@@ -66,47 +66,17 @@
           <div class="muted" style="margin-top:6px;font-weight:650">Choose a payment method to complete your booking.
           </div>
 
-          <div class="card" style="margin-top:12px">
-            <div class="card__body">
-              <div class="kpi">Digital wallet</div>
-              <div class="muted" style="margin-top:6px">Quick checkout options (demo interactions).</div>
-              <div class="hr"></div>
-              <div class="row" style="flex-wrap:wrap">
-                <a class="btn btn-secondary" href="#" data-wallet
-                  style="display:inline-flex;align-items:center;justify-content:center">Pay with Wallet</a>
-                <a class="btn btn-secondary" href="#" data-wallet
-                  style="display:inline-flex;align-items:center;justify-content:center">Apple Pay</a>
-                <a class="btn btn-secondary" href="#" data-wallet
-                  style="display:inline-flex;align-items:center;justify-content:center">Google Pay</a>
-              </div>
-            </div>
-          </div>
-
           <form data-payment-form style="margin-top:12px">
             <div class="card">
               <div class="card__body">
-                <div class="kpi">Pay by card</div>
-                <div class="muted" style="margin-top:6px">You will be redirected to Stripe Checkout to complete payment.</div>
+                <div class="kpi">Secure payment</div>
+                <div class="muted" style="margin-top:6px">You will be redirected to Stripe Checkout to enter your payment details (card, Apple Pay, Google Pay — where available).</div>
                 <div class="hr"></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                  <div class="field" style="grid-column:span 2">
-                    <div class="label">Cardholder name</div>
-                    <input class="control" name="cardName" placeholder="Name on card" />
-                  </div>
-                  <div class="field" style="grid-column:span 2">
-                    <div class="label">Card number</div>
-                    <input class="control" name="cardNumber" inputmode="numeric" placeholder="1234 5678 9012 3456" />
-                  </div>
-                  <div class="field">
-                    <div class="label">Expiry</div>
-                    <input class="control" name="expiry" placeholder="MM/YY" />
-                  </div>
-                  <div class="field">
-                    <div class="label">CVC</div>
-                    <input class="control" name="cvc" inputmode="numeric" placeholder="123" />
-                  </div>
+                <div class="row" style="gap:10px;flex-wrap:wrap">
+                  <div class="pill">Card</div>
+                  <div class="pill">Apple Pay</div>
+                  <div class="pill">Google Pay</div>
                 </div>
-
               </div>
             </div>
 
@@ -122,7 +92,7 @@
   <footer class="footer" aria-label="Footer">
     <div class="container footer__inner">
       <div class="muted"> BookingCart</div>
-      <div class="muted">Payment UI</div>
+      <div class="muted">Payments</div>
     </div>
   </footer>
 

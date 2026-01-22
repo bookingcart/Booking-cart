@@ -63,9 +63,158 @@
 
     const step = stepEl.getAttribute("data-step");
     const steps = Array.from(document.querySelectorAll(".step"));
+    const state = readState();
+    const allowedIndex = allowedStepIndex(state);
     steps.forEach((s) => {
-      s.setAttribute("data-active", s.getAttribute("data-step-id") === step ? "true" : "false");
+      const id = s.getAttribute("data-step-id") || "";
+      const idx = stepIndex(id);
+      s.setAttribute("data-active", id === step ? "true" : "false");
+      if (idx > allowedIndex) {
+        s.setAttribute("aria-disabled", "true");
+        s.addEventListener("click", (e) => {
+          e.preventDefault();
+          const msg = blockedMessageFor(id);
+          toast("Finish required steps", msg);
+        });
+      } else {
+        s.removeAttribute("aria-disabled");
+      }
     });
+  }
+
+  const STEP_ORDER = [
+    { id: "search", href: "index.html" },
+    { id: "results", href: "results.html" },
+    { id: "details", href: "details.html" },
+    { id: "passengers", href: "passengers.html" },
+    { id: "extras", href: "extras.html" },
+    { id: "payment", href: "payment.html" },
+    { id: "confirmation", href: "confirmation.html" }
+  ];
+
+  function stepIndex(id) {
+    return STEP_ORDER.findIndex((s) => s.id === id);
+  }
+
+  function stepHref(id) {
+    const s = STEP_ORDER.find((x) => x.id === id);
+    return s ? s.href : "index.html";
+  }
+
+  function isValidSearch(state) {
+    const s = state.search || {};
+    const mode = String(state.tripType || s.tripType || "round");
+    if (!s.from || !s.to) return false;
+    if (!s.fromCode || !s.toCode) return false;
+    if (!s.depart) return false;
+    if (mode === "round" && !s.return) return false;
+    return true;
+  }
+
+  function hasFlightSelection(state) {
+    return !!(state && state.selectedFlightId);
+  }
+
+  function hasPassengerInfo(state) {
+    const pax = state.passengers || { adults: 1, children: 0, infants: 0 };
+    const totalPax = (pax.adults || 0) + (pax.children || 0) + (pax.infants || 0);
+    const travelers = Array.isArray(state.travelers) ? state.travelers : [];
+    const email = ((state.contact || {}).email || "").trim();
+    if (!email) return false;
+    if (travelers.length < totalPax) return false;
+    const requiredOk = travelers.slice(0, totalPax).every((t) => {
+      return t && t.firstName && t.lastName && t.dob && t.doc;
+    });
+    return requiredOk;
+  }
+
+  function allowedStepIndex(state) {
+    if (!isValidSearch(state)) return 0;
+    if (!hasFlightSelection(state)) return 1;
+    if (!hasPassengerInfo(state)) return 2;
+    const hasBookingRef = !!(state && state.bookingRef);
+    return hasBookingRef ? 6 : 5;
+  }
+
+  function blockedMessageFor(targetStepId) {
+    const idx = stepIndex(targetStepId);
+    if (idx <= 0) return "Start your search to continue.";
+    if (idx === 1) return "Complete the search form (pick airports from the list and select dates).";
+    if (idx === 2) return "Select a flight on the Results page first.";
+    if (idx === 3) return "Select a flight on the Details page first.";
+    if (idx === 6) return "Complete payment first to view confirmation.";
+    if (idx >= 4) return "Complete passenger details (traveler info + contact email) first.";
+    return "Complete the required fields first.";
+  }
+
+  function guardRedirectForStep(currentStepId, state, query) {
+    const flights = Array.isArray(state.flights) ? state.flights : [];
+    const qFlight = query && query.flight ? String(query.flight) : "";
+
+    if (currentStepId === "results") {
+      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
+      return null;
+    }
+
+    if (currentStepId === "details") {
+      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
+      if (!flights.length) return { href: stepHref("results"), code: "results" };
+      if (!qFlight && !hasFlightSelection(state)) return { href: stepHref("results"), code: "select" };
+      return null;
+    }
+
+    if (currentStepId === "passengers") {
+      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
+      if (!flights.length) return { href: stepHref("results"), code: "results" };
+      if (!hasFlightSelection(state)) return { href: stepHref("results"), code: "select" };
+      return null;
+    }
+
+    if (currentStepId === "extras" || currentStepId === "payment") {
+      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
+      if (!hasFlightSelection(state)) return { href: stepHref("results"), code: "select" };
+      if (!hasPassengerInfo(state)) return { href: stepHref("passengers"), code: "passengers" };
+      return null;
+    }
+
+    if (currentStepId === "confirmation") {
+      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
+      if (!hasFlightSelection(state)) return { href: stepHref("results"), code: "select" };
+      if (!hasPassengerInfo(state)) return { href: stepHref("passengers"), code: "passengers" };
+      const hasSessionId = !!(query && query.session_id);
+      const hasBookingRef = !!(state && state.bookingRef);
+      if (!hasSessionId && !hasBookingRef) return { href: stepHref("payment"), code: "payment" };
+      return null;
+    }
+
+    return null;
+  }
+
+  function applyGuards() {
+    const stepEl = document.querySelector("[data-step]");
+    if (!stepEl) return;
+    const step = stepEl.getAttribute("data-step") || "";
+    if (!step) return;
+    const st = readState();
+    const q = getQuery();
+    const redirect = guardRedirectForStep(step, st, q);
+    if (!redirect || !redirect.href) return;
+
+    const href = String(redirect.href);
+    const code = String(redirect.code || "guard");
+    const next = href + (href.indexOf("?") === -1 ? "?" : "&") + "guard=" + encodeURIComponent(code);
+    window.location.replace(next);
+  }
+
+  function showGuardToast() {
+    const q = getQuery();
+    const code = q && q.guard ? String(q.guard) : "";
+    if (!code) return;
+    if (code === "search") toast("Complete search", "Pick airports from the list and select dates to continue.");
+    else if (code === "results") toast("Open results first", "Search flights first, then select a flight.");
+    else if (code === "select") toast("Select a flight", "Choose a flight on the Results page to continue.");
+    else if (code === "passengers") toast("Passenger details required", "Fill traveler details and a contact email to continue.");
+    else if (code === "payment") toast("Payment required", "Complete payment to view confirmation.");
   }
 
   function closeAllDropdowns(except) {
@@ -675,17 +824,17 @@
       let flights = null;
 
       if (window.location.protocol === "file:") {
-        toast("Duffel disabled", "To use live results, run via the server (not file://).");
+        toast("Live search disabled", "To use live results, run via the server (not file://).");
       } else {
         try {
           // Use Duffel API only
           flights = await fetchDuffelFlights(state, search);
           
           if (!flights || flights.length === 0) {
-            toast("No offers", "Duffel returned no offers for this search. Please try different airports or dates.");
+            toast("No offers", "Booking Cart found no offers for this search. Please try different airports or dates.");
             flights = [];
           } else {
-            toast("Duffel search successful", `Found ${flights.length} flights via Duffel API.`);
+            toast("Search successful", `Booking Cart found ${flights.length} flights.`);
           }
         } catch (e) {
           console.error("Duffel API error:", e);
@@ -1233,6 +1382,8 @@
   }
 
   function init() {
+    applyGuards();
+    showGuardToast();
     initStepper();
     initDropdowns();
     initAirportSuggestAll();
