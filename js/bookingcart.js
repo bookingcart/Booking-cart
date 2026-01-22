@@ -1228,7 +1228,6 @@
 
       const existing = readState();
       const bookingRef = existing.bookingRef || "BC" + Math.random().toString(36).slice(2, 8).toUpperCase();
-      writeState({ bookingRef });
 
       const s = existing.search || {};
       const desc =
@@ -1236,7 +1235,8 @@
         ((s.fromCode || extractIata(s.from) || "") + "→" + (s.toCode || extractIata(s.to) || "")) +
         (s.depart ? " " + s.depart : "");
 
-      const amountCents = Math.round(Number(totals.total || 0) * 100);
+      const latestTotals = computeTotals(existing);
+      const amountCents = Math.round(Number(latestTotals.total || 0) * 100);
       if (!Number.isFinite(amountCents) || amountCents <= 0) {
         toast("Payment", "Invalid checkout total.");
         return;
@@ -1260,12 +1260,20 @@
           cancelPath: "/payment.html"
         })
       })
-        .then((r) => r.json().catch(() => null))
-        .then((data) => {
-          if (!data || !data.ok || !data.url) {
-            const msg = data && data.error ? data.error : "Stripe Checkout failed";
+        .then(async (r) => {
+          const data = await r.json().catch(() => null);
+          if (!r.ok) {
+            const msg = data && data.error ? String(data.error) : `Request failed (${r.status})`;
             throw new Error(msg);
           }
+          if (!data || !data.ok || !data.url) {
+            const msg = data && data.error ? String(data.error) : "Stripe Checkout failed";
+            throw new Error(msg);
+          }
+          return data;
+        })
+        .then((data) => {
+          writeState({ bookingRef });
           window.location.href = data.url;
         })
         .catch((err) => {
