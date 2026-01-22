@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Booking confirmed</title>
+  <meta name="description" content="Booking confirmation, itinerary summary, and ticket download." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css" />
+</head>
+
+<body>
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="index.html">New search</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="layout" data-step="confirmation">
+    <div class="container" data-confirmation>
+      <div class="steps" aria-label="Booking steps">
+        <a class="step" data-step-id="search" href="index.html"><span class="step__dot">1</span> Search</a>
+        <a class="step" data-step-id="results" href="results.html"><span class="step__dot">2</span> Results</a>
+        <a class="step" data-step-id="details" href="details.html"><span class="step__dot">3</span> Details</a>
+        <a class="step" data-step-id="passengers" href="passengers.html"><span class="step__dot">4</span> Passengers</a>
+        <a class="step" data-step-id="extras" href="extras.html"><span class="step__dot">5</span> Extras</a>
+        <a class="step" data-step-id="payment" href="payment.html"><span class="step__dot">6</span> Payment</a>
+        <a class="step" data-step-id="confirmation" href="confirmation.html"><span class="step__dot">7</span>
+          Confirm</a>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card__body">
+          <div class="row space" style="flex-wrap:wrap">
+            <div>
+              <div class="kpi" style="font-size:22px">Booking confirmed</div>
+              <div class="muted" style="margin-top:6px;font-weight:650">Your ticket is ready. Reference: <span
+                  class="kpi" data-booking-ref>—</span></div>
+            </div>
+            <div class="pill">Paid: <span class="kpi" data-confirm-total style="margin-left:6px">—</span></div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="kpi">Itinerary</div>
+          <div class="muted" style="margin-top:6px;font-weight:650" data-confirm-flight>—</div>
+
+          <div class="hr"></div>
+
+          <div class="kpi">Payment</div>
+          <div class="muted" style="margin-top:6px;font-weight:650" data-payment-status>—</div>
+
+          <div class="hr"></div>
+
+          <div class="row" style="flex-wrap:wrap">
+            <a class="btn btn-primary" href="#" data-download
+              style="display:inline-flex;align-items:center;justify-content:center">Download ticket</a>
+            <a class="btn btn-secondary" href="#" data-email
+              style="display:inline-flex;align-items:center;justify-content:center">Email ticket</a>
+            <a class="btn btn-secondary" href="#" style="display:inline-flex;align-items:center;justify-content:center"
+              onclick="BookingCart.toast('Manage booking','Demo: manage booking flow can be added next.');return false;">Manage
+              booking</a>
+          </div>
+
+          <div class="small" style="margin-top:12px">This is a UI demo. No real booking was made.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="muted">Confirmation UI</div>
+    </div>
+  </footer>
+
+  <script src="js/bookingcart.js?v=2"></script>
+</body>
+
+</html>

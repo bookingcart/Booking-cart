@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Payment</title>
+  <meta name="description" content="Secure checkout with card and digital wallet options." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css" />
+</head>
+
+<body>
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="extras.html">Back</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="layout" data-step="payment">
+    <div class="container" data-payment>
+      <div class="steps" aria-label="Booking steps">
+        <a class="step" data-step-id="search" href="index.html"><span class="step__dot">1</span> Search</a>
+        <a class="step" data-step-id="results" href="results.html"><span class="step__dot">2</span> Results</a>
+        <a class="step" data-step-id="details" href="details.html"><span class="step__dot">3</span> Details</a>
+        <a class="step" data-step-id="passengers" href="passengers.html"><span class="step__dot">4</span> Passengers</a>
+        <a class="step" data-step-id="extras" href="extras.html"><span class="step__dot">5</span> Extras</a>
+        <a class="step" data-step-id="payment" href="payment.html"><span class="step__dot">6</span> Payment</a>
+        <a class="step" data-step-id="confirmation" href="confirmation.html"><span class="step__dot">7</span>
+          Confirm</a>
+      </div>
+
+      <div class="grid-2" style="margin-top:14px">
+        <aside class="sidebar" aria-label="Checkout summary">
+          <div class="sidebar__header">
+            <div class="sidebar__title">Checkout</div>
+            <a class="muted" href="extras.html" style="font-weight:800">Edit extras</a>
+          </div>
+          <div class="sidebar__body">
+            <div class="kpi">Total due</div>
+            <div class="price" style="font-size:24px;margin-top:6px" data-pay-total>—</div>
+            <div class="hr"></div>
+            <div class="kpi">Trust & security</div>
+            <div class="muted" style="margin-top:6px">Payments are processed securely via Stripe Checkout.</div>
+
+            <div class="row" style="margin-top:12px;flex-wrap:wrap">
+              <div class="pill">SSL</div>
+              <div class="pill">PCI-style UI</div>
+              <div class="pill">Secure checkout</div>
+            </div>
+          </div>
+        </aside>
+
+        <section aria-label="Payment">
+          <h1 class="section-title" style="font-size:24px;margin:0">Payment</h1>
+          <div class="muted" style="margin-top:6px;font-weight:650">Choose a payment method to complete your booking.
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="card__body">
+              <div class="kpi">Digital wallet</div>
+              <div class="muted" style="margin-top:6px">Quick checkout options (demo interactions).</div>
+              <div class="hr"></div>
+              <div class="row" style="flex-wrap:wrap">
+                <a class="btn btn-secondary" href="#" data-wallet
+                  style="display:inline-flex;align-items:center;justify-content:center">Pay with Wallet</a>
+                <a class="btn btn-secondary" href="#" data-wallet
+                  style="display:inline-flex;align-items:center;justify-content:center">Apple Pay</a>
+                <a class="btn btn-secondary" href="#" data-wallet
+                  style="display:inline-flex;align-items:center;justify-content:center">Google Pay</a>
+              </div>
+            </div>
+          </div>
+
+          <form data-payment-form style="margin-top:12px">
+            <div class="card">
+              <div class="card__body">
+                <div class="kpi">Pay by card</div>
+                <div class="muted" style="margin-top:6px">You will be redirected to Stripe Checkout to complete payment.</div>
+                <div class="hr"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <div class="field" style="grid-column:span 2">
+                    <div class="label">Cardholder name</div>
+                    <input class="control" name="cardName" placeholder="Name on card" />
+                  </div>
+                  <div class="field" style="grid-column:span 2">
+                    <div class="label">Card number</div>
+                    <input class="control" name="cardNumber" inputmode="numeric" placeholder="1234 5678 9012 3456" />
+                  </div>
+                  <div class="field">
+                    <div class="label">Expiry</div>
+                    <input class="control" name="expiry" placeholder="MM/YY" />
+                  </div>
+                  <div class="field">
+                    <div class="label">CVC</div>
+                    <input class="control" name="cvc" inputmode="numeric" placeholder="123" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="actions" style="padding-left:0;padding-right:0">
+              <button class="btn btn-primary" type="submit">Pay & Confirm Booking</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="muted">Payment UI</div>
+    </div>
+  </footer>
+
+  <script src="js/bookingcart.js?v=2"></script>
+</body>
+
+</html>

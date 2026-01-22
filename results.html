@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Results</title>
+  <meta name="description" content="Flight search results with filters and sorting." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css" />
+</head>
+
+<body>
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="index.html">Modify search</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="layout" data-step="results">
+    <div class="container">
+      <div class="steps" aria-label="Booking steps">
+        <a class="step" data-step-id="search" href="index.html"><span class="step__dot">1</span> Search</a>
+        <a class="step" data-step-id="results" href="results.html"><span class="step__dot">2</span> Results</a>
+        <a class="step" data-step-id="details" href="details.html"><span class="step__dot">3</span> Details</a>
+        <a class="step" data-step-id="passengers" href="passengers.html"><span class="step__dot">4</span> Passengers</a>
+        <a class="step" data-step-id="extras" href="extras.html"><span class="step__dot">5</span> Extras</a>
+        <a class="step" data-step-id="payment" href="payment.html"><span class="step__dot">6</span> Payment</a>
+        <a class="step" data-step-id="confirmation" href="confirmation.html"><span class="step__dot">7</span>
+          Confirm</a>
+      </div>
+
+      <div style="margin-top:14px">
+        <h1 class="section-title" style="font-size:24px;margin:0"><span data-route>—</span></h1>
+        <div class="muted" style="margin-top:6px;font-weight:650" data-meta>—</div>
+      </div>
+
+      <div class="grid-2" style="margin-top:14px" data-results>
+        <aside class="sidebar" aria-label="Filters">
+          <div class="sidebar__header">
+            <div class="sidebar__title">Filters</div>
+            <a class="muted" href="index.html" style="font-weight:800">New search</a>
+          </div>
+          <div class="sidebar__body">
+            <div class="field">
+              <div class="label">Max price</div>
+              <input class="control" type="range" name="maxPrice" min="150" max="1200" value="1200" />
+              <div class="small">Slide to narrow results by price.</div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="field">
+              <div class="label">Stops</div>
+              <select class="control select" name="stops">
+                <option value="any">Any</option>
+                <option value="0">Non-stop</option>
+                <option value="1">1 stop</option>
+                <option value="2">2 stops</option>
+              </select>
+            </div>
+
+            <div class="field" style="margin-top:12px">
+              <div class="label">Airline</div>
+              <select class="control select" name="airline">
+                <option value="any">Any</option>
+              </select>
+            </div>
+
+            <div class="field" style="margin-top:12px">
+              <div class="label">Departure time</div>
+              <select class="control select" name="departTime">
+                <option value="any">Any</option>
+                <option value="morning">Morning (05–12)</option>
+                <option value="afternoon">Afternoon (12–18)</option>
+                <option value="evening">Evening (18–05)</option>
+              </select>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="field">
+              <div class="label">Sort</div>
+              <select class="control select" name="sort">
+                <option value="price">Best price</option>
+                <option value="duration">Shortest duration</option>
+                <option value="depart">Earliest departure</option>
+              </select>
+            </div>
+          </div>
+        </aside>
+
+        <section aria-label="Results">
+          <div class="row space" style="margin-bottom:10px">
+            <div class="kpi">Available flights</div>
+            <div class="pill">Tip: click a card for details</div>
+          </div>
+          <div style="display:grid;gap:12px" data-results-list></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="muted">Prices are mock data</div>
+    </div>
+  </footer>
+
+  <script src="js/bookingcart.js?v=2"></script>
+</body>
+
+</html>

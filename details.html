@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Flight details</title>
+  <meta name="description" content="View flight breakdown, fare rules, baggage info, and select your flight." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css" />
+</head>
+
+<body>
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="results.html">Back to results</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="layout" data-step="details">
+    <div class="container" data-details>
+      <div class="steps" aria-label="Booking steps">
+        <a class="step" data-step-id="search" href="index.html"><span class="step__dot">1</span> Search</a>
+        <a class="step" data-step-id="results" href="results.html"><span class="step__dot">2</span> Results</a>
+        <a class="step" data-step-id="details" href="details.html"><span class="step__dot">3</span> Details</a>
+        <a class="step" data-step-id="passengers" href="passengers.html"><span class="step__dot">4</span> Passengers</a>
+        <a class="step" data-step-id="extras" href="extras.html"><span class="step__dot">5</span> Extras</a>
+        <a class="step" data-step-id="payment" href="payment.html"><span class="step__dot">6</span> Payment</a>
+        <a class="step" data-step-id="confirmation" href="confirmation.html"><span class="step__dot">7</span>
+          Confirm</a>
+      </div>
+
+      <div class="grid-2" style="margin-top:14px">
+        <aside class="sidebar" aria-label="Fare summary">
+          <div class="sidebar__header">
+            <div class="sidebar__title">Your selection</div>
+            <a class="muted" href="results.html" style="font-weight:800">Change</a>
+          </div>
+          <div class="sidebar__body">
+            <div class="logo" aria-hidden="true" data-airline-logo style="margin-bottom:10px">—</div>
+            <div class="kpi" data-airline>—</div>
+            <div class="muted" style="margin-top:6px;font-weight:700" data-times>—</div>
+            <div class="muted" style="margin-top:6px;font-weight:700" data-duration>—</div>
+            <div class="hr"></div>
+            <div class="row space">
+              <div class="muted" style="font-weight:800">Price</div>
+              <div class="price" data-price>—</div>
+            </div>
+            <div class="small" style="margin-top:8px">Final total will include taxes and any extras at checkout.</div>
+            <div style="margin-top:14px">
+              <a class="btn btn-primary" href="#" data-select-flight
+                style="display:inline-flex;align-items:center;justify-content:center;width:100%">Select Flight</a>
+            </div>
+          </div>
+        </aside>
+
+        <section aria-label="Flight details">
+          <h1 class="section-title" style="font-size:24px;margin:0">Flight details</h1>
+          <div class="muted" style="margin-top:6px;font-weight:650">Review the full breakdown, fare rules, and baggage
+            allowances before continuing.</div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="card__body">
+              <div class="kpi">Trip breakdown</div>
+              <div class="muted" style="margin-top:6px">Outbound flight leg includes departure, connection(s) (if any),
+                and arrival timings.</div>
+              <div class="hr"></div>
+              <div class="itinerary" data-trip-breakdown></div>
+              <div class="hr"></div>
+              <div class="row space" style="flex-wrap:wrap">
+                <div class="pill">Gate closes 20 min before departure</div>
+                <div class="pill">Mobile boarding pass supported</div>
+                <div class="pill">Change options depend on fare</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="card__body">
+              <div class="kpi">Fare rules</div>
+              <div class="muted" style="margin-top:6px">Typical fare rules (demo). Your actual rules depend on airline
+                and fare brand.</div>
+              <div class="hr"></div>
+              <div style="display:grid;gap:10px">
+                <div class="row space" style="flex-wrap:wrap">
+                  <div class="muted" style="font-weight:800">Refund policy</div>
+                  <div class="kpi">Refundable with fee</div>
+                </div>
+                <div class="row space" style="flex-wrap:wrap">
+                  <div class="muted" style="font-weight:800">Changes</div>
+                  <div class="kpi">Allowed (fare difference may apply)</div>
+                </div>
+                <div class="row space" style="flex-wrap:wrap">
+                  <div class="muted" style="font-weight:800">No-show</div>
+                  <div class="kpi">Ticket forfeited</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="card__body">
+              <div class="kpi">Baggage</div>
+              <div class="muted" style="margin-top:6px">Carry-on included. Checked baggage varies by fare. Add more
+                during Extras.</div>
+              <div class="hr"></div>
+              <div class="row" style="flex-wrap:wrap">
+                <div class="pill">Carry-on: 7kg</div>
+                <div class="pill">Personal item: 1</div>
+                <div class="pill">Checked: from 0–1 bag</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="muted">Secure checkout styling demo</div>
+    </div>
+  </footer>
+
+  <script src="js/bookingcart.js?v=2"></script>
+</body>
+
+</html>

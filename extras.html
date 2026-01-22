@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Extras</title>
+  <meta name="description" content="Add baggage, seat selection, insurance, and meal preferences." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css" />
+</head>
+
+<body>
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="passengers.html">Back</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="layout" data-step="extras">
+    <div class="container" data-extras>
+      <div class="steps" aria-label="Booking steps">
+        <a class="step" data-step-id="search" href="index.html"><span class="step__dot">1</span> Search</a>
+        <a class="step" data-step-id="results" href="results.html"><span class="step__dot">2</span> Results</a>
+        <a class="step" data-step-id="details" href="details.html"><span class="step__dot">3</span> Details</a>
+        <a class="step" data-step-id="passengers" href="passengers.html"><span class="step__dot">4</span> Passengers</a>
+        <a class="step" data-step-id="extras" href="extras.html"><span class="step__dot">5</span> Extras</a>
+        <a class="step" data-step-id="payment" href="payment.html"><span class="step__dot">6</span> Payment</a>
+        <a class="step" data-step-id="confirmation" href="confirmation.html"><span class="step__dot">7</span>
+          Confirm</a>
+      </div>
+
+      <div class="grid-2" style="margin-top:14px">
+        <aside class="sidebar" aria-label="Price summary">
+          <div class="sidebar__header">
+            <div class="sidebar__title">Price summary</div>
+            <a class="muted" href="details.html" style="font-weight:800">Change flight</a>
+          </div>
+          <div class="sidebar__body">
+            <div class="row space">
+              <div class="muted" style="font-weight:800">Base fare</div>
+              <div class="kpi" data-sum-base>—</div>
+            </div>
+            <div class="row space" style="margin-top:10px">
+              <div class="muted" style="font-weight:800">Extras</div>
+              <div class="kpi" data-sum-extras>—</div>
+            </div>
+            <div class="row space" style="margin-top:10px">
+              <div class="muted" style="font-weight:800">Taxes & fees</div>
+              <div class="kpi" data-sum-taxes>—</div>
+            </div>
+            <div class="hr"></div>
+            <div class="row space">
+              <div class="muted" style="font-weight:900">Total</div>
+              <div class="price" data-sum-total>—</div>
+            </div>
+            <div class="small" style="margin-top:8px">Totals update instantly as you select add-ons.</div>
+          </div>
+        </aside>
+
+        <section aria-label="Extras">
+          <h1 class="section-title" style="font-size:24px;margin:0">Add-ons & extras</h1>
+          <div class="muted" style="margin-top:6px;font-weight:650">Customize your trip with seats, extra bags, meals,
+            and optional protection.</div>
+
+          <form data-extras-form style="margin-top:12px">
+            <div class="card">
+              <div class="card__body">
+                <div class="kpi">Extra baggage</div>
+                <div class="muted" style="margin-top:6px">Add checked bags for the whole booking (demo pricing).</div>
+                <div class="hr"></div>
+                <div class="field" style="max-width:320px">
+                  <div class="label">Checked bags</div>
+                  <input class="control" type="number" name="baggage" min="0" max="6" value="0" />
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+              <div class="card__body">
+                <div class="kpi">Seat selection</div>
+                <div class="muted" style="margin-top:6px">Pick seats now or skip and get assigned at check-in.</div>
+                <div class="hr"></div>
+                <div class="field" style="max-width:380px">
+                  <div class="label">Seat option</div>
+                  <select class="control select" name="seat">
+                    <option value="none">No seat selection</option>
+                    <option value="standard">Standard seats</option>
+                    <option value="extra">Extra legroom</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+              <div class="card__body">
+                <div class="kpi">Travel insurance</div>
+                <div class="muted" style="margin-top:6px">Optional coverage for delays and cancellations.</div>
+                <div class="hr"></div>
+                <label class="row" style="gap:10px;align-items:center">
+                  <input type="checkbox" name="insurance" />
+                  <span style="font-weight:800">Add insurance</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+              <div class="card__body">
+                <div class="kpi">Meal preferences</div>
+                <div class="muted" style="margin-top:6px">Select a meal preference (where available).</div>
+                <div class="hr"></div>
+                <div class="field" style="max-width:380px">
+                  <div class="label">Meal</div>
+                  <select class="control select" name="meal">
+                    <option value="none">No meal</option>
+                    <option value="standard">Standard</option>
+                    <option value="premium">Premium</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions" style="padding-left:0;padding-right:0">
+              <button class="btn btn-primary" type="submit">Continue to Payment</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted">© BookingCart</div>
+      <div class="muted">Extras UI</div>
+    </div>
+  </footer>
+
+  <script src="js/bookingcart.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,10 @@
+[build]
+  command = "node -e \"console.log('Netlify build step (no build)')\""
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true

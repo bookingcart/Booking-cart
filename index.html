@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Search flights</title>
+  <meta name="description" content="Search and book flights with a modern, green-themed experience." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css" />
+</head>
+
+<body>
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="index.html">Flights</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero" aria-label="Flight search">
+    <div class="hero__bg" aria-hidden="true"></div>
+    <div class="container hero__content" data-step="search">
+      <div class="badge">Flight search only • Fast, clean checkout</div>
+      <h1 class="h1">Find flights you'll actually want to book.</h1>
+      <p class="lead">Compare schedules, pick the right fare, then checkout with a professional, secure-feeling booking
+        flow.</p>
+
+      <div class="panel" role="region" aria-label="Search panel">
+        <div class="tabs" role="tablist" aria-label="Trip type">
+          <button class="tab" type="button" role="tab" aria-selected="true" data-trip="round">Round-trip</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-trip="oneway">One-way</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-trip="multi">Multi-city</button>
+        </div>
+
+        <div class="panel__inner">
+          <form data-search-form>
+            <div class="form-grid">
+              <div class="field suggest" data-span="2">
+                <div class="label">From</div>
+                <input class="control" name="from" data-airport-input placeholder="City or airport"
+                  autocomplete="off" />
+                <ul class="suggest__list" role="listbox" aria-label="From suggestions"></ul>
+              </div>
+
+              <div class="field suggest" data-span="2">
+                <div class="label">To</div>
+                <input class="control" name="to" data-airport-input placeholder="City or airport" autocomplete="off" />
+                <ul class="suggest__list" role="listbox" aria-label="To suggestions"></ul>
+              </div>
+
+              <div class="field">
+                <div class="label">Departure</div>
+                <input class="control" name="depart" type="date" />
+              </div>
+
+              <div class="field" data-return-field>
+                <div class="label">Return</div>
+                <input class="control" name="return" type="date" />
+              </div>
+
+              <div class="field dropdown" data-dropdown>
+                <div class="label">Passengers</div>
+                <button class="control" type="button" data-dropdown-trigger data-passengers-trigger
+                  style="text-align:left">1 passenger</button>
+                <input type="hidden" name="passengers" value="" />
+                <div class="dropdown__panel" role="dialog" aria-label="Passenger selector">
+                  <div data-passengers>
+                    <div class="counter">
+                      <div class="counter__meta">
+                        <div class="counter__title">Adults</div>
+                        <div class="counter__hint">Age 12+</div>
+                      </div>
+                      <div class="counter__controls">
+                        <button class="icon-btn" type="button" data-minus="adults"
+                          aria-label="Decrease adults">−</button>
+                        <span class="kpi" data-count="adults">1</span>
+                        <button class="icon-btn" type="button" data-plus="adults"
+                          aria-label="Increase adults">+</button>
+                      </div>
+                    </div>
+
+                    <div class="counter">
+                      <div class="counter__meta">
+                        <div class="counter__title">Children</div>
+                        <div class="counter__hint">Age 2–11</div>
+                      </div>
+                      <div class="counter__controls">
+                        <button class="icon-btn" type="button" data-minus="children"
+                          aria-label="Decrease children">−</button>
+                        <span class="kpi" data-count="children">0</span>
+                        <button class="icon-btn" type="button" data-plus="children"
+                          aria-label="Increase children">+</button>
+                      </div>
+                    </div>
+
+                    <div class="counter">
+                      <div class="counter__meta">
+                        <div class="counter__title">Infants</div>
+                        <div class="counter__hint">Under 2 (max 1 per adult)</div>
+                      </div>
+                      <div class="counter__controls">
+                        <button class="icon-btn" type="button" data-minus="infants"
+                          aria-label="Decrease infants">−</button>
+                        <span class="kpi" data-count="infants">0</span>
+                        <button class="icon-btn" type="button" data-plus="infants"
+                          aria-label="Increase infants">+</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="label">Cabin class</div>
+                <select class="control select" name="cabin">
+                  <option>Economy</option>
+                  <option>Premium</option>
+                  <option>Business</option>
+                  <option>First</option>
+                </select>
+              </div>
+            </div>
+
+            <div data-multicity style="display:none">
+              <div class="card" style="margin:0 12px 12px 12px">
+                <div class="card__body">
+                  <div class="kpi">Multi-city is a UI preview</div>
+                  <div class="muted" style="margin-top:6px">For this demo, multi-city uses the same results flow. You
+                    can extend this later to support multiple legs.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Search Flights</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="steps" aria-label="Booking steps">
+        <a class="step" data-step-id="search" href="index.html"><span class="step__dot">1</span> Search</a>
+        <a class="step" data-step-id="results" href="results.html"><span class="step__dot">2</span> Results</a>
+        <a class="step" data-step-id="details" href="details.html"><span class="step__dot">3</span> Details</a>
+        <a class="step" data-step-id="passengers" href="passengers.html"><span class="step__dot">4</span> Passengers</a>
+        <a class="step" data-step-id="extras" href="extras.html"><span class="step__dot">5</span> Extras</a>
+        <a class="step" data-step-id="payment" href="payment.html"><span class="step__dot">6</span> Payment</a>
+        <a class="step" data-step-id="confirmation" href="confirmation.html"><span class="step__dot">7</span>
+          Confirm</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="muted">Your Travel, Simplified</div>
+    </div>
+  </footer>
+
+  <script src="js/bookingcart.js?v=2"></script>
+</body>
+
+</html>
