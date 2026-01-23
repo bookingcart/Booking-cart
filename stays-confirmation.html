@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Stay confirmed</title>
+  <meta name="description" content="Stay booking confirmation." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css" />
+</head>
+
+<body class="stays">
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="stays.html">New stay search</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="layout" data-stays-confirmation>
+    <div class="container">
+      <div class="steps stays-steps" aria-label="Stays steps">
+        <a class="step" href="stays.html"><span class="step__dot">1</span> Search</a>
+        <a class="step" href="stays-results.html"><span class="step__dot">2</span> Results</a>
+        <span class="step"><span class="step__dot">3</span> Details</span>
+        <span class="step"><span class="step__dot">4</span> Checkout</span>
+        <span class="step" data-active="true"><span class="step__dot">5</span> Confirm</span>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card__body">
+          <div class="row space" style="flex-wrap:wrap;gap:12px">
+            <div>
+              <div class="kpi" style="font-size:22px">Booking confirmed</div>
+              <div class="muted" style="margin-top:6px;font-weight:650">Confirmation: <span class="kpi" data-confirm-ref>—</span></div>
+            </div>
+            <div class="pill pill--info">Total: <span class="kpi" data-confirm-total style="margin-left:6px">—</span></div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div style="display:grid;gap:10px">
+            <div class="row space" style="flex-wrap:wrap">
+              <div class="muted" style="font-weight:850">Hotel</div>
+              <div class="kpi" data-confirm-hotel>—</div>
+            </div>
+            <div class="row space" style="flex-wrap:wrap">
+              <div class="muted" style="font-weight:850">Room</div>
+              <div class="kpi" data-confirm-room>—</div>
+            </div>
+            <div class="row space" style="flex-wrap:wrap">
+              <div class="muted" style="font-weight:850">Dates</div>
+              <div class="kpi" data-confirm-dates>—</div>
+            </div>
+            <div class="row space" style="flex-wrap:wrap">
+              <div class="muted" style="font-weight:850">Payment</div>
+              <div class="kpi" data-confirm-payment>—</div>
+            </div>
+            <div class="row space" style="flex-wrap:wrap">
+              <div class="muted" style="font-weight:850">Cancellation</div>
+              <div class="kpi" data-confirm-policy>—</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row" style="flex-wrap:wrap">
+            <a class="btn btn-primary" href="#" data-download-receipt style="display:inline-flex;align-items:center;justify-content:center">Download receipt</a>
+            <a class="btn btn-secondary" href="#" data-contact-support style="display:inline-flex;align-items:center;justify-content:center">Contact support</a>
+          </div>
+
+          <div class="small" style="margin-top:12px">This is a stays UI demo. Connect a real hotel API and payments later.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="muted">Stay confirmation</div>
+        <a class="muted" href="terms.html" style="font-weight:800">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/stays.js?v=1"></script>
+</body>
+
+</html>

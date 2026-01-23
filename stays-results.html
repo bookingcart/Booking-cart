@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Stays results</title>
+  <meta name="description" content="Browse stay options with filters and sorting." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css" />
+</head>
+
+<body class="stays">
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="stays.html">Modify search</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="layout" data-stays-results>
+    <div class="container">
+      <div class="steps stays-steps" aria-label="Stays steps">
+        <a class="step" href="stays.html"><span class="step__dot">1</span> Search</a>
+        <span class="step" data-active="true"><span class="step__dot">2</span> Results</span>
+        <span class="step"><span class="step__dot">3</span> Details</span>
+        <span class="step"><span class="step__dot">4</span> Checkout</span>
+        <span class="step"><span class="step__dot">5</span> Confirm</span>
+      </div>
+
+      <div style="margin-top:14px">
+        <h1 class="section-title" style="font-size:24px;margin:0"><span data-stays-route>—</span></h1>
+        <div class="muted" style="margin-top:6px;font-weight:650" data-stays-meta>—</div>
+      </div>
+
+      <div class="grid-2" style="margin-top:14px">
+        <aside class="sidebar" aria-label="Filters">
+          <div class="sidebar__header">
+            <div class="sidebar__title">Filters</div>
+            <a class="muted" href="stays.html" style="font-weight:800">New search</a>
+          </div>
+          <div class="sidebar__body">
+            <div class="field">
+              <div class="label">Max price / night</div>
+              <input class="control" type="range" name="maxPrice" min="60" max="500" value="450" />
+              <div class="small">Slide to narrow results by nightly price.</div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="field">
+              <div class="label">Star rating</div>
+              <div class="checklist">
+                <label class="row" style="gap:10px"><input type="checkbox" name="stars" value="5" checked /> <span class="muted">5 stars</span></label>
+                <label class="row" style="gap:10px"><input type="checkbox" name="stars" value="4" checked /> <span class="muted">4 stars</span></label>
+                <label class="row" style="gap:10px"><input type="checkbox" name="stars" value="3" checked /> <span class="muted">3 stars</span></label>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="field">
+              <div class="label">Guest rating (min)</div>
+              <input class="control" type="range" name="minRating" min="0" max="10" value="0" step="0.5" />
+              <div class="small">Higher rating = better reviews.</div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="field">
+              <div class="label">Amenities</div>
+              <div class="checklist">
+                <label class="row" style="gap:10px"><input type="checkbox" name="amenities" value="wifi" /> <span class="muted">Wi‑Fi</span></label>
+                <label class="row" style="gap:10px"><input type="checkbox" name="amenities" value="breakfast" /> <span class="muted">Breakfast</span></label>
+                <label class="row" style="gap:10px"><input type="checkbox" name="amenities" value="parking" /> <span class="muted">Parking</span></label>
+                <label class="row" style="gap:10px"><input type="checkbox" name="amenities" value="pool" /> <span class="muted">Pool</span></label>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="field">
+              <div class="label">Property type</div>
+              <div class="checklist">
+                <label class="row" style="gap:10px"><input type="checkbox" name="type" value="Hotel" checked /> <span class="muted">Hotel</span></label>
+                <label class="row" style="gap:10px"><input type="checkbox" name="type" value="Apartment" checked /> <span class="muted">Apartment</span></label>
+                <label class="row" style="gap:10px"><input type="checkbox" name="type" value="Lodge" checked /> <span class="muted">Lodge</span></label>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="field">
+              <div class="label">Sort</div>
+              <select class="control select" name="sort">
+                <option value="popularity">Popularity</option>
+                <option value="price">Price (low to high)</option>
+                <option value="rating">Guest rating</option>
+              </select>
+            </div>
+          </div>
+        </aside>
+
+        <section aria-label="Results">
+          <div class="row space" style="margin-bottom:10px">
+            <div class="kpi">Available stays</div>
+            <div class="pill">Tip: use filters to narrow down options</div>
+          </div>
+          <div style="display:grid;gap:12px" data-hotel-list></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="muted">Stays results</div>
+        <a class="muted" href="terms.html" style="font-weight:800">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/stays.js?v=1"></script>
+</body>
+
+</html>

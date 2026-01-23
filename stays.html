@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Stays</title>
+  <meta name="description" content="Search stays and hotels with a modern booking experience." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css?v=2" />
+</head>
+
+<body class="stays">
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="index.html">Flights</a>
+        <a href="stays.html">Stays</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero" aria-label="Stays search">
+    <div class="hero__bg" aria-hidden="true"></div>
+    <div class="container hero__content" data-stays-search>
+      <div class="badge">Find hotels, apartments, and lodges</div>
+      <h1 class="h1">Book stays with confidence.</h1>
+      <p class="lead">Compare location, amenities, and flexible policies — then checkout in a fast, secure flow.</p>
+
+      <div class="panel" role="region" aria-label="Search stays panel">
+        <div class="panel__inner">
+          <form data-stays-form>
+            <div class="form-grid">
+              <div class="field suggest" data-span="2">
+                <div class="label">Destination</div>
+                <input class="control" name="destination" data-dest-input placeholder="City, hotel, or landmark" autocomplete="off" />
+                <ul class="suggest__list" data-dest-list role="listbox" aria-label="Destination suggestions"></ul>
+              </div>
+
+              <div class="field">
+                <div class="label">Check-in</div>
+                <input class="control" name="checkIn" type="date" />
+              </div>
+
+              <div class="field">
+                <div class="label">Check-out</div>
+                <input class="control" name="checkOut" type="date" />
+              </div>
+
+              <div class="field" data-span="2">
+                <div class="label">Guests</div>
+                <div class="guests" data-guests>
+                  <button class="control" type="button" data-guests-trigger style="text-align:left">2 adults • 0 children • 1 room</button>
+                  <div class="guests__panel" data-guests-panel role="dialog" aria-label="Guests selector">
+                    <div style="display:grid;gap:10px">
+                      <div class="counter">
+                        <div class="counter__meta">
+                          <div class="counter__title">Adults</div>
+                          <div class="counter__hint">Age 18+</div>
+                        </div>
+                        <div class="counter__controls">
+                          <button class="icon-btn" type="button" data-minus="adults" aria-label="Decrease adults">−</button>
+                          <span class="kpi" data-count="adults">2</span>
+                          <button class="icon-btn" type="button" data-plus="adults" aria-label="Increase adults">+</button>
+                        </div>
+                      </div>
+
+                      <div class="counter">
+                        <div class="counter__meta">
+                          <div class="counter__title">Children</div>
+                          <div class="counter__hint">Age 0–17</div>
+                        </div>
+                        <div class="counter__controls">
+                          <button class="icon-btn" type="button" data-minus="children" aria-label="Decrease children">−</button>
+                          <span class="kpi" data-count="children">0</span>
+                          <button class="icon-btn" type="button" data-plus="children" aria-label="Increase children">+</button>
+                        </div>
+                      </div>
+
+                      <div class="counter">
+                        <div class="counter__meta">
+                          <div class="counter__title">Rooms</div>
+                          <div class="counter__hint">How many rooms?</div>
+                        </div>
+                        <div class="counter__controls">
+                          <button class="icon-btn" type="button" data-minus="rooms" aria-label="Decrease rooms">−</button>
+                          <span class="kpi" data-count="rooms">1</span>
+                          <button class="icon-btn" type="button" data-plus="rooms" aria-label="Increase rooms">+</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Search stays</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="steps stays-steps" aria-label="Stays steps">
+        <span class="step" data-active="true"><span class="step__dot">1</span> Search</span>
+        <span class="step"><span class="step__dot">2</span> Results</span>
+        <span class="step"><span class="step__dot">3</span> Details</span>
+        <span class="step"><span class="step__dot">4</span> Checkout</span>
+        <span class="step"><span class="step__dot">5</span> Confirm</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="layout" aria-label="Stays suggestions" data-stays-suggestions>
+    <div class="container">
+      <div class="section">
+        <div class="section__head">
+          <div>
+            <div class="kpi" style="font-size:18px">Top booked</div>
+            <div class="muted" style="margin-top:6px">Popular picks right now. Tap to open details or start your search.</div>
+          </div>
+        </div>
+        <div class="suggest-grid" data-top-booked></div>
+      </div>
+
+      <div class="section" style="margin-top:18px">
+        <div class="section__head">
+          <div>
+            <div class="kpi" style="font-size:18px">Top locations</div>
+            <div class="muted" style="margin-top:6px">Trending destinations with great availability and flexible policies.</div>
+          </div>
+        </div>
+        <div class="suggest-grid" data-top-locations></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="muted">Stays</div>
+        <a class="muted" href="terms.html" style="font-weight:800">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/stays.js?v=2"></script>
+</body>
+
+</html>

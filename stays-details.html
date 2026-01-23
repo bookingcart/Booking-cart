@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Stay details</title>
+  <meta name="description" content="View hotel details, amenities, rooms and policies." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css" />
+</head>
+
+<body class="stays">
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="stays-results.html">Back to results</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="layout" data-stays-details>
+    <div class="container">
+      <div class="steps stays-steps" aria-label="Stays steps">
+        <a class="step" href="stays.html"><span class="step__dot">1</span> Search</a>
+        <a class="step" href="stays-results.html"><span class="step__dot">2</span> Results</a>
+        <span class="step" data-active="true"><span class="step__dot">3</span> Details</span>
+        <span class="step"><span class="step__dot">4</span> Checkout</span>
+        <span class="step"><span class="step__dot">5</span> Confirm</span>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card__body">
+          <div class="row space" style="flex-wrap:wrap;gap:12px">
+            <div>
+              <div class="kpi" style="font-size:22px" data-hotel-name>—</div>
+              <div class="small" style="margin-top:4px" data-hotel-sub>—</div>
+              <div class="muted" style="margin-top:8px" data-hotel-address>—</div>
+            </div>
+            <div class="rating-badge">
+              <div class="kpi" style="font-size:16px">Rating</div>
+              <div class="small" data-hotel-rating>—</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="gallery" data-hotel-gallery aria-label="Hotel photo gallery"></div>
+
+          <div class="hr"></div>
+
+          <div class="grid-2" style="grid-template-columns:1fr 340px">
+            <section aria-label="Hotel details">
+              <div class="card" style="margin:0">
+                <div class="card__body">
+                  <div class="kpi">Amenities</div>
+                  <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:10px" data-hotel-amenities></div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px">
+                <div class="card__body">
+                  <div class="kpi">About this property</div>
+                  <div class="muted" style="margin-top:6px" data-hotel-desc>—</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px">
+                <div class="card__body">
+                  <div class="kpi">House rules</div>
+                  <div class="hr"></div>
+                  <div style="display:grid;gap:10px" data-hotel-rules></div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px">
+                <div class="card__body">
+                  <div class="kpi">Policies</div>
+                  <div class="hr"></div>
+                  <div style="display:grid;gap:10px" data-hotel-policies></div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px">
+                <div class="card__body">
+                  <div class="kpi">Guest reviews</div>
+                  <div class="muted" style="margin-top:6px">This UI shows a preview. Connect a reviews API later.</div>
+                  <div class="hr"></div>
+                  <div class="row" style="gap:8px;flex-wrap:wrap">
+                    <span class="pill">Clean rooms</span>
+                    <span class="pill">Great location</span>
+                    <span class="pill">Friendly staff</span>
+                    <span class="pill">Fast Wi‑Fi</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <aside class="sidebar" aria-label="Map">
+              <div class="card" style="margin:0">
+                <div class="card__body">
+                  <div class="kpi">Map</div>
+                  <div class="muted" style="margin-top:6px">Preview</div>
+                  <div style="margin-top:10px" data-map></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="card__body">
+              <div class="row space" style="flex-wrap:wrap">
+                <div>
+                  <div class="kpi">Room types</div>
+                  <div class="muted" style="margin-top:6px">Select a room to continue to checkout.</div>
+                </div>
+                <a class="muted" href="stays-results.html" style="font-weight:800">Change property</a>
+              </div>
+              <div class="hr"></div>
+              <div style="display:grid;gap:12px" data-room-list></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="muted">Stay details</div>
+        <a class="muted" href="terms.html" style="font-weight:800">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/stays.js?v=1"></script>
+</body>
+
+</html>
