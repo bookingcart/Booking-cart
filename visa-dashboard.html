@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Visa Dashboard</title>
+  <meta name="description" content="Track your visa applications and download approved documents." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css?v=2" />
+</head>
+
+<body>
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="index.html">Flights</a>
+        <a href="stays.html">Stays</a>
+        <a href="visa.html">Visa</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="layout" aria-label="Visa dashboard" data-visa-dashboard>
+    <div class="container">
+      <div class="row space" style="align-items:flex-end;gap:14px;flex-wrap:wrap">
+        <div>
+          <div class="kpi" style="font-size:22px">Your Visa Applications</div>
+          <div class="muted" style="margin-top:6px">Track status, view uploaded documents, and download approved visas. We are not affiliated with governments and do not issue visas.</div>
+        </div>
+        <a class="btn btn-secondary" href="visa.html" style="height:44px">Start a new application</a>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card__body">
+          <div data-visa-dashboard-list></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="muted">Visa Dashboard</div>
+        <a class="muted" href="terms.html" style="font-weight:800">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/visa.js?v=1"></script>
+</body>
+
+</html>

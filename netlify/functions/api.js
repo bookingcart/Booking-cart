@@ -1,11 +1,21 @@
 const fetch = require("node-fetch");
 const Stripe = require("stripe");
+const crypto = require("crypto");
+
+let blobs;
+try {
+  blobs = require("@netlify/blobs");
+} catch {
+  blobs = null;
+}
 
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || "";
 const DUFFEL_BASE_URL = "https://api.duffel.com";
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const stripe = STRIPE_SECRET_KEY ? Stripe(STRIPE_SECRET_KEY) : null;
+
+const VISA_ADMIN_TOKEN = process.env.VISA_ADMIN_TOKEN || "";
 
 function corsHeaders() {
   return {
@@ -54,6 +64,294 @@ function safeJsonParse(s) {
   } catch {
     return null;
   }
+}
+
+function requireVisaAdmin(event) {
+  if (!VISA_ADMIN_TOKEN) {
+    return { ok: false, status: 500, error: "Visa admin is not configured (missing VISA_ADMIN_TOKEN)" };
+  }
+
+  const auth = String(event.headers?.authorization || event.headers?.Authorization || "");
+  const token = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length).trim() : "";
+  if (!token || token !== VISA_ADMIN_TOKEN) {
+    return { ok: false, status: 401, error: "Unauthorized" };
+  }
+  return { ok: true };
+}
+
+function ensureVisaStore(event) {
+  if (!blobs || !blobs.getStore) {
+    return { store: null, err: { status: 500, error: "Visa storage is not configured" } };
+  }
+
+  if (typeof blobs.connectLambda === "function") {
+    try {
+      blobs.connectLambda(event);
+    } catch {
+      // ignore
+    }
+  }
+
+  try {
+    const store = blobs.getStore("visa-applications");
+    return { store, err: null };
+  } catch (e) {
+    return { store: null, err: { status: 500, error: e && e.message ? e.message : "Unable to open visa store" } };
+  }
+}
+
+function randomId(prefix) {
+  if (crypto.randomUUID) return `${prefix}_${crypto.randomUUID()}`;
+  return `${prefix}_${crypto.randomBytes(16).toString("hex")}`;
+}
+
+function visaRules() {
+  return {
+    "United Arab Emirates": {
+      tourism: {
+        type: "eVisa",
+        governmentFee: 95,
+        documents: ["Passport bio page", "Passport photo", "Accommodation details", "Return ticket (recommended)"]
+      },
+      business: {
+        type: "eVisa",
+        governmentFee: 125,
+        documents: ["Passport bio page", "Passport photo", "Invitation letter (if applicable)"]
+      },
+      transit: {
+        type: "Visa-free / Transit rules",
+        governmentFee: 0,
+        documents: ["Valid passport", "Onward ticket"]
+      }
+    },
+    Turkey: {
+      tourism: {
+        type: "eVisa",
+        governmentFee: 60,
+        documents: ["Passport bio page", "Passport photo"]
+      },
+      business: {
+        type: "eVisa",
+        governmentFee: 75,
+        documents: ["Passport bio page", "Passport photo"]
+      },
+      transit: {
+        type: "Visa-free / Transit rules",
+        governmentFee: 0,
+        documents: ["Valid passport", "Onward ticket"]
+      }
+    },
+    Kenya: {
+      tourism: {
+        type: "eTA",
+        governmentFee: 35,
+        documents: ["Passport bio page", "Passport photo", "Accommodation details", "Return ticket"]
+      },
+      business: {
+        type: "eTA",
+        governmentFee: 35,
+        documents: ["Passport bio page", "Passport photo", "Invitation letter (if applicable)"]
+      },
+      transit: {
+        type: "Visa-free / Transit rules",
+        governmentFee: 0,
+        documents: ["Valid passport", "Onward ticket"]
+      }
+    },
+    India: {
+      tourism: {
+        type: "eVisa",
+        governmentFee: 40,
+        documents: ["Passport bio page", "Passport photo"]
+      },
+      business: {
+        type: "eVisa",
+        governmentFee: 80,
+        documents: ["Passport bio page", "Passport photo", "Business card / invitation (if applicable)"]
+      },
+      transit: {
+        type: "Embassy visa",
+        governmentFee: 0,
+        documents: ["Passport bio page", "Passport photo", "Onward ticket"]
+      }
+    }
+  };
+}
+
+function computeEligibility({ nationality, destination, purpose }) {
+  const dest = String(destination || "").trim();
+  const nat = String(nationality || "").trim();
+  const purp = String(purpose || "tourism").trim();
+
+  if (!dest || !nat) {
+    return {
+      destination: dest,
+      nationality: nat,
+      purpose: purp,
+      visaType: "Visa required",
+      summary: "Please provide nationality and destination.",
+      processingOptions: [],
+      requiredDocuments: []
+    };
+  }
+
+  if (dest.toLowerCase() === nat.toLowerCase()) {
+    return {
+      destination: dest,
+      nationality: nat,
+      purpose: purp,
+      visaType: "Visa-free",
+      summary: "Based on your input, you may not need a visa to travel domestically. Confirm with official government guidance.",
+      processingOptions: [{ label: "Standard", daysMin: 0, daysMax: 0, governmentFee: 0, serviceFee: 0, note: "No visa required" }],
+      requiredDocuments: ["Valid passport"]
+    };
+  }
+
+  const rules = visaRules();
+  const byDest = rules[dest] || null;
+  const rule = byDest ? byDest[purp] || byDest.tourism : null;
+  const visaType = rule ? rule.type : "Embassy visa";
+  const govFee = rule ? Number(rule.governmentFee || 0) : 0;
+  const docs = rule ? rule.documents : ["Passport bio page", "Passport photo"];
+
+  const serviceBase = visaType === "Visa-free" ? 0 : 49;
+  const serviceRush = visaType === "Visa-free" ? 0 : 89;
+
+  const processingOptions =
+    visaType === "Visa-free"
+      ? [{ label: "Standard", daysMin: 0, daysMax: 0, governmentFee: 0, serviceFee: 0, note: "No visa required" }]
+      : [
+          {
+            label: "Standard",
+            daysMin: visaType === "Embassy visa" ? 10 : 3,
+            daysMax: visaType === "Embassy visa" ? 20 : 7,
+            governmentFee: govFee,
+            serviceFee: serviceBase,
+            note: "We prepare, review, and submit your application to the official portal."
+          },
+          {
+            label: "Rush",
+            daysMin: visaType === "Embassy visa" ? 7 : 1,
+            daysMax: visaType === "Embassy visa" ? 14 : 3,
+            governmentFee: govFee,
+            serviceFee: serviceRush,
+            note: "Prioritized review and submission support. Subject to portal availability."
+          }
+        ];
+
+  return {
+    destination: dest,
+    nationality: nat,
+    purpose: purp,
+    visaType,
+    summary: "This is guidance only. Final requirements, fees, and approval are determined by the destination government.",
+    processingOptions,
+    requiredDocuments: docs
+  };
+}
+
+async function handleVisaEligibility(event) {
+  const payload = safeJsonParse(event.body || "{}") || {};
+  const nationality = String(payload.nationality || "");
+  const destination = String(payload.destination || "");
+  const purpose = String(payload.purpose || "tourism");
+  const arrivalDate = String(payload.arrivalDate || "");
+
+  if (!nationality || !destination || !purpose || !arrivalDate) {
+    return json(400, { ok: false, error: "Missing required parameters: nationality, destination, purpose, arrivalDate" });
+  }
+
+  const result = computeEligibility({ nationality, destination, purpose, arrivalDate });
+  return json(200, { ok: true, result });
+}
+
+async function handleVisaCreateApplication(event) {
+  const { store, err } = ensureVisaStore(event);
+  if (err) return json(err.status, { ok: false, error: err.error });
+
+  const payload = safeJsonParse(event.body || "{}") || {};
+  const eligibility = payload.eligibility || null;
+  if (!eligibility || !eligibility.destination || !eligibility.nationality) {
+    return json(400, { ok: false, error: "Missing eligibility" });
+  }
+
+  const id = randomId("visa");
+  const now = new Date().toISOString();
+  const application = {
+    id,
+    createdAt: now,
+    updatedAt: now,
+    status: "Draft",
+    eligibility,
+    applicant: {},
+    documents: [],
+    notesToApplicant: "",
+    portalReference: ""
+  };
+
+  await store.setJSON(`apps/${id}`, application);
+  return json(200, { ok: true, id });
+}
+
+async function handleVisaGetApplication(event) {
+  const { store, err } = ensureVisaStore(event);
+  if (err) return json(err.status, { ok: false, error: err.error });
+
+  const id = String(event.queryStringParameters?.id || "");
+  if (!id) return json(400, { ok: false, error: "Missing id" });
+
+  const application = await store.get(`apps/${id}`, { type: "json" });
+  if (!application) return json(404, { ok: false, error: "Not found" });
+  return json(200, { ok: true, application });
+}
+
+async function handleVisaAdminList(event) {
+  const auth = requireVisaAdmin(event);
+  if (!auth.ok) return json(auth.status, { ok: false, error: auth.error });
+
+  const { store, err } = ensureVisaStore(event);
+  if (err) return json(err.status, { ok: false, error: err.error });
+
+  const listed = await store.list({ prefix: "apps/" });
+  const items = Array.isArray(listed?.blobs) ? listed.blobs : [];
+  const keys = items.map((b) => b.key).filter(Boolean);
+
+  const apps = [];
+  for (const key of keys.slice(0, 200)) {
+    const app = await store.get(key, { type: "json" });
+    if (app) apps.push(app);
+  }
+
+  apps.sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+  return json(200, { ok: true, applications: apps });
+}
+
+async function handleVisaAdminUpdate(event) {
+  const auth = requireVisaAdmin(event);
+  if (!auth.ok) return json(auth.status, { ok: false, error: auth.error });
+
+  const { store, err } = ensureVisaStore(event);
+  if (err) return json(err.status, { ok: false, error: err.error });
+
+  const payload = safeJsonParse(event.body || "{}") || {};
+  const id = String(payload.id || "");
+  const status = String(payload.status || "");
+  const notes = String(payload.notes || "");
+  if (!id || !status) return json(400, { ok: false, error: "Missing id or status" });
+
+  const key = `apps/${id}`;
+  const existing = await store.get(key, { type: "json" });
+  if (!existing) return json(404, { ok: false, error: "Not found" });
+
+  const updated = {
+    ...existing,
+    status,
+    notesToApplicant: notes,
+    updatedAt: new Date().toISOString()
+  };
+
+  await store.setJSON(key, updated);
+  return json(200, { ok: true });
 }
 
 function parseDurationToMinutes(duration) {
@@ -448,6 +746,26 @@ exports.handler = async (event) => {
 
     if (route === "stripe/session" && event.httpMethod === "GET") {
       return await handleStripeSession(event);
+    }
+
+    if (route === "visa/eligibility" && event.httpMethod === "POST") {
+      return await handleVisaEligibility(event);
+    }
+
+    if (route === "visa/application/create" && event.httpMethod === "POST") {
+      return await handleVisaCreateApplication(event);
+    }
+
+    if (route === "visa/application" && event.httpMethod === "GET") {
+      return await handleVisaGetApplication(event);
+    }
+
+    if (route === "visa/admin/applications" && event.httpMethod === "GET") {
+      return await handleVisaAdminList(event);
+    }
+
+    if (route === "visa/admin/update" && event.httpMethod === "POST") {
+      return await handleVisaAdminUpdate(event);
     }
 
     return json(404, { ok: false, error: "Not found" });

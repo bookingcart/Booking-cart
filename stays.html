@@ -23,6 +23,7 @@
       <nav class="header__nav" aria-label="Primary">
         <a href="index.html">Flights</a>
         <a href="stays.html">Stays</a>
+        <a href="visa.html">Visa</a>
       </nav>
     </div>
   </header>
@@ -37,7 +38,7 @@
       <div class="panel" role="region" aria-label="Search stays panel">
         <div class="panel__inner">
           <form data-stays-form>
-            <div class="form-grid">
+            <div class="form-grid form-grid--stays">
               <div class="field suggest" data-span="2">
                 <div class="label">Destination</div>
                 <input class="control" name="destination" data-dest-input placeholder="City, hotel, or landmark" autocomplete="off" />
@@ -54,7 +55,7 @@
                 <input class="control" name="checkOut" type="date" />
               </div>
 
-              <div class="field" data-span="2">
+              <div class="field">
                 <div class="label">Guests</div>
                 <div class="guests" data-guests>
                   <button class="control" type="button" data-guests-trigger style="text-align:left">2 adults • 0 children • 1 room</button>
@@ -99,10 +100,11 @@
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div class="actions">
-              <button class="btn btn-primary" type="submit">Search stays</button>
+              <div class="field field--submit">
+                <div class="label">&nbsp;</div>
+                <button class="btn btn-primary" type="submit">Search stays</button>
+              </div>
             </div>
           </form>
         </div>
