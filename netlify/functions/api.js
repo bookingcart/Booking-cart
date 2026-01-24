@@ -266,13 +266,18 @@ async function handleVisaEligibility(event) {
 }
 
 async function handleVisaCreateApplication(event) {
-  const { store, err } = ensureVisaStore(event);
-  if (err) return json(err.status, { ok: false, error: err.error });
-
   const payload = safeJsonParse(event.body || "{}") || {};
   const eligibility = payload.eligibility || null;
   if (!eligibility || !eligibility.destination || !eligibility.nationality) {
     return json(400, { ok: false, error: "Missing eligibility" });
+  }
+
+  // Try to use Netlify Blobs; if unavailable, fall back to a local-only demo ID
+  const { store, err } = ensureVisaStore(event);
+  if (err) {
+    // Fallback: return a demo ID that the frontend can store locally
+    const demoId = randomId("local");
+    return json(200, { ok: true, id: demoId, fallback: "local" });
   }
 
   const id = randomId("visa");
@@ -289,8 +294,14 @@ async function handleVisaCreateApplication(event) {
     portalReference: ""
   };
 
-  await store.setJSON(`apps/${id}`, application);
-  return json(200, { ok: true, id });
+  try {
+    await store.setJSON(`apps/${id}`, application);
+    return json(200, { ok: true, id });
+  } catch (e) {
+    // If storage still fails, fall back to a local-only demo ID
+    const demoId = randomId("local");
+    return json(200, { ok: true, id: demoId, fallback: "local" });
+  }
 }
 
 async function handleVisaGetApplication(event) {

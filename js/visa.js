@@ -496,6 +496,20 @@
                 body: JSON.stringify({ eligibility: result })
               });
               addAppId(created.id);
+              // If the server returned a fallback, store the app locally
+              if (created.fallback === "local") {
+                try {
+                  localStorage.setItem(`bookingcart_visa_local_app_${created.id}`, JSON.stringify({
+                    id: created.id,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    status: "Draft",
+                    eligibility: result
+                  }));
+                } catch {
+                  // ignore
+                }
+              }
               window.location.href = `visa-dashboard.html?app=${encodeURIComponent(created.id)}`;
             } catch (err) {
               const localId = `local_${Date.now()}`;
@@ -567,6 +581,10 @@
     const listEl = qs("[data-visa-dashboard-list]", root);
     if (!listEl) return;
 
+    // Read ?app= query param to highlight a specific app
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightId = urlParams.get("app") || "";
+
     const ids = readAppIds();
     if (!ids.length) {
       setHtml(
@@ -602,7 +620,17 @@
       return;
     }
 
-    setHtml(listEl, apps.map(renderDashboardItem).join(""));
+    // If ?app= is present, move that app to the top and highlight it
+    let ordered = apps;
+    if (highlightId) {
+      const idx = apps.findIndex((a) => a.id === highlightId);
+      if (idx !== -1) {
+        const [highlighted] = apps.splice(idx, 1);
+        ordered = [highlighted, ...apps];
+      }
+    }
+
+    setHtml(listEl, ordered.map(renderDashboardItem).join(""));
   }
 
   function renderAdminRow(app) {
