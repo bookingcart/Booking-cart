@@ -2,13 +2,6 @@ const fetch = require("node-fetch");
 const Stripe = require("stripe");
 const crypto = require("crypto");
 
-let blobs;
-try {
-  blobs = require("@netlify/blobs");
-} catch {
-  blobs = null;
-}
-
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || "";
 const DUFFEL_BASE_URL = "https://api.duffel.com";
 
@@ -16,6 +9,12 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const stripe = STRIPE_SECRET_KEY ? Stripe(STRIPE_SECRET_KEY) : null;
 
 const VISA_ADMIN_TOKEN = process.env.VISA_ADMIN_TOKEN || "";
+
+// GitHub API configuration
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
+const GITHUB_OWNER = process.env.GITHUB_OWNER || "";
+const GITHUB_REPO = process.env.GITHUB_REPO || "";
+const GITHUB_API_BASE = "https://api.github.com";
 
 function corsHeaders() {
   return {
@@ -79,25 +78,74 @@ function requireVisaAdmin(event) {
   return { ok: true };
 }
 
-function ensureVisaStore(event) {
-  if (!blobs || !blobs.getStore) {
-    return { store: null, err: { status: 500, error: "Visa storage is not configured" } };
-  }
+// GitHub API helpers
+function githubHeaders() {
+  return {
+    Authorization: `token ${GITHUB_TOKEN}`,
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "BookingCart-Visa"
+  };
+}
 
-  if (typeof blobs.connectLambda === "function") {
-    try {
-      blobs.connectLambda(event);
-    } catch {
-      // ignore
-    }
+async function githubCreateOrUpdateFile(path, content, message = "Update visa application") {
+  if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO) {
+    throw new Error("GitHub storage is not configured");
   }
-
+  const url = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`;
+  const body = {
+    message,
+    content: Buffer.from(JSON.stringify(content, null, 2)).toString("base64")
+  };
+  // Try to create; if file exists, get sha first
   try {
-    const store = blobs.getStore("visa-applications");
-    return { store, err: null };
-  } catch (e) {
-    return { store: null, err: { status: 500, error: e && e.message ? e.message : "Unable to open visa store" } };
+    const getRes = await fetch(url, { headers: githubHeaders() });
+    if (getRes.ok) {
+      const existing = await getRes.json();
+      body.sha = existing.sha;
+    }
+  } catch {
+    // ignore
   }
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...githubHeaders() },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`GitHub API error: ${res.status} ${err}`);
+  }
+  return await res.json();
+}
+
+async function githubGetFile(path) {
+  if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO) {
+    throw new Error("GitHub storage is not configured");
+  }
+  const url = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`;
+  const res = await fetch(url, { headers: githubHeaders() });
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    const err = await res.text();
+    throw new Error(`GitHub API error: ${res.status} ${err}`);
+  }
+  const data = await res.json();
+  return JSON.parse(Buffer.from(data.content, "base64").toString("utf-8"));
+}
+
+async function githubListFiles(prefix = "") {
+  if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO) {
+    throw new Error("GitHub storage is not configured");
+  }
+  const url = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${prefix}`;
+  const res = await fetch(url, { headers: githubHeaders() });
+  if (!res.ok) {
+    if (res.status === 404) return [];
+    const err = await res.text();
+    throw new Error(`GitHub API error: ${res.status} ${err}`);
+  }
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
 }
 
 function randomId(prefix) {
@@ -105,75 +153,63 @@ function randomId(prefix) {
   return `${prefix}_${crypto.randomBytes(16).toString("hex")}`;
 }
 
+ function normCountry(s) {
+   return String(s || "")
+     .trim()
+     .toLowerCase();
+ }
+
+ const VISA_FREE_GROUP = new Set(
+   ["Mauritius", "Seychelles", "Barbados", "Bahamas", "Fiji"].map(normCountry)
+ );
+
 function visaRules() {
   return {
     "United Arab Emirates": {
-      tourism: {
-        type: "eVisa",
-        governmentFee: 95,
-        documents: ["Passport bio page", "Passport photo", "Accommodation details", "Return ticket (recommended)"]
-      },
-      business: {
-        type: "eVisa",
-        governmentFee: 125,
-        documents: ["Passport bio page", "Passport photo", "Invitation letter (if applicable)"]
-      },
-      transit: {
-        type: "Visa-free / Transit rules",
-        governmentFee: 0,
-        documents: ["Valid passport", "Onward ticket"]
-      }
+      tourism: { type: "eVisa", governmentFee: 95, documents: ["Passport bio page", "Passport photo", "Accommodation details", "Return ticket (recommended)"] },
+      business: { type: "eVisa", governmentFee: 125, documents: ["Passport bio page", "Passport photo", "Invitation letter (if applicable)"] },
+      transit: { type: "Visa-free / Transit rules", governmentFee: 0, documents: ["Valid passport", "Onward ticket"] }
     },
     Turkey: {
-      tourism: {
-        type: "eVisa",
-        governmentFee: 60,
-        documents: ["Passport bio page", "Passport photo"]
-      },
-      business: {
-        type: "eVisa",
-        governmentFee: 75,
-        documents: ["Passport bio page", "Passport photo"]
-      },
-      transit: {
-        type: "Visa-free / Transit rules",
-        governmentFee: 0,
-        documents: ["Valid passport", "Onward ticket"]
-      }
+      tourism: { type: "eVisa", governmentFee: 60, documents: ["Passport bio page", "Passport photo"] },
+      business: { type: "eVisa", governmentFee: 75, documents: ["Passport bio page", "Passport photo"] },
+      transit: { type: "Visa-free / Transit rules", governmentFee: 0, documents: ["Valid passport", "Onward ticket"] }
     },
     Kenya: {
-      tourism: {
-        type: "eTA",
-        governmentFee: 35,
-        documents: ["Passport bio page", "Passport photo", "Accommodation details", "Return ticket"]
-      },
-      business: {
-        type: "eTA",
-        governmentFee: 35,
-        documents: ["Passport bio page", "Passport photo", "Invitation letter (if applicable)"]
-      },
-      transit: {
-        type: "Visa-free / Transit rules",
-        governmentFee: 0,
-        documents: ["Valid passport", "Onward ticket"]
-      }
+      tourism: { type: "eTA", governmentFee: 35, documents: ["Passport bio page", "Passport photo", "Accommodation details", "Return ticket"] },
+      business: { type: "eTA", governmentFee: 35, documents: ["Passport bio page", "Passport photo", "Invitation letter (if applicable)"] },
+      transit: { type: "Visa-free / Transit rules", governmentFee: 0, documents: ["Valid passport", "Onward ticket"] }
     },
     India: {
-      tourism: {
-        type: "eVisa",
-        governmentFee: 40,
-        documents: ["Passport bio page", "Passport photo"]
-      },
-      business: {
-        type: "eVisa",
-        governmentFee: 80,
-        documents: ["Passport bio page", "Passport photo", "Business card / invitation (if applicable)"]
-      },
-      transit: {
-        type: "Embassy visa",
-        governmentFee: 0,
-        documents: ["Passport bio page", "Passport photo", "Onward ticket"]
-      }
+      tourism: { type: "eVisa", governmentFee: 40, documents: ["Passport bio page", "Passport photo"] },
+      business: { type: "eVisa", governmentFee: 80, documents: ["Passport bio page", "Passport photo", "Business card / invitation (if applicable)"] },
+      transit: { type: "Embassy visa", governmentFee: 0, documents: ["Passport bio page", "Passport photo", "Onward ticket"] }
+    },
+    // Visa-free destinations for many nationalities (examples)
+    "Mauritius": {
+      tourism: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of funds", "Return/onward ticket"] },
+      business: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of funds", "Return/onward ticket"] },
+      transit: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport"] }
+    },
+    "Seychelles": {
+      tourism: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of accommodation", "Return/onward ticket"] },
+      business: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of accommodation", "Return/onward ticket"] },
+      transit: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport"] }
+    },
+    "Barbados": {
+      tourism: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of funds", "Return/onward ticket"] },
+      business: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of funds", "Return/onward ticket"] },
+      transit: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport"] }
+    },
+    "Bahamas": {
+      tourism: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of funds", "Return/onward ticket"] },
+      business: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of funds", "Return/onward ticket"] },
+      transit: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport"] }
+    },
+    "Fiji": {
+      tourism: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of funds", "Return/onward ticket"] },
+      business: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport", "Proof of funds", "Return/onward ticket"] },
+      transit: { type: "Visa-free", governmentFee: 0, documents: ["Valid passport"] }
     }
   };
 }
@@ -204,6 +240,18 @@ function computeEligibility({ nationality, destination, purpose }) {
       summary: "Based on your input, you may not need a visa to travel domestically. Confirm with official government guidance.",
       processingOptions: [{ label: "Standard", daysMin: 0, daysMax: 0, governmentFee: 0, serviceFee: 0, note: "No visa required" }],
       requiredDocuments: ["Valid passport"]
+    };
+  }
+
+  if (VISA_FREE_GROUP.has(normCountry(dest)) && VISA_FREE_GROUP.has(normCountry(nat))) {
+    return {
+      destination: dest,
+      nationality: nat,
+      purpose: purp,
+      visaType: "Visa-free",
+      summary: "Visa-free travel is typically allowed between these countries for short stays. Always confirm with official government guidance before travel.",
+      processingOptions: [{ label: "Standard", daysMin: 0, daysMax: 0, governmentFee: 0, serviceFee: 0, note: "No visa required" }],
+      requiredDocuments: ["Valid passport", "Return/onward ticket (recommended)"]
     };
   }
 
@@ -272,102 +320,92 @@ async function handleVisaCreateApplication(event) {
     return json(400, { ok: false, error: "Missing eligibility" });
   }
 
-  // Try to use Netlify Blobs; if unavailable, fall back to a local-only demo ID
-  const { store, err } = ensureVisaStore(event);
-  if (err) {
-    // Fallback: return a demo ID that the frontend can store locally
-    const demoId = randomId("local");
-    return json(200, { ok: true, id: demoId, fallback: "local" });
-  }
-
-  const id = randomId("visa");
-  const now = new Date().toISOString();
-  const application = {
-    id,
-    createdAt: now,
-    updatedAt: now,
-    status: "Draft",
-    eligibility,
-    applicant: {},
-    documents: [],
-    notesToApplicant: "",
-    portalReference: ""
-  };
-
+  // Try to use GitHub API; if unavailable, fall back to a local-only demo ID
   try {
-    await store.setJSON(`apps/${id}`, application);
+    const id = randomId("visa");
+    const now = new Date().toISOString();
+    const application = {
+      id,
+      createdAt: now,
+      updatedAt: now,
+      status: "Draft",
+      eligibility,
+      applicant: {},
+      documents: [],
+      notesToApplicant: "",
+      portalReference: ""
+    };
+    await githubCreateOrUpdateFile(`visa-applications/${id}.json`, application, `Create visa application ${id}`);
     return json(200, { ok: true, id });
   } catch (e) {
-    // If storage still fails, fall back to a local-only demo ID
+    // Fallback: return a demo ID that the frontend can store locally
     const demoId = randomId("local");
     return json(200, { ok: true, id: demoId, fallback: "local" });
   }
 }
 
 async function handleVisaGetApplication(event) {
-  const { store, err } = ensureVisaStore(event);
-  if (err) return json(err.status, { ok: false, error: err.error });
-
   const id = String(event.queryStringParameters?.id || "");
   if (!id) return json(400, { ok: false, error: "Missing id" });
 
-  const application = await store.get(`apps/${id}`, { type: "json" });
-  if (!application) return json(404, { ok: false, error: "Not found" });
-  return json(200, { ok: true, application });
+  try {
+    const application = await githubGetFile(`visa-applications/${id}.json`);
+    if (!application) return json(404, { ok: false, error: "Not found" });
+    return json(200, { ok: true, application });
+  } catch (e) {
+    return json(500, { ok: false, error: e && e.message ? e.message : "Failed to fetch application" });
+  }
 }
 
 async function handleVisaAdminList(event) {
   const auth = requireVisaAdmin(event);
   if (!auth.ok) return json(auth.status, { ok: false, error: auth.error });
 
-  const { store, err } = ensureVisaStore(event);
-  if (err) return json(err.status, { ok: false, error: err.error });
-
-  const listed = await store.list({ prefix: "apps/" });
-  const items = Array.isArray(listed?.blobs) ? listed.blobs : [];
-  const keys = items.map((b) => b.key).filter(Boolean);
-
-  const apps = [];
-  for (const key of keys.slice(0, 200)) {
-    const app = await store.get(key, { type: "json" });
-    if (app) apps.push(app);
+  try {
+    const files = await githubListFiles("visa-applications");
+    const apps = [];
+    for (const file of files.slice(0, 200)) {
+      if (file.type === "file" && file.name.endsWith(".json")) {
+        const app = await githubGetFile(file.path);
+        if (app) apps.push(app);
+      }
+    }
+    apps.sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+    return json(200, { ok: true, applications: apps });
+  } catch (e) {
+    return json(500, { ok: false, error: e && e.message ? e.message : "Failed to list applications" });
   }
-
-  apps.sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
-  return json(200, { ok: true, applications: apps });
 }
 
 async function handleVisaAdminUpdate(event) {
   const auth = requireVisaAdmin(event);
   if (!auth.ok) return json(auth.status, { ok: false, error: auth.error });
 
-  const { store, err } = ensureVisaStore(event);
-  if (err) return json(err.status, { ok: false, error: err.error });
-
   const payload = safeJsonParse(event.body || "{}") || {};
   const id = String(payload.id || "");
   const status = String(payload.status || "");
-  const notes = String(payload.notes || "");
-  if (!id || !status) return json(400, { ok: false, error: "Missing id or status" });
+  const notesToApplicant = String(payload.notesToApplicant || "");
 
-  const key = `apps/${id}`;
-  const existing = await store.get(key, { type: "json" });
-  if (!existing) return json(404, { ok: false, error: "Not found" });
+  if (!id) return json(400, { ok: false, error: "Missing id" });
 
-  const updated = {
-    ...existing,
-    status,
-    notesToApplicant: notes,
-    updatedAt: new Date().toISOString()
-  };
+  try {
+    const application = await githubGetFile(`visa-applications/${id}.json`);
+    if (!application) return json(404, { ok: false, error: "Not found" });
 
-  await store.setJSON(key, updated);
-  return json(200, { ok: true });
+    if (status) application.status = status;
+    if (notesToApplicant !== undefined) application.notesToApplicant = notesToApplicant;
+    application.updatedAt = new Date().toISOString();
+
+    await githubCreateOrUpdateFile(`visa-applications/${id}.json`, application, `Update visa application ${id}`);
+    return json(200, { ok: true, application });
+  } catch (e) {
+    return json(500, { ok: false, error: e && e.message ? e.message : "Failed to update application" });
+  }
 }
 
 function parseDurationToMinutes(duration) {
-  if (!duration) return 120;
-  const match = String(duration).match(/PT(\d+)H?(\d+)M?/);
+  if (!duration) return 0;
+  const match = duration.match(/PT(\d+)H(\d+)M?/);
   if (!match) return 120;
   const hours = parseInt(match[1]) || 0;
   const minutes = parseInt(match[2]) || 0;

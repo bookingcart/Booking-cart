@@ -56,6 +56,62 @@
     return `<span class="pill" style="padding:6px 10px;font-size:12px">${escapeHtml(text)}</span>`;
   }
 
+  const COUNTRY_ISO_CACHE_KEY = "bookingcart_country_iso2_v1";
+
+  function normKey(s) {
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function flagEmojiFromIso2(iso2) {
+    const code = String(iso2 || "").trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(code)) return "";
+    const A = 0x1f1e6;
+    const first = code.charCodeAt(0) - 65;
+    const second = code.charCodeAt(1) - 65;
+    return String.fromCodePoint(A + first, A + second);
+  }
+
+  async function loadCountryIso2Map() {
+    try {
+      const cached = safeJsonParse(localStorage.getItem(COUNTRY_ISO_CACHE_KEY) || "{}");
+      if (cached && typeof cached === "object" && Object.keys(cached).length > 50) return cached;
+    } catch {
+    }
+
+    const resp = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,altSpellings");
+    const data = await resp.json().catch(() => []);
+    const map = {};
+
+    (Array.isArray(data) ? data : []).forEach((c) => {
+      const iso2 = String(c?.cca2 || "").trim().toUpperCase();
+      if (!/^[A-Z]{2}$/.test(iso2)) return;
+
+      const names = [];
+      if (c?.name?.common) names.push(String(c.name.common));
+      if (c?.name?.official) names.push(String(c.name.official));
+      const alt = Array.isArray(c?.altSpellings) ? c.altSpellings : [];
+      alt.forEach((a) => names.push(String(a)));
+
+      names
+        .map(normKey)
+        .filter(Boolean)
+        .forEach((k) => {
+          if (!map[k]) map[k] = iso2;
+        });
+    });
+
+    try {
+      localStorage.setItem(COUNTRY_ISO_CACHE_KEY, JSON.stringify(map));
+    } catch {
+    }
+
+    return map;
+  }
+
   const COUNTRIES = [
     "Afghanistan",
     "Albania",
@@ -254,6 +310,16 @@
     "Zimbabwe"
   ];
 
+  function normCountry(s) {
+    return String(s || "")
+      .trim()
+      .toLowerCase();
+  }
+
+  const VISA_FREE_GROUP = new Set(
+    ["Mauritius", "Seychelles", "Barbados", "Bahamas", "Fiji"].map(normCountry)
+  );
+
   function localVisaRules() {
     return {
       "United Arab Emirates": {
@@ -279,16 +345,16 @@
     };
   }
 
-  function computeEligibilityLocal(payload) {
-    const nationality = String(payload.nationality || "").trim();
-    const destination = String(payload.destination || "").trim();
-    const purpose = String(payload.purpose || "tourism").trim();
+  function computeEligibilityLocal({ nationality, destination, purpose }) {
+    const dest = String(destination || "").trim();
+    const nat = String(nationality || "").trim();
+    const purp = String(purpose || "tourism").trim();
 
-    if (!nationality || !destination) {
+    if (!dest || !nat) {
       return {
-        destination,
-        nationality,
-        purpose,
+        destination: dest,
+        nationality: nat,
+        purpose: purp,
         visaType: "Visa required",
         summary: "Please provide nationality and destination.",
         processingOptions: [],
@@ -296,11 +362,12 @@
       };
     }
 
-    if (destination.toLowerCase() === nationality.toLowerCase()) {
+    // Same country
+    if (dest.toLowerCase() === nat.toLowerCase()) {
       return {
-        destination,
-        nationality,
-        purpose,
+        destination: dest,
+        nationality: nat,
+        purpose: purp,
         visaType: "Visa-free",
         summary: "Based on your input, you may not need a visa to travel domestically. Confirm with official government guidance.",
         processingOptions: [{ label: "Standard", daysMin: 0, daysMax: 0, governmentFee: 0, serviceFee: 0, note: "No visa required" }],
@@ -308,6 +375,40 @@
       };
     }
 
+    // Try to get ISO2 codes
+    const natIso2 = COUNTRY_TO_ISO2[nat];
+    const destIso2 = COUNTRY_TO_ISO2[dest];
+
+    // Use dataset if we have ISO2 mappings
+    if (natIso2 && destIso2 && typeof getVisaRequirement === 'function') {
+      const requirement = getVisaRequirement(natIso2, destIso2);
+      const visaType = normalizeDatasetRequirement(requirement);
+      
+      return {
+        destination: dest,
+        nationality: nat,
+        purpose: purp,
+        visaType: visaType,
+        summary: `Based on current data: ${visaType} for ${purp}. Always confirm with official government guidance before travel.`,
+        processingOptions: getProcessingOptions(visaType),
+        requiredDocuments: getRequiredDocuments(visaType)
+      };
+    }
+
+    // Fallback to mutual visa-free group
+    if (VISA_FREE_GROUP.has(normCountry(dest)) && VISA_FREE_GROUP.has(normCountry(nat))) {
+      return {
+        destination: dest,
+        nationality: nat,
+        purpose: purp,
+        visaType: "Visa-free",
+        summary: "Visa-free travel is typically allowed between these countries for short stays. Always confirm with official government guidance before travel.",
+        processingOptions: [{ label: "Standard", daysMin: 0, daysMax: 0, governmentFee: 0, serviceFee: 0, note: "No visa required" }],
+        requiredDocuments: ["Valid passport", "Return/onward ticket (recommended)"]
+      };
+    }
+
+    // Final fallback to local rules
     const rules = localVisaRules();
     const byDest = rules[destination] || null;
     const rule = byDest ? byDest[purpose] || byDest.tourism : null;
@@ -342,15 +443,79 @@
     return {
       destination,
       nationality,
-      purpose,
+      purpose: purp,
       visaType,
-      summary: "This is guidance only. Final requirements, fees, and approval are determined by the destination government.",
+      summary: `Based on your input: ${visaType} for ${purp}. Always confirm with official government guidance before travel.`,
       processingOptions,
       requiredDocuments: docs
     };
   }
 
-  function populateCountrySelect(selectEl, countries) {
+  function getProcessingOptions(visaType) {
+    if (visaType === "Visa-free") {
+      return [{ label: "Standard", daysMin: 0, daysMax: 0, governmentFee: 0, serviceFee: 0, note: "No visa required" }];
+    }
+    
+    if (visaType === "eVisa" || visaType === "eTA" || visaType === "Visa on arrival") {
+      return [
+        {
+          label: "Standard",
+          daysMin: 1,
+          daysMax: 7,
+          governmentFee: 0,
+          serviceFee: 49,
+          note: "We prepare and guide your electronic application."
+        },
+        {
+          label: "Rush",
+          daysMin: 1,
+          daysMax: 3,
+          governmentFee: 0,
+          serviceFee: 89,
+          note: "Prioritized electronic application support."
+        }
+      ];
+    }
+    
+    // Embassy visa
+    return [
+      {
+        label: "Standard",
+        daysMin: 10,
+        daysMax: 20,
+        governmentFee: 0,
+        serviceFee: 49,
+        note: "We prepare, review, and submit your application to the official portal."
+      },
+      {
+        label: "Rush",
+        daysMin: 7,
+        daysMax: 14,
+        governmentFee: 0,
+        serviceFee: 89,
+        note: "Prioritized review and submission support."
+      }
+    ];
+  }
+
+  function getRequiredDocuments(visaType) {
+    if (visaType === "Visa-free") {
+      return ["Valid passport", "Return/onward ticket (recommended)"];
+    }
+    
+    if (visaType === "Visa on arrival") {
+      return ["Valid passport", "Passport photos", "Return/onward ticket", "Proof of funds"];
+    }
+    
+    if (visaType === "eVisa" || visaType === "eTA") {
+      return ["Valid passport", "Passport photo", "Digital documents", "Email address"];
+    }
+    
+    // Embassy visa
+    return ["Passport bio page", "Passport photo", "Application form", "Supporting documents"];
+  }
+
+  function populateCountrySelect(selectEl, countries, iso2Map) {
     if (!selectEl) return;
     const current = String(selectEl.value || "");
     const firstOption = selectEl.querySelector("option");
@@ -358,10 +523,208 @@
     const options = countries
       .slice()
       .sort((a, b) => a.localeCompare(b))
-      .map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
+      .map((c) => {
+        const iso2 = iso2Map ? iso2Map[normKey(c)] : "";
+        const flag = iso2 ? flagEmojiFromIso2(iso2) : "";
+        const label = flag ? `${flag} ${c}` : c;
+        return `<option value="${escapeHtml(c)}">${escapeHtml(label)}</option>`;
+      })
       .join("");
     selectEl.innerHTML = placeholderHtml + options;
     if (current) selectEl.value = current;
+  }
+
+  function normalizeVisaCategory(visaType) {
+    const vt = String(visaType || "").toLowerCase();
+    if (vt.includes("visa-free")) return "visa_free";
+    if (vt.includes("eta") || vt.includes("evisa")) return "evisa";
+    if (vt.includes("visa on arrival")) return "visa_on_arrival";
+    return "required";
+  }
+
+  function hashToUnit(str, seed) {
+    const s = String(str || "");
+    let h = seed || 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0) / 4294967295;
+  }
+
+  function renderPassportToolMap(mapEl, passport, groups) {
+    if (!mapEl) return;
+    const p = String(passport || "").trim();
+    if (!p) {
+      setHtml(mapEl, "");
+      return;
+    }
+
+    const dots = [];
+    function addDots(items, color) {
+      items.forEach((name) => {
+        const u = hashToUnit(name, 2166136261);
+        const v = hashToUnit(name, 1315423911);
+        const x = 40 + u * 920;
+        const y = 30 + v * 400;
+        dots.push({ x, y, color, name });
+      });
+    }
+
+    addDots(groups.visa_free, "#03d10c");
+    addDots(groups.evisa, "#f6c343");
+    addDots(groups.visa_on_arrival, "#ff9500");
+    addDots(groups.required, "#8aa59a");
+
+    const total = dots.length || 1;
+    const maxDots = 240;
+    const step = Math.max(1, Math.floor(total / maxDots));
+    const sampled = dots.filter((_, idx) => idx % step === 0).slice(0, maxDots);
+
+    const svgDots = sampled
+      .map(
+        (d) =>
+          `<circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="3.4" fill="${d.color}" fill-opacity="0.92"><title>${escapeHtml(
+            d.name
+          )}</title></circle>`
+      )
+      .join("");
+
+    setHtml(
+      mapEl,
+      `<div class="card" style="box-shadow:none">
+        <div class="card__body">
+          <div class="row space" style="gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="kpi">Map</div>
+              <div class="muted" style="margin-top:6px">Summary for ${escapeHtml(p)}.</div>
+            </div>
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              ${badge(`Visa-free: ${groups.visa_free.length}`)}
+              ${badge(`eVisa / eTA: ${groups.evisa.length}`)}
+              ${badge(`Visa on arrival: ${groups.visa_on_arrival.length}`)}
+              ${badge(`Required: ${groups.required.length}`)}
+            </div>
+          </div>
+          <div class="hr"></div>
+          <svg viewBox="0 0 1000 460" width="100%" height="220" role="img" aria-label="Visa map" style="display:block;border-radius:12px;background:linear-gradient(180deg, rgba(3,209,12,.06), rgba(23,50,29,.02));border:1px solid var(--border)">
+            <rect x="0" y="0" width="1000" height="460" fill="rgba(255,255,255,.4)" />
+            <path d="M83 267c28-38 66-64 112-78 41-12 84-13 125-8 24 3 48 10 67 22 19 12 33 28 35 52 2 18-5 36-18 49-22 22-56 32-87 36-70 9-138-10-205-36-16-6-31-13-45-23-7-5-13-10-16-14-3-4-2-7 0-12Zm380-166c24-24 59-38 94-41 38-4 76 6 107 28 27 19 45 46 52 79 7 35 1 72-18 101-18 28-48 47-81 55-35 8-73 3-105-12-31-14-56-39-66-71-10-32-6-67 17-99Zm263 86c17-12 39-18 60-18 27 0 54 9 74 27 19 17 31 40 33 66 3 30-7 60-28 82-22 24-54 36-87 35-33-2-65-18-84-45-19-27-23-61-10-91 8-21 24-40 42-56Z" fill="rgba(23,50,29,.08)" />
+            ${svgDots}
+          </svg>
+        </div>
+      </div>`
+    );
+  }
+
+  function renderPassportToolOutput(outEl, mapEl, passport, filterText, iso2Map) {
+    if (!outEl) return;
+    const p = String(passport || "").trim();
+    if (!p) {
+      setHtml(outEl, `<div class="muted">Choose a passport above to see results.</div>`);
+      if (mapEl) setHtml(mapEl, "");
+      return;
+    }
+
+    const q = String(filterText || "").trim().toLowerCase();
+    const destinations = COUNTRIES.filter((d) => String(d || "") !== p).filter((d) => {
+      if (!q) return true;
+      return String(d || "").toLowerCase().includes(q);
+    });
+
+    const groups = { visa_free: [], evisa: [], visa_on_arrival: [], required: [] };
+    for (const dest of destinations) {
+      const res = computeEligibilityLocal({ nationality: p, destination: dest, purpose: "tourism" });
+      const cat = normalizeVisaCategory(res.visaType);
+      groups[cat].push(dest);
+    }
+
+    renderPassportToolMap(mapEl, p, groups);
+
+    function listHtml(items) {
+      if (!items.length) return `<div class="muted">None found.</div>`;
+      return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">${items
+        .slice(0, 120)
+        .map((x) => {
+          const iso2 = iso2Map ? iso2Map[normKey(x)] : "";
+          const flag = iso2 ? flagEmojiFromIso2(iso2) : "";
+          const label = flag ? `${flag} ${x}` : x;
+          return `<div class="row" style="gap:10px;align-items:center">
+            <div class="result-dot"></div>
+            <div style="font-size:18px;line-height:1.2;cursor:pointer" 
+                 onclick="showCountryDetails('${escapeHtml(p)}', '${escapeHtml(x)}', '${iso2}')"
+                 title="Click for details">${escapeHtml(label)}</div>
+          </div>`;
+        })
+        .join("")}</div>`;
+    }
+
+    const total = destinations.length;
+
+    setHtml(
+      outEl,
+      `<div class="row space" style="gap:12px;flex-wrap:wrap">
+        <div>
+          <div class="kpi" style="font-size:16px">${escapeHtml(p)} passport</div>
+          <div class="muted" style="margin-top:6px">Showing ${escapeHtml(total)} destinations${q ? ` matching "${escapeHtml(filterText)}"` : ""}.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:grid;gap:12px">
+        <div class="card" style="box-shadow:none">
+          <div class="card__body">
+            <div class="kpi">Visa-free</div>
+            <div class="hr"></div>
+            ${listHtml(groups.visa_free)}
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none">
+          <div class="card__body">
+            <div class="kpi">eVisa / eTA</div>
+            <div class="hr"></div>
+            ${listHtml(groups.evisa)}
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none">
+          <div class="card__body">
+            <div class="kpi">Visa on arrival</div>
+            <div class="hr"></div>
+            ${listHtml(groups.visa_on_arrival)}
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none">
+          <div class="card__body">
+            <div class="kpi">Visa required</div>
+            <div class="hr"></div>
+            ${listHtml(groups.required)}
+          </div>
+        </div>
+      </div>`
+    );
+  }
+
+  function initVisaPassportTool(root, iso2Map) {
+    const toolRoot = qs("[data-visa-passport-form]");
+    if (!toolRoot) return;
+
+    const passportSel = qs("select[name='passport']", toolRoot);
+    const filterInput = qs("input[name='destFilter']", toolRoot);
+    const mapEl = qs("[data-visa-passport-map]");
+    const outEl = qs("[data-visa-passport-output]");
+    if (!passportSel || !filterInput || !outEl) return;
+
+    populateCountrySelect(passportSel, COUNTRIES, iso2Map);
+
+    const rerender = () => {
+      renderPassportToolOutput(outEl, mapEl, passportSel.value, filterInput.value, iso2Map);
+    };
+
+    passportSel.addEventListener("change", rerender);
+    filterInput.addEventListener("input", rerender);
+    rerender();
   }
 
   async function api(path, options) {
@@ -377,6 +740,7 @@
   function renderEligibilityResult(container, result) {
     const docs = Array.isArray(result.requiredDocuments) ? result.requiredDocuments : [];
     const proc = Array.isArray(result.processingOptions) ? result.processingOptions : [];
+    const isVisaFree = result.visaType === "Visa-free";
 
     const procHtml = proc
       .map((p) => {
@@ -420,19 +784,22 @@
           <div class="hr"></div>
 
           <div class="kpi">Required documents</div>
-          <div class="muted" style="margin-top:6px">We will verify document requirements during expert review and submit through the official portal.</div>
+          <div class="muted" style="margin-top:6px">${isVisaFree ? "Ensure you meet entry requirements." : "We will verify document requirements during expert review and submit through the official portal."}</div>
           <div style="margin-top:10px;display:grid;gap:8px">${docsHtml}</div>
 
           <div class="hr"></div>
 
           <div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-start">
             <div style="flex:1;min-width:240px">
-              <div class="kpi">Disclosure</div>
-              <div class="muted" style="margin-top:6px">Government fees are mandatory. Service fees cover application preparation, review, and submission support. We are not affiliated with governments and do not issue visas.</div>
+              <div class="kpi">${isVisaFree ? "Good to know" : "Disclosure"}</div>
+              <div class="muted" style="margin-top:6px">${isVisaFree ? "No visa required for this trip. Always check official government sources before travel as rules can change." : "Government fees are mandatory. Service fees cover application preparation, review, and submission support. We are not affiliated with governments and do not issue visas."}</div>
             </div>
             <div style="width:min(320px,100%)">
-              <button class="btn btn-primary" type="button" data-start-visa style="width:100%">Start application</button>
-              <a class="btn btn-secondary" href="visa-dashboard.html" style="margin-top:10px;width:100%;height:44px">Go to dashboard</a>
+              ${isVisaFree
+                ? `<a class="btn btn-secondary" href="visa-dashboard.html" style="width:100%;height:44px">Go to dashboard</a>`
+                : `<button class="btn btn-primary" type="button" data-start-visa style="width:100%">Start application</button>
+                   <a class="btn btn-secondary" href="visa-dashboard.html" style="margin-top:10px;width:100%;height:44px">Go to dashboard</a>`
+              }
             </div>
           </div>
         </div>
@@ -452,6 +819,16 @@
     const destinationSelect = qs("select[name='destination']", form);
     populateCountrySelect(nationalitySelect, COUNTRIES);
     populateCountrySelect(destinationSelect, COUNTRIES);
+
+    loadCountryIso2Map()
+      .then((iso2Map) => {
+        populateCountrySelect(nationalitySelect, COUNTRIES, iso2Map);
+        populateCountrySelect(destinationSelect, COUNTRIES, iso2Map);
+        initVisaPassportTool(iso2Map);
+      })
+      .catch(() => {
+        initVisaPassportTool();
+      });
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();

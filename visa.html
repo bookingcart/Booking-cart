@@ -90,6 +90,40 @@
     </div>
   </section>
 
+  <section class="section" aria-label="Visa Tool">
+    <div class="container">
+      <div class="panel" role="region" aria-label="Visa Tool">
+        <div class="panel__inner">
+          <div class="row space" style="gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="kpi" style="font-size:16px">Visa Tool</div>
+              <div class="muted" style="margin-top:6px">Select a passport to see visa-free, eVisa / eTA, and visa required destinations. Always confirm entry rules before travel.</div>
+            </div>
+          </div>
+
+          <form data-visa-passport-form style="margin-top:10px">
+            <div class="form-grid">
+              <div class="field">
+                <div class="label">Passport</div>
+                <select class="control select" name="passport">
+                  <option value="">Select passport</option>
+                </select>
+              </div>
+
+              <div class="field" data-span="full">
+                <div class="label">Filter destinations (optional)</div>
+                <input class="control" name="destFilter" placeholder="Type a country name…" />
+              </div>
+            </div>
+          </form>
+
+          <div data-visa-passport-map style="margin-top:12px"></div>
+          <div style="margin-top:12px" data-visa-passport-output></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <footer class="footer" aria-label="Footer">
     <div class="container footer__inner">
       <div class="muted"> BookingCart</div>
@@ -100,7 +134,10 @@
     </div>
   </footer>
 
+  <script src="data/visa-dataset.js"></script>
+  <script src="data/visa-details.js"></script>
   <script src="js/visa.js?v=1"></script>
+  <script src="js/visa-modal.js"></script>
 </body>
 
 </html>
