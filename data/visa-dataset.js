@@ -512,6 +512,9 @@ for (const [iso2, name] of Object.entries(ISO2_TO_COUNTRY)) {
   COUNTRY_TO_ISO2[name] = iso2;
 }
 
+// List of all countries for dropdown
+const VISA_COUNTRIES = Object.values(ISO2_TO_COUNTRY);
+
 // Get visa requirement from dataset
 function getVisaRequirement(passportIso2, destinationIso2) {
   if (!VISA_DATASET[passportIso2]) return 'visa required';
@@ -560,6 +563,7 @@ if (typeof module !== 'undefined' && module.exports) {
     VISA_DATASET,
     ISO2_TO_COUNTRY,
     COUNTRY_TO_ISO2,
+    VISA_COUNTRIES,
     getVisaRequirement,
     normalizeDatasetRequirement
   };

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Visa Requirements Checker | BookingCart</title>
+  <meta name="description" content="Check visa requirements worldwide by passport. See visa-free, eVisa, visa on arrival, and required destinations instantly." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css?v=2" />
+  <style>
+    /* Visa Tool Specific Styles */
+    .visa-tool-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .visa-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .visa-header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+    }
+    
+    .visa-header p {
+      font-size: 1.1rem;
+      color: #666;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .passport-selector {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    
+    .passport-selector h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #333;
+    }
+    
+    .passport-selector .select-wrapper {
+      position: relative;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    
+    .passport-selector select {
+      width: 100%;
+      padding: 15px 20px;
+      font-size: 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      appearance: none;
+      transition: all 0.3s ease;
+    }
+    
+    .passport-selector select:hover {
+      border-color: #3b82f6;
+    }
+    
+    .passport-selector select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .select-wrapper::after {
+      content: "▼";
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #666;
+    }
+    
+    .visa-results {
+      display: none;
+    }
+    
+    .visa-results.active {
+      display: block;
+    }
+    
+    .visa-map {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    
+    .visa-map h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    
+    .visa-stats {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    
+    .stat-item {
+      text-align: center;
+      padding: 15px;
+      border-radius: 8px;
+      min-width: 120px;
+    }
+    
+    .stat-item.visa-free {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    .stat-item.evisa {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .stat-item.visa-on-arrival {
+      background: #fed7aa;
+      color: #9a3412;
+    }
+    
+    .stat-item.visa-required {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      display: block;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      margin-top: 5px;
+    }
+    
+    .visa-map-container {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .visa-countries {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .country-section {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .country-section h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .country-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    
+    .badge-visa-free {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    .badge-evisa {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .badge-visa-on-arrival {
+      background: #fed7aa;
+      color: #9a3412;
+    }
+    
+    .badge-visa-required {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .country-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    
+    .country-item {
+      padding: 12px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      background: #fff;
+      min-height: 44px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    
+    .country-item:hover {
+      background: #f8fafc;
+      border-color: #3b82f6;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+    }
+    
+    .country-flag {
+      font-size: 18px;
+      line-height: 1;
+      width: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .disclaimer {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 30px;
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    @media (max-width: 768px) {
+      .visa-header h1 {
+        font-size: 2rem;
+      }
+      
+      .passport-selector,
+      .visa-map,
+      .country-section {
+        padding: 20px;
+      }
+      
+      .visa-stats {
+        justify-content: center;
+      }
+      
+      .stat-item {
+        min-width: 100px;
+        padding: 10px;
+      }
+      
+      .stat-number {
+        font-size: 1.5rem;
+      }
+      
+      .visa-countries {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="index.html">Flights</a>
+        <a href="stays.html">Stays</a>
+        <a href="visa-new.html">Visa</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="visa-tool-container">
+    <div class="visa-header">
+      <h1>Global Visa Requirements Checker</h1>
+      <p>Select a passport to see visa-free, eVisa, visa on arrival, and required destinations worldwide.</p>
+    </div>
+
+    <div class="passport-selector">
+      <h2>Passport selection</h2>
+      <p style="margin-bottom: 20px; color: #666;">Choose a passport to update the map and lists instantly.</p>
+      <div class="select-wrapper">
+        <select id="passportSelect">
+          <option value="">Select a passport</option>
+        </select>
+      </div>
+      <p style="margin-top: 15px; font-size: 0.9rem; color: #666;">Results cover worldwide destinations. Always confirm entry rules before travel.</p>
+    </div>
+
+    <div class="visa-results" id="visaResults">
+      <div class="visa-map">
+        <h3>Visa requirements for <span id="selectedPassport"></span></h3>
+        <div class="visa-stats" id="visaStats">
+          <div class="stat-item visa-free">
+            <span class="stat-number" id="visaFreeCount">0</span>
+            <div class="stat-label">Visa-free</div>
+          </div>
+          <div class="stat-item evisa">
+            <span class="stat-number" id="evisaCount">0</span>
+            <div class="stat-label">eVisa/eTA</div>
+          </div>
+          <div class="stat-item visa-on-arrival">
+            <span class="stat-number" id="visaOnArrivalCount">0</span>
+            <div class="stat-label">Visa on arrival</div>
+          </div>
+          <div class="stat-item visa-required">
+            <span class="stat-number" id="visaRequiredCount">0</span>
+            <div class="stat-label">Visa required</div>
+          </div>
+        </div>
+        <div class="visa-map-container" id="visaMap">
+          <div class="loading">Loading map...</div>
+        </div>
+      </div>
+
+      <div class="visa-countries">
+        <div class="country-section">
+          <h3>
+            <span class="country-badge badge-visa-free">●</span>
+            Visa-free destinations
+          </h3>
+          <div class="country-list" id="visaFreeList">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+
+        <div class="country-section">
+          <h3>
+            <span class="country-badge badge-evisa">●</span>
+            eVisa / eTA destinations
+          </h3>
+          <div class="country-list" id="evisaList">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+
+        <div class="country-section">
+          <h3>
+            <span class="country-badge badge-visa-on-arrival">●</span>
+            Visa on arrival destinations
+          </h3>
+          <div class="country-list" id="visaOnArrivalList">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+
+        <div class="country-section">
+          <h3>
+            <span class="country-badge badge-visa-required">●</span>
+            Visa required destinations
+          </h3>
+          <div class="country-list" id="visaRequiredList">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Important:</strong> Visa requirements are subject to change at any time. Travelers are advised to confirm with the relevant embassy or airline before travel.
+    </div>
+  </main>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted">BookingCart</div>
+      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="muted">Visa Assistance</div>
+        <a class="muted" href="terms.html" style="font-weight:800">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/flag-emoji.js"></script>
+  <script src="data/visa-dataset.js"></script>
+  <script src="data/visa-details.js"></script>
+  <script src="js/world-map.js"></script>
+  <script src="js/visa-tool.js"></script>
+</body>
+
+</html>

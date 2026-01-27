@@ -1,6 +1,47 @@
 (function () {
   const STORAGE_KEY = "bookingcart_flights_v1";
 
+  const airports = [
+    { city: "London", name: "Heathrow", code: "LHR" },
+    { city: "London", name: "Gatwick", code: "LGW" },
+    { city: "Paris", name: "Charles de Gaulle", code: "CDG" },
+    { city: "Amsterdam", name: "Schiphol", code: "AMS" },
+    { city: "Frankfurt", name: "Frankfurt", code: "FRA" },
+    { city: "Munich", name: "Munich", code: "MUC" },
+    { city: "Rome", name: "Fiumicino", code: "FCO" },
+    { city: "Madrid", name: "Barajas", code: "MAD" },
+    { city: "Barcelona", name: "El Prat", code: "BCN" },
+    { city: "Istanbul", name: "Istanbul", code: "IST" },
+    { city: "Dubai", name: "Dubai", code: "DXB" },
+    { city: "Doha", name: "Hamad", code: "DOH" },
+    { city: "Cairo", name: "Cairo", code: "CAI" },
+    { city: "Riyadh", name: "King Khalid", code: "RUH" },
+    { city: "Jeddah", name: "King Abdulaziz", code: "JED" },
+    { city: "Nairobi", name: "Jomo Kenyatta", code: "NBO" },
+    { city: "Lagos", name: "Murtala Muhammed", code: "LOS" },
+    { city: "Johannesburg", name: "O.R. Tambo", code: "JNB" },
+    { city: "New York", name: "JFK", code: "JFK" },
+    { city: "New York", name: "Newark", code: "EWR" },
+    { city: "Boston", name: "Logan", code: "BOS" },
+    { city: "Chicago", name: "O'Hare", code: "ORD" },
+    { city: "Los Angeles", name: "LAX", code: "LAX" },
+    { city: "San Francisco", name: "SFO", code: "SFO" },
+    { city: "Toronto", name: "Pearson", code: "YYZ" },
+    { city: "Vancouver", name: "YVR", code: "YVR" },
+    { city: "Mexico City", name: "Benito Juárez", code: "MEX" },
+    { city: "São Paulo", name: "Guarulhos", code: "GRU" },
+    { city: "Tokyo", name: "Haneda", code: "HND" },
+    { city: "Tokyo", name: "Narita", code: "NRT" },
+    { city: "Seoul", name: "Incheon", code: "ICN" },
+    { city: "Singapore", name: "Changi", code: "SIN" },
+    { city: "Hong Kong", name: "Hong Kong", code: "HKG" },
+    { city: "Bangkok", name: "Suvarnabhumi", code: "BKK" },
+    { city: "Delhi", name: "Indira Gandhi", code: "DEL" },
+    { city: "Mumbai", name: "Chhatrapati Shivaji", code: "BOM" },
+    { city: "Sydney", name: "Kingsford Smith", code: "SYD" },
+    { city: "Melbourne", name: "Tullamarine", code: "MEL" }
+  ];
+
   function readState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -63,158 +104,9 @@
 
     const step = stepEl.getAttribute("data-step");
     const steps = Array.from(document.querySelectorAll(".step"));
-    const state = readState();
-    const allowedIndex = allowedStepIndex(state);
     steps.forEach((s) => {
-      const id = s.getAttribute("data-step-id") || "";
-      const idx = stepIndex(id);
-      s.setAttribute("data-active", id === step ? "true" : "false");
-      if (idx > allowedIndex) {
-        s.setAttribute("aria-disabled", "true");
-        s.addEventListener("click", (e) => {
-          e.preventDefault();
-          const msg = blockedMessageFor(id);
-          toast("Finish required steps", msg);
-        });
-      } else {
-        s.removeAttribute("aria-disabled");
-      }
+      s.setAttribute("data-active", s.getAttribute("data-step-id") === step ? "true" : "false");
     });
-  }
-
-  const STEP_ORDER = [
-    { id: "search", href: "index.html" },
-    { id: "results", href: "results.html" },
-    { id: "details", href: "details.html" },
-    { id: "passengers", href: "passengers.html" },
-    { id: "extras", href: "extras.html" },
-    { id: "payment", href: "payment.html" },
-    { id: "confirmation", href: "confirmation.html" }
-  ];
-
-  function stepIndex(id) {
-    return STEP_ORDER.findIndex((s) => s.id === id);
-  }
-
-  function stepHref(id) {
-    const s = STEP_ORDER.find((x) => x.id === id);
-    return s ? s.href : "index.html";
-  }
-
-  function isValidSearch(state) {
-    const s = state.search || {};
-    const mode = String(state.tripType || s.tripType || "round");
-    if (!s.from || !s.to) return false;
-    if (!s.fromCode || !s.toCode) return false;
-    if (!s.depart) return false;
-    if (mode === "round" && !s.return) return false;
-    return true;
-  }
-
-  function hasFlightSelection(state) {
-    return !!(state && state.selectedFlightId);
-  }
-
-  function hasPassengerInfo(state) {
-    const pax = state.passengers || { adults: 1, children: 0, infants: 0 };
-    const totalPax = (pax.adults || 0) + (pax.children || 0) + (pax.infants || 0);
-    const travelers = Array.isArray(state.travelers) ? state.travelers : [];
-    const email = ((state.contact || {}).email || "").trim();
-    if (!email) return false;
-    if (travelers.length < totalPax) return false;
-    const requiredOk = travelers.slice(0, totalPax).every((t) => {
-      return t && t.firstName && t.lastName && t.dob && t.doc;
-    });
-    return requiredOk;
-  }
-
-  function allowedStepIndex(state) {
-    if (!isValidSearch(state)) return 0;
-    if (!hasFlightSelection(state)) return 1;
-    if (!hasPassengerInfo(state)) return 2;
-    const hasBookingRef = !!(state && state.bookingRef);
-    return hasBookingRef ? 6 : 5;
-  }
-
-  function blockedMessageFor(targetStepId) {
-    const idx = stepIndex(targetStepId);
-    if (idx <= 0) return "Start your search to continue.";
-    if (idx === 1) return "Complete the search form (pick airports from the list and select dates).";
-    if (idx === 2) return "Select a flight on the Results page first.";
-    if (idx === 3) return "Select a flight on the Details page first.";
-    if (idx === 6) return "Complete payment first to view confirmation.";
-    if (idx >= 4) return "Complete passenger details (traveler info + contact email) first.";
-    return "Complete the required fields first.";
-  }
-
-  function guardRedirectForStep(currentStepId, state, query) {
-    const flights = Array.isArray(state.flights) ? state.flights : [];
-    const qFlight = query && query.flight ? String(query.flight) : "";
-
-    if (currentStepId === "results") {
-      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
-      return null;
-    }
-
-    if (currentStepId === "details") {
-      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
-      if (!flights.length) return { href: stepHref("results"), code: "results" };
-      if (!qFlight && !hasFlightSelection(state)) return { href: stepHref("results"), code: "select" };
-      return null;
-    }
-
-    if (currentStepId === "passengers") {
-      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
-      if (!flights.length) return { href: stepHref("results"), code: "results" };
-      if (!hasFlightSelection(state)) return { href: stepHref("results"), code: "select" };
-      return null;
-    }
-
-    if (currentStepId === "extras" || currentStepId === "payment") {
-      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
-      if (!hasFlightSelection(state)) return { href: stepHref("results"), code: "select" };
-      if (!hasPassengerInfo(state)) return { href: stepHref("passengers"), code: "passengers" };
-      return null;
-    }
-
-    if (currentStepId === "confirmation") {
-      if (!isValidSearch(state)) return { href: stepHref("search"), code: "search" };
-      if (!hasFlightSelection(state)) return { href: stepHref("results"), code: "select" };
-      if (!hasPassengerInfo(state)) return { href: stepHref("passengers"), code: "passengers" };
-      const hasSessionId = !!(query && query.session_id);
-      const hasBookingRef = !!(state && state.bookingRef);
-      if (!hasSessionId && !hasBookingRef) return { href: stepHref("payment"), code: "payment" };
-      return null;
-    }
-
-    return null;
-  }
-
-  function applyGuards() {
-    const stepEl = document.querySelector("[data-step]");
-    if (!stepEl) return;
-    const step = stepEl.getAttribute("data-step") || "";
-    if (!step) return;
-    const st = readState();
-    const q = getQuery();
-    const redirect = guardRedirectForStep(step, st, q);
-    if (!redirect || !redirect.href) return;
-
-    const href = String(redirect.href);
-    const code = String(redirect.code || "guard");
-    const next = href + (href.indexOf("?") === -1 ? "?" : "&") + "guard=" + encodeURIComponent(code);
-    window.location.replace(next);
-  }
-
-  function showGuardToast() {
-    const q = getQuery();
-    const code = q && q.guard ? String(q.guard) : "";
-    if (!code) return;
-    if (code === "search") toast("Complete search", "Pick airports from the list and select dates to continue.");
-    else if (code === "results") toast("Open results first", "Search flights first, then select a flight.");
-    else if (code === "select") toast("Select a flight", "Choose a flight on the Results page to continue.");
-    else if (code === "passengers") toast("Passenger details required", "Fill traveler details and a contact email to continue.");
-    else if (code === "payment") toast("Payment required", "Complete payment to view confirmation.");
   }
 
   function closeAllDropdowns(except) {
@@ -271,16 +163,16 @@
         return data.airports;
       }
     } catch (e) {
-      console.warn("Duffel airport search failed:", e);
-      toast("Error", "Failed to search for airports");
+      console.warn("Duffel airport search failed, using local data:", e);
     }
     return [];
   }
 
-  function initAirportSuggest(root) {
-    const input = root.querySelector("input[data-airport-input]");
-    const list = root.querySelector("[data-airport-list]") || root.querySelector(".suggest__list");
-    if (!input || !list) return;
+  function initAirportSuggest(input) {
+    const root = input.closest(".suggest");
+    if (!root) return;
+    const list = root.querySelector(".suggest__list");
+    if (!list) return;
 
     let searchTimeout = null;
 
@@ -325,12 +217,20 @@
         return;
       }
 
-      // Use Duffel API only
-      let results = await searchDuffelAirports(q);
+      // Try Amadeus API first
+      let results = await searchAmadeusAirports(q);
       
-      // If no results from Duffel, show empty
+      // If no results from Amadeus, try Duffel
       if (results.length === 0) {
-        console.log(`No airports found for "${q}" in Duffel API`);
+        results = await searchDuffelAirports(q);
+      }
+      
+      // If still no results, use local data
+      if (results.length === 0) {
+        results = airports.filter((a) => {
+          const s = (a.city + " " + a.name + " " + a.code).toLowerCase();
+          return s.includes(q.toLowerCase());
+        });
       }
 
       render(results);
@@ -338,7 +238,6 @@
 
     input.addEventListener("input", () => {
       const q = input.value.trim();
-      input.removeAttribute("data-airport-code");
       
       // Clear previous timeout
       if (searchTimeout) {
@@ -351,7 +250,12 @@
       } else if (q.length === 0) {
         render([]);
       } else {
-        render([]);
+        // For single character, use local data immediately
+        const results = airports.filter((a) => {
+          const s = (a.city + " " + a.name + " " + a.code).toLowerCase();
+          return s.includes(q.toLowerCase());
+        });
+        render(results);
       }
     });
 
@@ -368,8 +272,8 @@
   }
 
   function initAirportSuggestAll() {
-    const roots = Array.from(document.querySelectorAll(".suggest"));
-    roots.forEach(initAirportSuggest);
+    const inputs = Array.from(document.querySelectorAll("input[data-airport-input]"));
+    inputs.forEach(initAirportSuggest);
   }
 
   function initTripTabs() {
@@ -478,21 +382,15 @@
     if (depart && st.search && st.search.depart) depart.value = st.search.depart;
     if (ret && st.search && st.search.return) ret.value = st.search.return;
     if (cabin && st.search && st.search.cabin) cabin.value = st.search.cabin;
-    if (from && st.search && st.search.fromCode) from.setAttribute("data-airport-code", st.search.fromCode);
-    if (to && st.search && st.search.toCode) to.setAttribute("data-airport-code", st.search.toCode);
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
 
       const mode = (readState().tripType || "round").toString();
-      const fromCode = from ? (from.getAttribute("data-airport-code") || "") : "";
-      const toCode = to ? (to.getAttribute("data-airport-code") || "") : "";
       const payload = {
         tripType: mode,
         from: from ? from.value.trim() : "",
         to: to ? to.value.trim() : "",
-        fromCode,
-        toCode,
         depart: depart ? depart.value : "",
         return: ret ? ret.value : "",
         cabin: cabin ? cabin.value : "Economy"
@@ -500,11 +398,6 @@
 
       if (!payload.from || !payload.to) {
         toast("Missing route", "Please choose a departure and destination airport.");
-        return;
-      }
-
-      if (!payload.fromCode || !payload.toCode) {
-        toast("Pick from list", "Please click an airport from the suggestions list (IATA code required).");
         return;
       }
 
@@ -529,6 +422,49 @@
     } catch (e) {
       return "$" + n;
     }
+  }
+
+  function seedFlights(search) {
+    const airlines = [
+      { code: "TG", name: "BookingCart Air", logo: "BC" },
+      { code: "GN", name: "GreenJet", logo: "GJ" },
+      { code: "SK", name: "SkyNova", logo: "SN" },
+      { code: "AF", name: "AeroFlow", logo: "AF" },
+      { code: "CL", name: "Cloudline", logo: "CL" }
+    ];
+
+    const base = 190;
+    const cabinMult =
+      search.cabin === "Premium" ? 1.25 : search.cabin === "Business" ? 1.85 : search.cabin === "First" ? 2.4 : 1;
+
+    const makeTime = (h, m) => String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+
+    const list = [];
+    for (let i = 0; i < 18; i++) {
+      const a = airlines[i % airlines.length];
+      const stops = i % 6 === 0 ? 2 : i % 3 === 0 ? 1 : 0;
+      const departH = 6 + (i % 12);
+      const departM = i % 2 === 0 ? 15 : 40;
+      const durMin = 95 + (i % 9) * 23 + stops * 55;
+      const arrTotal = departH * 60 + departM + durMin;
+      const arrH = Math.floor((arrTotal / 60) % 24);
+      const arrM = arrTotal % 60;
+
+      const price = Math.round((base + i * 17 + stops * 45) * cabinMult);
+
+      const id = a.code + "-" + (100 + i);
+      list.push({
+        id,
+        airline: a,
+        departTime: makeTime(departH, departM),
+        arriveTime: makeTime(arrH, arrM),
+        durationMin: durMin,
+        stops,
+        price
+      });
+    }
+
+    return list;
   }
 
   function durationLabel(min) {
@@ -556,8 +492,8 @@
   async function fetchDuffelFlights(state, search) {
     try {
       const payload = {
-        originLocationCode: search.fromCode || extractIata(search.from),
-        destinationLocationCode: search.toCode || extractIata(search.to),
+        originLocationCode: extractIata(search.from),
+        destinationLocationCode: extractIata(search.to),
         departureDate: search.depart,
         returnDate: search.tripType === "round" ? search.return : "",
         adults: state.passengers?.adults || 1,
@@ -565,7 +501,7 @@
         infants: state.passengers?.infants || 0,
         travelClass: toAmadeusTravelClass(search.cabin),
         currencyCode: "USD",
-        max: 100
+        max: 30
       };
 
       const resp = await fetch("/api/duffel-search", {
@@ -575,20 +511,52 @@
       });
 
       const data = await resp.json().catch(() => null);
-      if (!resp.ok || !data || !data.ok) {
-        const msg = data && data.error ? data.error : `Duffel search failed (${resp.status})`;
-        throw new Error(msg);
-      }
-
-      if (Array.isArray(data.flights)) {
+      if (data && data.ok && Array.isArray(data.flights)) {
         console.log(`Duffel search successful: ${data.flights.length} flights`);
         return data.flights;
       }
-      return [];
     } catch (e) {
-      console.error("Duffel API error:", e);
-      throw e;
+      console.warn("Duffel flight search failed:", e);
     }
+    return [];
+  }
+
+  async function fetchAmadeusFlights(state, search) {
+    const originLocationCode = extractIata(search.from);
+    const destinationLocationCode = extractIata(search.to);
+    if (!originLocationCode || !destinationLocationCode) {
+      throw new Error("Please pick airports from suggestions (IATA codes required). ");
+    }
+
+    const pax = state.passengers || { adults: 1, children: 0, infants: 0 };
+    const tripType = (state.tripType || search.tripType || "round").toString();
+
+    const body = {
+      originLocationCode,
+      destinationLocationCode,
+      departureDate: search.depart,
+      returnDate: tripType === "round" ? search.return : "",
+      adults: Number(pax.adults || 1),
+      children: Number(pax.children || 0),
+      infants: Number(pax.infants || 0),
+      travelClass: toAmadeusTravelClass(search.cabin),
+      currencyCode: "USD",
+      max: 30
+    };
+
+    const resp = await fetch("/api/amadeus-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok || !data || !data.ok) {
+      const msg = data && data.error ? data.error : "Amadeus search failed";
+      throw new Error(msg);
+    }
+
+    return Array.isArray(data.flights) ? data.flights : [];
   }
 
   function initResults() {
@@ -665,96 +633,56 @@
       if (!list.length) {
         const empty = document.createElement("div");
         empty.className = "card";
-        empty.innerHTML =
-          flights && flights.length
-            ? '<div class="card__body"><div class="kpi">No flights match your filters</div><div class="muted" style="margin-top:6px">Try increasing your max price or changing stops/airlines.</div></div>'
-            : '<div class="card__body"><div class="kpi">No flights found for this search</div><div class="muted" style="margin-top:6px">Try different airports or a later date.</div></div>';
+        empty.innerHTML = '<div class="card__body"><div class="kpi">No flights match your filters</div><div class="muted" style="margin-top:6px">Try increasing your max price or changing stops/airlines.</div></div>';
         listEl.appendChild(empty);
         return;
       }
 
       list.forEach((f) => {
         const card = document.createElement("div");
-        card.className = "card result-card";
-
-        const airlineLogoMarkup = f.airline.logoUrl
-          ? '<img class="airline-logo" src="' +
-            String(f.airline.logoUrl).replace(/"/g, "&quot;") +
-            '" alt="' +
-            String(f.airline.name || "Airline").replace(/"/g, "&quot;") +
-            '" loading="lazy" />'
-          : (f.airline.logo || "");
-
-        const hasReturn = !!(f.returnDepartTime && f.returnArriveTime);
-        const stopsLabel = f.stops === 0 ? "Non-stop" : f.stops + " stop" + (f.stops > 1 ? "s" : "");
-        const returnStopsLabel = (f.returnStops || 0) === 0 ? "Non-stop" : (f.returnStops || 0) + " stop" + ((f.returnStops || 0) > 1 ? "s" : "");
-        const returnBlock = hasReturn
-          ? '<div class="result-return">' +
-            '<div class="result-subtitle">Return</div>' +
-            '<div class="result-times">' +
-            '<div class="result-time">' +
-            f.returnDepartTime +
-            "</div>" +
-            '<div class="result-line" aria-hidden="true"><span class="result-dot"></span><span class="result-bar"></span><span class="result-dot"></span></div>' +
-            '<div class="result-time" style="text-align:right">' +
-            f.returnArriveTime +
-            "</div>" +
-            "</div>" +
-            '<div class="result-sub">' +
-            durationLabel(f.returnDurationMin || 0) +
-            " • " +
-            returnStopsLabel +
-            "</div>" +
-            "</div>"
-          : "";
-
-        const isRoundTrip = (state.tripType || "round") === "round";
-
+        card.className = "card";
         card.innerHTML =
           '<div class="card__body">' +
-          '<div class="result-top">' +
-          '<div class="result-airline">' +
+          '<div class="row space">' +
+          '<div class="row">' +
           '<div class="logo" aria-hidden="true">' +
-          airlineLogoMarkup +
+          f.airline.logo +
           "</div>" +
-          '<div class="result-airline__meta">' +
+          '<div style="display:flex;flex-direction:column;gap:2px">' +
           '<div class="kpi">' +
           f.airline.name +
           "</div>" +
-          '<div class="result-sub">' +
-          durationLabel(f.durationMin) +
-          " • " +
-          stopsLabel +
-          "</div>" +
-          "</div>" +
-          "</div>" +
-          '<div class="result-price">' +
-          '<div class="price">' +
-          money(f.price) +
-          "</div>" +
-          '<div class="result-sub">per traveler</div>' +
-          "</div>" +
-          "</div>" +
-          '<div class="result-mid">' +
-          '<div class="result-subtitle">Outbound</div>' +
-          '<div class="result-times">' +
-          '<div class="result-time">' +
-          f.departTime +
-          "</div>" +
-          '<div class="result-line" aria-hidden="true"><span class="result-dot"></span><span class="result-bar"></span><span class="result-dot"></span></div>' +
-          '<div class="result-time" style="text-align:right">' +
-          f.arriveTime +
-          "</div>" +
-          "</div>" +
-          '<div class="result-airports">' +
+          '<div class="muted" style="font-weight:700">' +
           (search.from || "") +
           " → " +
           (search.to || "") +
           "</div>" +
           "</div>" +
-          (isRoundTrip ? returnBlock : "") +
-          '<div class="result-actions">' +
-          '<a class="btn btn-primary" href="#" data-flight-link>Select</a>' +
+          "</div>" +
+          '<div style="text-align:right">' +
+          '<div class="price">' +
+          money(f.price) +
+          "</div>" +
+          '<div class="muted" style="font-weight:700">per traveler</div>' +
+          "</div>" +
+          "</div>" +
+          '<div class="hr"></div>' +
+          '<div class="row space">' +
+          '<div class="row" style="gap:10px;flex-wrap:wrap">' +
+          '<span class="pill"><span style="font-weight:950">' +
+          f.departTime +
+          "</span> depart</span>" +
+          '<span class="pill"><span style="font-weight:950">' +
+          f.arriveTime +
+          "</span> arrive</span>" +
+          '<span class="pill">' +
+          durationLabel(f.durationMin) +
+          "</span>" +
+          '<span class="pill">' +
+          (f.stops === 0 ? "Non-stop" : f.stops + " stop" + (f.stops > 1 ? "s" : "")) +
+          "</span>" +
+          "</div>" +
+          '<a class="btn btn-secondary" href="#" data-flight-link>View details</a>' +
           "</div>" +
           "</div>";
 
@@ -789,29 +717,14 @@
       const airlineSelect = document.querySelector("select[name='airline']");
       if (airlineSelect) {
         while (airlineSelect.options.length > 1) airlineSelect.remove(1);
-
-        const byCode = new Map();
-        flights.forEach((f) => {
-          const code = f && f.airline && f.airline.code ? String(f.airline.code) : "";
-          if (!code) return;
-          if (!byCode.has(code)) {
-            const name = f.airline && f.airline.name ? String(f.airline.name) : code;
-            byCode.set(code, name);
-          }
-        });
-
-        const entries = Array.from(byCode.entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
-        entries.forEach(([code, name]) => {
+        const codes = Array.from(new Set(flights.map((f) => f.airline.code)));
+        codes.forEach((c) => {
+          const label = flights.find((f) => f.airline.code === c).airline.name;
           const opt = document.createElement("option");
-          opt.value = code;
-          opt.textContent = `${name} (${code})`;
+          opt.value = c;
+          opt.textContent = label;
           airlineSelect.appendChild(opt);
         });
-
-        // If current selected airline is no longer available, reset to Any
-        if (airlineSelect.value !== "any" && !byCode.has(airlineSelect.value)) {
-          airlineSelect.value = "any";
-        }
       }
 
       const update = () => render(apply(flights));
@@ -824,28 +737,49 @@
       let flights = null;
 
       if (window.location.protocol === "file:") {
-        toast("Live search disabled", "To use live results, run via the server (not file://).");
+        toast("Amadeus disabled", "To use live results, run via Netlify (not file://). Showing demo flights.");
       } else {
         try {
-          // Use Duffel API only
-          flights = await fetchDuffelFlights(state, search);
+          // Try Amadeus API first
+          flights = await fetchAmadeusFlights(state, search);
+          
+          // If Amadeus returns no results, try Duffel
+          if (!flights || flights.length === 0) {
+            console.log("Amadeus returned no results, trying Duffel API...");
+            flights = await fetchDuffelFlights(state, search);
+          }
           
           if (!flights || flights.length === 0) {
-            toast("No offers", "Booking Cart found no offers for this search. Please try different airports or dates.");
-            flights = [];
+            toast("No offers", "Neither Amadeus nor Duffel returned offers. Showing demo flights.");
+            flights = null;
           } else {
-            toast("Search successful", `Booking Cart found ${flights.length} flights.`);
+            const source = flights[0]?.id?.startsWith('DF-') ? 'Duffel' : 'Amadeus';
+            toast(`Live search successful`, `Found ${flights.length} flights via ${source}.`);
           }
         } catch (e) {
-          console.error("Duffel API error:", e);
-          const errorMsg = e && e.message ? e.message : "API request failed";
-          toast("Live search unavailable", errorMsg + ". Please try again later.");
-          flights = [];
+          console.error("API search error:", e);
+          
+          // Try Duffel as fallback
+          try {
+            flights = await fetchDuffelFlights(state, search);
+            if (flights && flights.length > 0) {
+              toast("Duffel search successful", `Found ${flights.length} flights via Duffel API.`);
+            } else {
+              const errorMsg = e && e.message ? e.message : "API request failed";
+              toast("Live search unavailable", errorMsg + ". Showing demo flights.");
+              flights = null;
+            }
+          } catch (duffelError) {
+            console.error("Duffel API also failed:", duffelError);
+            const errorMsg = e && e.message ? e.message : "Both APIs failed";
+            toast("Live search unavailable", errorMsg + ". Showing demo flights.");
+            flights = null;
+          }
         }
       }
 
-      // No mock data fallback - only use real API results
-      hydrateResults(flights || []);
+      if (!flights) flights = seedFlights(search);
+      hydrateResults(flights);
     })();
   }
 
@@ -867,187 +801,14 @@
     writeState({ selectedFlightId: flight.id });
 
     const airline = root.querySelector("[data-airline]");
-    const airlineLogo = root.querySelector("[data-airline-logo]");
     const times = root.querySelector("[data-times]");
     const duration = root.querySelector("[data-duration]");
     const price = root.querySelector("[data-price]");
-    const breakdown = root.querySelector("[data-trip-breakdown]");
-
-    function esc(v) {
-      return String(v == null ? "" : v)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;");
-    }
-
-    function fmtTime(iso) {
-      if (!iso) return "";
-      const d = new Date(iso);
-      return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
-    }
-
-    function fmtDate(iso) {
-      if (!iso) return "";
-      const d = new Date(iso);
-      return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "2-digit" });
-    }
-
-    function fmtDateTime(iso) {
-      if (!iso) return "";
-      const d = new Date(iso);
-      const date = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "2-digit" });
-      const time = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
-      return `${date} • ${time}`;
-    }
-
-    function minsBetween(a, b) {
-      if (!a || !b) return 0;
-      const da = new Date(a);
-      const db = new Date(b);
-      const diff = Math.round((db - da) / 60000);
-      return Number.isFinite(diff) ? diff : 0;
-    }
-
-    function layoverLabel(mins) {
-      const m = Math.max(0, mins);
-      const h = Math.floor(m / 60);
-      const mm = m % 60;
-      if (h <= 0) return `${mm}m`;
-      return `${h}h ${String(mm).padStart(2, "0")}m`;
-    }
-
-    function renderLeg(title, segs) {
-      const safeSegs = Array.isArray(segs) ? segs.filter(Boolean) : [];
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "card itin-leg";
-
-      if (!safeSegs.length) {
-        wrapper.innerHTML =
-          '<div class="itin-leg__head">' +
-          '<div class="itin-leg__title">' +
-          esc(title) +
-          "</div>" +
-          "</div>" +
-          '<div class="itin-timeline">' +
-          '<div class="muted" style="font-weight:700">No segment data available.</div>' +
-          "</div>";
-        return wrapper;
-      }
-
-      const first = safeSegs[0];
-      const last = safeSegs[safeSegs.length - 1];
-      const stops = Math.max(0, safeSegs.length - 1);
-      const totalMin = minsBetween(first.departure?.at, last.arrival?.at);
-
-      wrapper.innerHTML =
-        '<div class="itin-leg__head">' +
-        '<div class="itin-leg__title">' +
-        esc(title) +
-        "</div>" +
-        '<div class="itin-leg__pills">' +
-        '<span class="pill">' + esc((first.departure?.iataCode || "") + " → " + (last.arrival?.iataCode || "")) + "</span>" +
-        '<span class="pill">' + esc(durationLabel(Math.max(0, totalMin))) + "</span>" +
-        '<span class="pill">' + esc(stops === 0 ? "Non-stop" : stops + " stop" + (stops > 1 ? "s" : "")) + "</span>" +
-        "</div>" +
-        "</div>" +
-        '<div class="itin-timeline" data-itin-timeline></div>';
-
-      const timeline = wrapper.querySelector("[data-itin-timeline]");
-      if (!timeline) return wrapper;
-
-      safeSegs.forEach((s, idx) => {
-        const isLast = idx === safeSegs.length - 1;
-        const flightNo = ((s.carrierCode || "") + (s.number || "")).trim();
-        const segMin = minsBetween(s.departure?.at, s.arrival?.at);
-
-        const item = document.createElement("div");
-        item.className = "itin-item";
-        item.innerHTML =
-          '<div class="itin-marker' + (isLast ? " itin-marker--end" : "") + '">' +
-          '<div class="itin-dot"></div>' +
-          "</div>" +
-          '<div class="itin-content">' +
-          '<div class="itin-row">' +
-          '<div class="itin-point">' +
-          '<div class="itin-time">' + esc(fmtTime(s.departure?.at)) + "</div>" +
-          '<div class="itin-airport">' + esc(s.departure?.iataCode || "") + "</div>" +
-          "</div>" +
-          '<div class="itin-arrow">→</div>' +
-          '<div class="itin-point" style="text-align:right">' +
-          '<div class="itin-time">' + esc(fmtTime(s.arrival?.at)) + "</div>" +
-          '<div class="itin-airport">' + esc(s.arrival?.iataCode || "") + "</div>" +
-          "</div>" +
-          "</div>" +
-          '<div class="itin-sub">' +
-          esc(fmtDate(s.departure?.at)) +
-          (segMin > 0 ? " • " + esc(durationLabel(segMin)) : "") +
-          "</div>" +
-          '<div class="itin-chips">' +
-          (flightNo ? '<span class="itin-chip">Flight ' + esc(flightNo) + "</span>" : "") +
-          (s.duration ? '<span class="itin-chip">' + esc(String(s.duration)) + "</span>" : "") +
-          "</div>" +
-          "</div>";
-
-        timeline.appendChild(item);
-
-        if (idx < safeSegs.length - 1) {
-          const next = safeSegs[idx + 1];
-          const layMin = minsBetween(s.arrival?.at, next.departure?.at);
-
-          const lay = document.createElement("div");
-          lay.className = "itin-item";
-          lay.innerHTML =
-            '<div class="itin-marker">' +
-            '<div class="itin-dot itin-dot--layover"></div>' +
-            "</div>" +
-            '<div class="itin-content">' +
-            '<div class="itin-layover">Layover in ' +
-            esc(s.arrival?.iataCode || "") +
-            " • " +
-            esc(layoverLabel(layMin)) +
-            "</div>" +
-            "</div>";
-          timeline.appendChild(lay);
-        }
-      });
-
-      return wrapper;
-    }
 
     if (airline) setText(airline, flight.airline.name);
-    if (airlineLogo) {
-      if (flight.airline && flight.airline.logoUrl) {
-        airlineLogo.innerHTML =
-          '<img class="airline-logo" src="' +
-          String(flight.airline.logoUrl).replace(/"/g, "&quot;") +
-          '" alt="' +
-          String(flight.airline.name || "Airline").replace(/"/g, "&quot;") +
-          '" loading="lazy" />';
-      } else {
-        setText(airlineLogo, (flight.airline && flight.airline.logo) || "");
-      }
-    }
-    if (times) {
-      const hasReturn = !!(flight.returnDepartTime && flight.returnArriveTime);
-      setText(times, hasReturn ? `${flight.departTime} → ${flight.arriveTime} • Return ${flight.returnDepartTime} → ${flight.returnArriveTime}` : `${flight.departTime} → ${flight.arriveTime}`);
-    }
-    if (duration) {
-      const outPart = durationLabel(flight.durationMin) + " • " + (flight.stops === 0 ? "Non-stop" : flight.stops + " stop" + (flight.stops > 1 ? "s" : ""));
-      const hasReturn = !!(flight.returnDepartTime && flight.returnArriveTime);
-      const retPart = hasReturn ? " • Return " + durationLabel(flight.returnDurationMin || 0) + " • " + ((flight.returnStops || 0) === 0 ? "Non-stop" : (flight.returnStops || 0) + " stop" + ((flight.returnStops || 0) > 1 ? "s" : "")) : "";
-      setText(duration, outPart + retPart);
-    }
+    if (times) setText(times, flight.departTime + " → " + flight.arriveTime);
+    if (duration) setText(duration, durationLabel(flight.durationMin) + " • " + (flight.stops === 0 ? "Non-stop" : flight.stops + " stop" + (flight.stops > 1 ? "s" : "")));
     if (price) setText(price, money(flight.price));
-
-    if (breakdown) {
-      breakdown.innerHTML = "";
-      breakdown.appendChild(renderLeg("Outbound", flight.segments || []));
-      if (Array.isArray(flight.returnSegments) && flight.returnSegments.length) {
-        breakdown.appendChild(renderLeg("Return", flight.returnSegments));
-      }
-    }
 
     const cta = root.querySelector("[data-select-flight]");
     if (cta)
@@ -1215,75 +976,25 @@
     const totalEl = document.querySelector("[data-pay-total]");
     if (totalEl) setText(totalEl, money(totals.total));
 
-    const q = getQuery();
-    if (q && q.canceled === "1") {
-      toast("Payment canceled", "You canceled Stripe Checkout. You can try again.");
-    }
-
     const form = root.querySelector("form[data-payment-form]");
     if (!form) return;
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
 
-      const existing = readState();
-      const bookingRef = existing.bookingRef || "BC" + Math.random().toString(36).slice(2, 8).toUpperCase();
+      const name = (form.querySelector("input[name='cardName']") || {}).value || "";
+      const num = (form.querySelector("input[name='cardNumber']") || {}).value || "";
+      const exp = (form.querySelector("input[name='expiry']") || {}).value || "";
+      const cvc = (form.querySelector("input[name='cvc']") || {}).value || "";
 
-      const s = existing.search || {};
-      const desc =
-        "BookingCart " +
-        ((s.fromCode || extractIata(s.from) || "") + "→" + (s.toCode || extractIata(s.to) || "")) +
-        (s.depart ? " " + s.depart : "");
-
-      const latestTotals = computeTotals(existing);
-      const amountCents = Math.round(Number(latestTotals.total || 0) * 100);
-      if (!Number.isFinite(amountCents) || amountCents <= 0) {
-        toast("Payment", "Invalid checkout total.");
+      if (!name.trim() || !num.trim() || !exp.trim() || !cvc.trim()) {
+        toast("Payment details", "Fill in your payment details to continue.");
         return;
       }
 
-      const btn = form.querySelector("button[type='submit']");
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = "Redirecting…";
-      }
-
-      fetch("/api/stripe/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amountCents,
-          currency: "usd",
-          description: desc,
-          bookingRef,
-          successPath: "/confirmation.html",
-          cancelPath: "/payment.html"
-        })
-      })
-        .then(async (r) => {
-          const data = await r.json().catch(() => null);
-          if (!r.ok) {
-            const msg = data && data.error ? String(data.error) : `Request failed (${r.status})`;
-            throw new Error(msg);
-          }
-          if (!data || !data.ok || !data.url) {
-            const msg = data && data.error ? String(data.error) : "Stripe Checkout failed";
-            throw new Error(msg);
-          }
-          return data;
-        })
-        .then((data) => {
-          writeState({ bookingRef });
-          window.location.href = data.url;
-        })
-        .catch((err) => {
-          console.error("Stripe checkout error:", err);
-          toast("Payment unavailable", (err && err.message ? err.message : "Stripe error") + ".");
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = "Pay & Confirm Booking";
-          }
-        });
+      const bookingRef = "BC" + Math.random().toString(36).slice(2, 8).toUpperCase();
+      writeState({ bookingRef });
+      window.location.href = "confirmation.html";
     });
 
     const walletBtns = Array.from(root.querySelectorAll("[data-wallet]"));
@@ -1300,39 +1011,12 @@
     if (!root) return;
 
     const state = readState();
-    const q = getQuery();
     const refEl = root.querySelector("[data-booking-ref]");
     if (refEl) setText(refEl, state.bookingRef || "—");
 
     const totals = computeTotals(state);
     const totalEl = root.querySelector("[data-confirm-total]");
     if (totalEl) setText(totalEl, money(totals.total));
-
-    const payStatusEl = root.querySelector("[data-payment-status]");
-    if (payStatusEl) {
-      setText(payStatusEl, "Verifying payment…");
-      const sessionId = q && q.session_id ? String(q.session_id) : "";
-      if (!sessionId) {
-        setText(payStatusEl, "No Stripe session found.");
-      } else {
-        fetch("/api/stripe/session?session_id=" + encodeURIComponent(sessionId))
-          .then((r) => r.json().catch(() => null))
-          .then((data) => {
-            if (!data || !data.ok) {
-              const msg = data && data.error ? data.error : "Unable to verify payment";
-              throw new Error(msg);
-            }
-            const paid = String(data.payment_status || "") === "paid";
-            const amount = typeof data.amount_total === "number" ? (data.amount_total / 100).toFixed(2) : "";
-            const cur = String(data.currency || "").toUpperCase();
-            setText(payStatusEl, paid ? `Paid • ${cur} ${amount}` : `Not paid • status: ${data.payment_status || data.status}`);
-          })
-          .catch((err) => {
-            console.error("Stripe verify error:", err);
-            setText(payStatusEl, (err && err.message) ? err.message : "Unable to verify payment");
-          });
-      }
-    }
 
     const flight = (state.flights || []).find((f) => f.id === state.selectedFlightId) || (state.flights || [])[0];
     const flightEl = root.querySelector("[data-confirm-flight]");
@@ -1390,8 +1074,6 @@
   }
 
   function init() {
-    applyGuards();
-    showGuardToast();
     initStepper();
     initDropdowns();
     initAirportSuggestAll();

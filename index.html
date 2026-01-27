@@ -6,8 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BookingCart — Search flights</title>
   <meta name="description" content="Search and book flights with a modern, green-themed experience." />
-  <link rel="icon" type="image/png" href="images/favicon.png" />
-  <link rel="apple-touch-icon" href="images/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
@@ -24,7 +22,7 @@
       <nav class="header__nav" aria-label="Primary">
         <a href="index.html">Flights</a>
         <a href="stays.html">Stays</a>
-        <a href="visa.html">Visa</a>
+        <a href="events.html">Events</a>
       </nav>
     </div>
   </header>
@@ -32,8 +30,8 @@
   <section class="hero" aria-label="Flight search">
     <div class="hero__bg" aria-hidden="true"></div>
     <div class="container hero__content" data-step="search">
-      <div class="badge">Your next journey starts here</div>
-      <h1 class="h1">Where to next. travel Cart?</h1>
+      <div class="badge">Flight search only • Fast, clean checkout</div>
+      <h1 class="h1">Find flights you'll actually want to book.</h1>
       <p class="lead">Compare schedules, pick the right fare, then checkout with a professional, secure-feeling booking
         flow.</p>
 
@@ -131,23 +129,21 @@
                   <option>First</option>
                 </select>
               </div>
-
-              <div class="field field--submit">
-                <div class="label">&nbsp;</div>
-                <button class="btn btn-primary" type="submit">Search Flights</button>
-              </div>
             </div>
 
             <div data-multicity style="display:none">
               <div class="card" style="margin:0 12px 12px 12px">
                 <div class="card__body">
-                  <div class="kpi">Multi-cities</div>
-                  <div class="muted" style="margin-top:6px">Multi-city uses the same results flow. You
+                  <div class="kpi">Multi-city is a UI preview</div>
+                  <div class="muted" style="margin-top:6px">For this demo, multi-city uses the same results flow. You
                     can extend this later to support multiple legs.</div>
                 </div>
               </div>
             </div>
 
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Search Flights</button>
+            </div>
           </form>
         </div>
       </div>
@@ -167,15 +163,12 @@
 
   <footer class="footer" aria-label="Footer">
     <div class="container footer__inner">
-      <div class="muted"> BookingCart</div>
-      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
-        <div class="muted">Your Travel, Simplified</div>
-        <a class="muted" href="terms.html" style="font-weight:800">Terms</a>
-      </div>
+      <div class="muted">© BookingCart</div>
+      <div class="muted">Your Travel, Simplified</div>
     </div>
   </footer>
 
-  <script src="js/bookingcart.js?v=2"></script>
+  <script src="js/bookingcart.js"></script>
 </body>
 
 </html>

@@ -10,6 +10,9 @@ const stripe = STRIPE_SECRET_KEY ? Stripe(STRIPE_SECRET_KEY) : null;
 
 const VISA_ADMIN_TOKEN = process.env.VISA_ADMIN_TOKEN || "";
 
+const TRAVELBUDDY_RAPIDAPI_SECRET = process.env.TRAVELBUDDY_RAPIDAPI_SECRET || process.env.RAPIDAPI_SECRET || "";
+const TRAVELBUDDY_API_BASE = "https://visa-requirement.p.rapidapi.com";
+
 // GitHub API configuration
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
 const GITHUB_OWNER = process.env.GITHUB_OWNER || "";
@@ -63,6 +66,76 @@ function safeJsonParse(s) {
   } catch {
     return null;
   }
+}
+
+function requireTravelBuddy(event) {
+  if (!TRAVELBUDDY_RAPIDAPI_SECRET) {
+    return { ok: false, status: 500, error: "Travel Buddy API is not configured (missing TRAVELBUDDY_RAPIDAPI_SECRET)" };
+  }
+  return { ok: true };
+}
+
+async function travelBuddyPost(path, body) {
+  const url = `${TRAVELBUDDY_API_BASE}${path}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-RapidAPI-Proxy-Secret": TRAVELBUDDY_RAPIDAPI_SECRET
+    },
+    body: JSON.stringify(body || {})
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    return { ok: false, status: res.status, bodyText: text };
+  }
+  try {
+    return { ok: true, status: res.status, json: JSON.parse(text) };
+  } catch {
+    return { ok: false, status: 502, bodyText: "Invalid JSON from upstream" };
+  }
+}
+
+async function handleTravelBuddyVisaCheck(event) {
+  const gate = requireTravelBuddy(event);
+  if (!gate.ok) return json(gate.status, { ok: false, error: gate.error });
+
+  const payload = safeJsonParse(event.body || "{}") || {};
+  const passport = String(payload.passport || "").trim().toUpperCase();
+  const destination = String(payload.destination || "").trim().toUpperCase();
+
+  if (!/^[A-Z]{2}$/.test(passport) || !/^[A-Z]{2}$/.test(destination)) {
+    return json(422, { ok: false, error: "Invalid parameters. Expected ISO2 codes for passport and destination." });
+  }
+  if (passport === destination) {
+    return json(422, { ok: false, error: "passport and destination must be different" });
+  }
+
+  const upstream = await travelBuddyPost("/v2/visa/check", { passport, destination });
+  if (!upstream.ok) {
+    return json(upstream.status || 502, { ok: false, error: "Upstream error", details: upstream.bodyText || "" });
+  }
+
+  return json(200, { ok: true, data: upstream.json });
+}
+
+async function handleTravelBuddyVisaMap(event) {
+  const gate = requireTravelBuddy(event);
+  if (!gate.ok) return json(gate.status, { ok: false, error: gate.error });
+
+  const payload = safeJsonParse(event.body || "{}") || {};
+  const passport = String(payload.passport || "").trim().toUpperCase();
+
+  if (!/^[A-Z]{2}$/.test(passport)) {
+    return json(422, { ok: false, error: "Invalid parameters. Expected ISO2 code for passport." });
+  }
+
+  const upstream = await travelBuddyPost("/v2/visa/map", { passport });
+  if (!upstream.ok) {
+    return json(upstream.status || 502, { ok: false, error: "Upstream error", details: upstream.bodyText || "" });
+  }
+
+  return json(200, { ok: true, data: upstream.json });
 }
 
 function requireVisaAdmin(event) {
@@ -815,6 +888,14 @@ exports.handler = async (event) => {
 
     if (route === "visa/admin/update" && event.httpMethod === "POST") {
       return await handleVisaAdminUpdate(event);
+    }
+
+    if (route === "travelbuddy/visa/check" && event.httpMethod === "POST") {
+      return await handleTravelBuddyVisaCheck(event);
+    }
+
+    if (route === "travelbuddy/visa/map" && event.httpMethod === "POST") {
+      return await handleTravelBuddyVisaMap(event);
     }
 
     return json(404, { ok: false, error: "Not found" });

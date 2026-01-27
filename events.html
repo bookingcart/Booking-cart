@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookingCart — Events</title>
+  <meta name="description" content="Discover and book events with Eventbrite API integration." />
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/bookingcart.css?v=2" />
+</head>
+
+<body class="events">
+  <header class="header" aria-label="Top navigation">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="BookingCart Home">
+        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
+      </a>
+      <nav class="header__nav" aria-label="Primary">
+        <a href="index.html">Flights</a>
+        <a href="stays.html">Stays</a>
+        <a href="events.html">Events</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero" aria-label="Events search">
+    <div class="hero__bg" aria-hidden="true"></div>
+    <div class="container hero__content" data-events-search>
+      <div class="badge">Discover events worldwide</div>
+      <h1 class="h1">Find amazing events.</h1>
+      <p class="lead">Search concerts, conferences, workshops, and local experiences — then book tickets instantly.</p>
+
+      <div class="panel" role="region" aria-label="Search events panel">
+        <div class="panel__inner">
+          <form data-events-form>
+            <div class="form-grid form-grid--events">
+              <div class="field suggest" data-span="2">
+                <div class="label">Location</div>
+                <input class="control" name="location" placeholder="City or country (e.g., London, Kenya, Dubai)" autocomplete="off" required />
+              </div>
+
+              <div class="field field--submit">
+                <div class="label">&nbsp;</div>
+                <button class="btn btn-primary" type="submit">Search events</button>
+              </div>
+            </div>
+          </form>
+
+          <div class="muted" style="margin-top:12px;font-size:12px">
+            <strong>Note:</strong> Eventbrite removed public event search in 2020. This search shows events available via our connected Eventbrite accounts.
+          </div>
+
+          <div data-events-status style="margin-top:12px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#f8fafc;display:none">
+            <div class="muted" style="font-size:13px">Checking Eventbrite API status…</div>
+          </div>
+
+          <div data-events-results style="display:none;padding:12px"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer" aria-label="Footer">
+    <div class="container footer__inner">
+      <div class="muted"> BookingCart</div>
+      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <a href="terms.html" class="muted">Terms</a>
+        <a href="privacy.html" class="muted">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/events.js?v=2"></script>
+</body>
+
+</html>
