@@ -129,8 +129,22 @@
   }
 
   async function searchByLocation(location) {
-    const response = await fetch(`/api/events/search?location=${encodeURIComponent(location)}`);
-    const body = await response.json().catch(() => ({}));
+    // Try combined search first (Eventbrite + Ticketmaster), fallback to Eventbrite only
+    let response = await fetch(`/api/events/search-combined?location=${encodeURIComponent(location)}`);
+    let body = await response.json().catch(() => ({}));
+    
+    // If combined search fails or returns no results, try Eventbrite only
+    if (!response.ok || !body.ok || !body.events || body.events.length === 0) {
+      response = await fetch(`/api/events/search?location=${encodeURIComponent(location)}`);
+      body = await response.json().catch(() => ({}));
+    }
+    
+    // If still no results, try Ticketmaster only
+    if (!response.ok || !body.ok || !body.events || body.events.length === 0) {
+      response = await fetch(`/api/events/ticketmaster?location=${encodeURIComponent(location)}`);
+      body = await response.json().catch(() => ({}));
+    }
+    
     if (!response.ok || !body.ok) {
       throw new Error(body.error || `HTTP ${response.status}`);
     }

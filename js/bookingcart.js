@@ -163,7 +163,7 @@
         return data.airports;
       }
     } catch (e) {
-      console.warn("Duffel airport search failed, using local data:", e);
+      console.warn("Duffel airport search failed:", e);
     }
     return [];
   }
@@ -516,7 +516,7 @@
         return data.flights;
       }
     } catch (e) {
-      console.warn("Duffel flight search failed:", e);
+      console.error("Duffel API error:", e);
     }
     return [];
   }
@@ -737,44 +737,23 @@
       let flights = null;
 
       if (window.location.protocol === "file:") {
-        toast("Amadeus disabled", "To use live results, run via Netlify (not file://). Showing demo flights.");
+        toast("Duffel disabled", "To use live results, run via Netlify (not file://). Showing demo flights.");
       } else {
         try {
-          // Try Amadeus API first
-          flights = await fetchAmadeusFlights(state, search);
-          
-          // If Amadeus returns no results, try Duffel
-          if (!flights || flights.length === 0) {
-            console.log("Amadeus returned no results, trying Duffel API...");
-            flights = await fetchDuffelFlights(state, search);
-          }
+          // Try Duffel API
+          flights = await fetchDuffelFlights(state, search);
           
           if (!flights || flights.length === 0) {
-            toast("No offers", "Neither Amadeus nor Duffel returned offers. Showing demo flights.");
+            toast("No offers", "Duffel returned no offers for this search. Showing demo flights.");
             flights = null;
           } else {
-            const source = flights[0]?.id?.startsWith('DF-') ? 'Duffel' : 'Amadeus';
-            toast(`Live search successful`, `Found ${flights.length} flights via ${source}.`);
+            toast("Duffel search successful", `Found ${flights.length} flights via Duffel API.`);
           }
         } catch (e) {
-          console.error("API search error:", e);
-          
-          // Try Duffel as fallback
-          try {
-            flights = await fetchDuffelFlights(state, search);
-            if (flights && flights.length > 0) {
-              toast("Duffel search successful", `Found ${flights.length} flights via Duffel API.`);
-            } else {
-              const errorMsg = e && e.message ? e.message : "API request failed";
-              toast("Live search unavailable", errorMsg + ". Showing demo flights.");
-              flights = null;
-            }
-          } catch (duffelError) {
-            console.error("Duffel API also failed:", duffelError);
-            const errorMsg = e && e.message ? e.message : "Both APIs failed";
-            toast("Live search unavailable", errorMsg + ". Showing demo flights.");
-            flights = null;
-          }
+          console.error("Duffel API error:", e);
+          const errorMsg = e && e.message ? e.message : "API request failed";
+          toast("Live search unavailable", errorMsg + ". Showing demo flights.");
+          flights = null;
         }
       }
 
