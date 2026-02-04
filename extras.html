@@ -5,142 +5,285 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BookingCart — Extras</title>
-  <meta name="description" content="Add baggage, seat selection, insurance, and meal preferences." />
+  <meta name="description" content="Add extras to your flight." />
+
+  <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="css/bookingcart.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1888969771559868"
+     crossorigin="anonymous"></script>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+          colors: {
+            primary: '#0f172a',
+            secondary: '#3b82f6',
+          }
+        }
+      }
+    }
+  </script>
 </head>
 
-<body>
-  <header class="header" aria-label="Top navigation">
-    <div class="container header__inner">
-      <a class="brand" href="index.html" aria-label="BookingCart Home">
-        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
-      </a>
-      <nav class="header__nav" aria-label="Primary">
-        <a href="passengers.html">Back</a>
-      </nav>
+<body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="container mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-12">
+        <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight">BookingCart</a>
+        <div class="hidden lg:flex items-center gap-4">
+          <a href="passengers.html"
+            class="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
+            <i class="ph-bold ph-arrow-left"></i> Back to passengers
+          </a>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-200 border border-white shadow-sm">
+          <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User"
+            class="w-full h-full object-cover" />
+        </div>
+      </div>
     </div>
   </header>
 
-  <main class="layout" data-step="extras">
-    <div class="container" data-extras>
-      <div class="steps" aria-label="Booking steps">
-        <a class="step" data-step-id="search" href="index.html"><span class="step__dot">1</span> Search</a>
-        <a class="step" data-step-id="results" href="results.html"><span class="step__dot">2</span> Results</a>
-        <a class="step" data-step-id="details" href="details.html"><span class="step__dot">3</span> Details</a>
-        <a class="step" data-step-id="passengers" href="passengers.html"><span class="step__dot">4</span> Passengers</a>
-        <a class="step" data-step-id="extras" href="extras.html"><span class="step__dot">5</span> Extras</a>
-        <a class="step" data-step-id="payment" href="payment.html"><span class="step__dot">6</span> Payment</a>
-        <a class="step" data-step-id="confirmation" href="confirmation.html"><span class="step__dot">7</span>
-          Confirm</a>
-      </div>
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto px-6 py-8" data-step="extras">
 
-      <div class="grid-2" style="margin-top:14px">
-        <aside class="sidebar" aria-label="Price summary">
-          <div class="sidebar__header">
-            <div class="sidebar__title">Price summary</div>
-            <a class="muted" href="details.html" style="font-weight:800">Change flight</a>
+    <!-- Steps -->
+    <div class="flex items-center gap-4 mb-8 overflow-x-auto no-scrollbar steps text-sm font-medium">
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="search" href="index.html">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">1</span>
+        Search
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="results" href="results.html">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">2</span>
+        Results
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="details" href="details.html">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">3</span>
+        Details
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="passengers" href="passengers.html">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">4</span>
+        Passengers
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 text-white border border-slate-900 whitespace-nowrap"
+        data-step-id="extras" href="extras.html">
+        <span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">5</span>
+        Extras
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-slate-500 border border-slate-200 whitespace-nowrap"
+        data-step-id="payment" href="#">
+        <span class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold">6</span>
+        Payment
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8" data-extras>
+
+      <!-- Main Content -->
+      <section class="lg:col-span-8 space-y-6">
+        <div class="flex items-center justify-between mb-2">
+          <h1 class="text-2xl font-bold text-slate-900">Add-ons & Extras</h1>
+        </div>
+        <p class="text-slate-500 font-medium">Customize your trip with baggage, seats, and more.</p>
+
+        <form data-extras-form class="space-y-6">
+          <!-- Baggage -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h2 class="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2"><i
+                class="ph-duotone ph-suitcase-rolling text-blue-600 text-xl"></i> Extra Baggage</h2>
+            <div class="bg-slate-50 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <div class="font-bold text-slate-900 text-sm">Checked Bag (23kg)</div>
+                <div class="text-xs text-slate-500 mt-1">Add per bag</div>
+              </div>
+              <input
+                class="w-20 bg-white border border-slate-200 rounded-lg p-2 text-center font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                type="number" name="baggage" min="0" max="6" value="0" />
+            </div>
           </div>
-          <div class="sidebar__body">
-            <div class="row space">
-              <div class="muted" style="font-weight:800">Base fare</div>
-              <div class="kpi" data-sum-base>—</div>
+
+          <!-- Seats -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h2 class="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2"><i
+                class="ph-duotone ph-armchair text-blue-600 text-xl"></i> Seat Selection</h2>
+            <div class="space-y-3">
+              <select
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                name="seat">
+                <option value="none">No specific seat preference</option>
+                <option value="standard">Standard Aisle/Window</option>
+                <option value="extra">Extra Legroom</option>
+              </select>
             </div>
-            <div class="row space" style="margin-top:10px">
-              <div class="muted" style="font-weight:800">Extras</div>
-              <div class="kpi" data-sum-extras>—</div>
-            </div>
-            <div class="row space" style="margin-top:10px">
-              <div class="muted" style="font-weight:800">Taxes & fees</div>
-              <div class="kpi" data-sum-taxes>—</div>
-            </div>
-            <div class="hr"></div>
-            <div class="row space">
-              <div class="muted" style="font-weight:900">Total</div>
-              <div class="price" data-sum-total>—</div>
-            </div>
-            <div class="small" style="margin-top:8px">Totals update instantly as you select add-ons.</div>
           </div>
-        </aside>
 
-        <section aria-label="Extras">
-          <h1 class="section-title" style="font-size:24px;margin:0">Add-ons & extras</h1>
-          <div class="muted" style="margin-top:6px;font-weight:650">Customize your trip with seats, extra bags, meals,
-            and optional protection.</div>
-
-          <form data-extras-form style="margin-top:12px">
-            <div class="card">
-              <div class="card__body">
-                <div class="kpi">Extra baggage</div>
-                <div class="muted" style="margin-top:6px">Add checked bags for the whole booking (demo pricing).</div>
-                <div class="hr"></div>
-                <div class="field" style="max-width:320px">
-                  <div class="label">Checked bags</div>
-                  <input class="control" type="number" name="baggage" min="0" max="6" value="0" />
-                </div>
+          <!-- Insurance -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h2 class="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2"><i
+                class="ph-duotone ph-shield-check text-blue-600 text-xl"></i> Travel Insurance</h2>
+            <label
+              class="flex items-center gap-4 bg-slate-50 rounded-xl p-4 cursor-pointer hover:bg-slate-100 transition-colors">
+              <input type="checkbox" name="insurance"
+                class="w-6 h-6 text-blue-600 rounded focus:ring-blue-500 border-gray-300" />
+              <div>
+                <div class="font-bold text-slate-900 text-sm">Add Trip Protection</div>
+                <div class="text-xs text-slate-500">Covers cancellations and medical emergencies.</div>
               </div>
-            </div>
+            </label>
+          </div>
 
-            <div class="card" style="margin-top:12px">
-              <div class="card__body">
-                <div class="kpi">Seat selection</div>
-                <div class="muted" style="margin-top:6px">Pick seats now or skip and get assigned at check-in.</div>
-                <div class="hr"></div>
-                <div class="field" style="max-width:380px">
-                  <div class="label">Seat option</div>
-                  <select class="control select" name="seat">
-                    <option value="none">No seat selection</option>
-                    <option value="standard">Standard seats</option>
-                    <option value="extra">Extra legroom</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+          <!-- Meals -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h2 class="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2"><i
+                class="ph-duotone ph-fork-knife text-blue-600 text-xl"></i> Meal Preference</h2>
+            <select
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+              name="meal">
+              <option value="none">No meal preference</option>
+              <option value="standard">Standard Meal</option>
+              <option value="premium">Premium Meal</option>
+              <option value="veg">Vegetarian</option>
+            </select>
+          </div>
 
-            <div class="card" style="margin-top:12px">
-              <div class="card__body">
-                <div class="kpi">Travel insurance</div>
-                <div class="muted" style="margin-top:6px">Optional coverage for delays and cancellations.</div>
-                <div class="hr"></div>
-                <label class="row" style="gap:10px;align-items:center">
-                  <input type="checkbox" name="insurance" />
-                  <span style="font-weight:800">Add insurance</span>
-                </label>
-              </div>
-            </div>
+          <div class="flex justify-end pt-4">
+            <button
+              class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
+              type="submit">
+              Continue to Payment <i class="ph-bold ph-arrow-right"></i>
+            </button>
+          </div>
+        </form>
+      </section>
 
-            <div class="card" style="margin-top:12px">
-              <div class="card__body">
-                <div class="kpi">Meal preferences</div>
-                <div class="muted" style="margin-top:6px">Select a meal preference (where available).</div>
-                <div class="hr"></div>
-                <div class="field" style="max-width:380px">
-                  <div class="label">Meal</div>
-                  <select class="control select" name="meal">
-                    <option value="none">No meal</option>
-                    <option value="standard">Standard</option>
-                    <option value="premium">Premium</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+      <!-- Sidebar Summary -->
+      <aside class="lg:col-span-4 space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-lg p-6 sticky top-24">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="font-bold text-lg text-slate-900">Price Summary</h2>
+          </div>
 
-            <div class="actions" style="padding-left:0;padding-right:0">
-              <button class="btn btn-primary" type="submit">Continue to Payment</button>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <span class="text-sm font-medium text-slate-500">Base Fare</span>
+              <span class="font-bold text-slate-900" data-sum-base>—</span>
             </div>
-          </form>
-        </section>
-      </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm font-medium text-slate-500">Extras</span>
+              <span class="font-bold text-slate-900" data-sum-extras>—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm font-medium text-slate-500">Taxes & Fees</span>
+              <span class="font-bold text-slate-900" data-sum-taxes>—</span>
+            </div>
+          </div>
+
+          <hr class="border-slate-100 my-4">
+
+          <div class="flex justify-between items-end mb-2">
+            <span class="font-bold text-slate-700">Total Due</span>
+            <span class="text-2xl font-extrabold text-blue-600" data-sum-total>—</span>
+          </div>
+          <div class="text-xs text-right text-slate-400">Updates automatically</div>
+
+        </div>
+      </aside>
+
     </div>
   </main>
 
-  <footer class="footer" aria-label="Footer">
-    <div class="container footer__inner">
-      <div class="muted">© BookingCart</div>
-      <div class="muted">Extras UI</div>
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-100 pt-16 pb-8" aria-label="Footer">
+    <div class="container mx-auto px-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 mb-16">
+        <!-- Brand -->
+        <div class="lg:col-span-2 space-y-4">
+          <a href="#" class="block text-2xl font-bold text-slate-900 tracking-tight">BookingCart</a>
+          <p class="text-slate-500 text-sm">Your Travel, Simplified. Book flights, hotels, and more with confidence and
+            ease.</p>
+          <div class="flex gap-4 pt-2">
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-facebook-logo"></i></a>
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-x-logo"></i></a>
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-instagram-logo"></i></a>
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-linkedin-logo"></i></a>
+          </div>
+        </div>
+
+        <!-- Links -->
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Navigate</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="index.html" class="hover:text-green-600 transition-colors">Flights</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Hotels</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Trains</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Company</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="#" class="hover:text-green-600 transition-colors">About Us</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Careers</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Blog</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Support</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="#" class="hover:text-green-600 transition-colors">Help Center</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Contact Us</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">FAQ</a></li>
+          </ul>
+        </div>
+
+        <!-- Reviews -->
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Reviews</h3>
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <div class="flex text-yellow-400 text-sm mb-1">★★★★★</div>
+            <div class="font-bold text-slate-900">4.8 out of 5</div>
+            <div class="text-xs text-slate-400 mt-1">Based on 12,847 reviews</div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
+        <div>&copy; 2025 BookingCart. All rights reserved.</div>
+        <div class="flex gap-6">
+          <a href="#" class="hover:text-slate-600">Privacy Policy</a>
+          <a href="#" class="hover:text-slate-600">Terms of Service</a>
+          <a href="#" class="hover:text-slate-600">Cookie Setting</a>
+        </div>
+      </div>
     </div>
   </footer>
 

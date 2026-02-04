@@ -1,47 +1,6 @@
 (function () {
   const STORAGE_KEY = "bookingcart_flights_v1";
 
-  const airports = [
-    { city: "London", name: "Heathrow", code: "LHR" },
-    { city: "London", name: "Gatwick", code: "LGW" },
-    { city: "Paris", name: "Charles de Gaulle", code: "CDG" },
-    { city: "Amsterdam", name: "Schiphol", code: "AMS" },
-    { city: "Frankfurt", name: "Frankfurt", code: "FRA" },
-    { city: "Munich", name: "Munich", code: "MUC" },
-    { city: "Rome", name: "Fiumicino", code: "FCO" },
-    { city: "Madrid", name: "Barajas", code: "MAD" },
-    { city: "Barcelona", name: "El Prat", code: "BCN" },
-    { city: "Istanbul", name: "Istanbul", code: "IST" },
-    { city: "Dubai", name: "Dubai", code: "DXB" },
-    { city: "Doha", name: "Hamad", code: "DOH" },
-    { city: "Cairo", name: "Cairo", code: "CAI" },
-    { city: "Riyadh", name: "King Khalid", code: "RUH" },
-    { city: "Jeddah", name: "King Abdulaziz", code: "JED" },
-    { city: "Nairobi", name: "Jomo Kenyatta", code: "NBO" },
-    { city: "Lagos", name: "Murtala Muhammed", code: "LOS" },
-    { city: "Johannesburg", name: "O.R. Tambo", code: "JNB" },
-    { city: "New York", name: "JFK", code: "JFK" },
-    { city: "New York", name: "Newark", code: "EWR" },
-    { city: "Boston", name: "Logan", code: "BOS" },
-    { city: "Chicago", name: "O'Hare", code: "ORD" },
-    { city: "Los Angeles", name: "LAX", code: "LAX" },
-    { city: "San Francisco", name: "SFO", code: "SFO" },
-    { city: "Toronto", name: "Pearson", code: "YYZ" },
-    { city: "Vancouver", name: "YVR", code: "YVR" },
-    { city: "Mexico City", name: "Benito Juárez", code: "MEX" },
-    { city: "São Paulo", name: "Guarulhos", code: "GRU" },
-    { city: "Tokyo", name: "Haneda", code: "HND" },
-    { city: "Tokyo", name: "Narita", code: "NRT" },
-    { city: "Seoul", name: "Incheon", code: "ICN" },
-    { city: "Singapore", name: "Changi", code: "SIN" },
-    { city: "Hong Kong", name: "Hong Kong", code: "HKG" },
-    { city: "Bangkok", name: "Suvarnabhumi", code: "BKK" },
-    { city: "Delhi", name: "Indira Gandhi", code: "DEL" },
-    { city: "Mumbai", name: "Chhatrapati Shivaji", code: "BOM" },
-    { city: "Sydney", name: "Kingsford Smith", code: "SYD" },
-    { city: "Melbourne", name: "Tullamarine", code: "MEL" }
-  ];
-
   function readState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -140,25 +99,14 @@
     });
   }
 
-  async function searchAmadeusAirports(keyword) {
-    if (!keyword || keyword.length < 2) return [];
-    try {
-      const resp = await fetch(`/api/amadeus-airports?keyword=${encodeURIComponent(keyword)}`);
-      const data = await resp.json().catch(() => null);
-      if (data && data.ok && Array.isArray(data.airports)) {
-        return data.airports;
-      }
-    } catch (e) {
-      console.warn("Amadeus airport search failed, using local data:", e);
-    }
-    return [];
-  }
-
   async function searchDuffelAirports(keyword) {
     if (!keyword || keyword.length < 2) return [];
     try {
-      const resp = await fetch(`/api/duffel-airports?keyword=${encodeURIComponent(keyword)}`);
+      console.log("Searching Duffel airports for:", keyword); // Debug log
+      const resp = await fetch(`http://localhost:3002/api/duffel-airports?keyword=${encodeURIComponent(keyword)}`);
+      console.log("Duffel API response status:", resp.status); // Debug log
       const data = await resp.json().catch(() => null);
+      console.log("Duffel API data:", data); // Debug log
       if (data && data.ok && Array.isArray(data.airports)) {
         return data.airports;
       }
@@ -196,8 +144,10 @@
           a.code +
           "</span>";
         li.addEventListener("click", () => {
+          console.log("Airport selected:", a.city, a.code); // Debug log
           input.value = a.city + " (" + a.code + ")";
           input.setAttribute("data-airport-code", a.code);
+          console.log("Set data-airport-code to:", a.code); // Debug log
           list.setAttribute("data-open", "false");
         });
         li.addEventListener("keydown", (ev) => {
@@ -217,45 +167,26 @@
         return;
       }
 
-      // Try Amadeus API first
-      let results = await searchAmadeusAirports(q);
-      
-      // If no results from Amadeus, try Duffel
-      if (results.length === 0) {
-        results = await searchDuffelAirports(q);
-      }
-      
-      // If still no results, use local data
-      if (results.length === 0) {
-        results = airports.filter((a) => {
-          const s = (a.city + " " + a.name + " " + a.code).toLowerCase();
-          return s.includes(q.toLowerCase());
-        });
-      }
+      // Only use Duffel API
+      let results = await searchDuffelAirports(q);
 
+      // Only use API results - no local fallback
       render(results);
     }
 
     input.addEventListener("input", () => {
       const q = input.value.trim();
-      
+
       // Clear previous timeout
       if (searchTimeout) {
         clearTimeout(searchTimeout);
       }
 
-      // Debounce API calls
+      // Only search with API calls for 2+ characters
       if (q.length >= 2) {
         searchTimeout = setTimeout(() => performSearch(q), 300);
-      } else if (q.length === 0) {
-        render([]);
       } else {
-        // For single character, use local data immediately
-        const results = airports.filter((a) => {
-          const s = (a.city + " " + a.name + " " + a.code).toLowerCase();
-          return s.includes(q.toLowerCase());
-        });
-        render(results);
+        render([]);
       }
     });
 
@@ -284,9 +215,23 @@
     const returnField = document.querySelector("[data-return-field]");
 
     function setMode(mode) {
-      tabs.forEach((t) => t.setAttribute("aria-selected", t.getAttribute("data-trip") === mode ? "true" : "false"));
+      tabs.forEach((t) => {
+        const isActive = t.getAttribute("data-trip") === mode;
+        t.setAttribute("aria-selected", isActive ? "true" : "false");
+
+        // Explicit Styling Management for Reliability
+        if (isActive) {
+          t.classList.remove("text-slate-500", "hover:text-slate-900", "hover:bg-white/50");
+          t.classList.add("text-blue-600", "bg-blue-50/50");
+        } else {
+          t.classList.remove("text-blue-600", "bg-blue-50/50");
+          t.classList.add("text-slate-500", "hover:text-slate-900", "hover:bg-white/50");
+        }
+      });
+
       if (returnField) {
-        returnField.style.display = mode === "round" ? "flex" : "none";
+        returnField.classList.toggle("hidden", mode !== "round");
+        returnField.classList.toggle("block", mode === "round");
       }
       if (multi) {
         multi.style.display = mode === "multi" ? "block" : "none";
@@ -368,7 +313,15 @@
 
   function initSearchForm() {
     const form = document.querySelector("form[data-search-form]");
+    console.log("Search form found:", !!form); // Debug log
     if (!form) return;
+
+    // Set minimum dates to today
+    const today = new Date().toISOString().split('T')[0];
+    const departInput = form.querySelector("input[name='depart']");
+    const returnInput = form.querySelector("input[name='return']");
+    if (departInput) departInput.min = today;
+    if (returnInput) returnInput.min = today;
 
     const st = readState();
     const from = form.querySelector("input[name='from']");
@@ -385,7 +338,8 @@
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-
+      console.log("Form submitted"); // Debug log
+      
       const mode = (readState().tripType || "round").toString();
       const payload = {
         tripType: mode,
@@ -395,22 +349,28 @@
         return: ret ? ret.value : "",
         cabin: cabin ? cabin.value : "Economy"
       };
+      
+      console.log("Form payload:", payload); // Debug log
 
       if (!payload.from || !payload.to) {
+        console.log("Missing route validation failed"); // Debug log
         toast("Missing route", "Please choose a departure and destination airport.");
         return;
       }
 
       if (!payload.depart) {
+        console.log("Missing date validation failed"); // Debug log
         toast("Missing date", "Please select a departure date.");
         return;
       }
 
       if (payload.tripType === "round" && !payload.return) {
+        console.log("Missing return date validation failed"); // Debug log
         toast("Missing return date", "Select a return date or switch to one-way.");
         return;
       }
 
+      console.log("Writing state and redirecting to results.html"); // Debug log
       writeState({ search: payload });
       window.location.href = "results.html";
     });
@@ -422,49 +382,6 @@
     } catch (e) {
       return "$" + n;
     }
-  }
-
-  function seedFlights(search) {
-    const airlines = [
-      { code: "TG", name: "BookingCart Air", logo: "BC" },
-      { code: "GN", name: "GreenJet", logo: "GJ" },
-      { code: "SK", name: "SkyNova", logo: "SN" },
-      { code: "AF", name: "AeroFlow", logo: "AF" },
-      { code: "CL", name: "Cloudline", logo: "CL" }
-    ];
-
-    const base = 190;
-    const cabinMult =
-      search.cabin === "Premium" ? 1.25 : search.cabin === "Business" ? 1.85 : search.cabin === "First" ? 2.4 : 1;
-
-    const makeTime = (h, m) => String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
-
-    const list = [];
-    for (let i = 0; i < 18; i++) {
-      const a = airlines[i % airlines.length];
-      const stops = i % 6 === 0 ? 2 : i % 3 === 0 ? 1 : 0;
-      const departH = 6 + (i % 12);
-      const departM = i % 2 === 0 ? 15 : 40;
-      const durMin = 95 + (i % 9) * 23 + stops * 55;
-      const arrTotal = departH * 60 + departM + durMin;
-      const arrH = Math.floor((arrTotal / 60) % 24);
-      const arrM = arrTotal % 60;
-
-      const price = Math.round((base + i * 17 + stops * 45) * cabinMult);
-
-      const id = a.code + "-" + (100 + i);
-      list.push({
-        id,
-        airline: a,
-        departTime: makeTime(departH, departM),
-        arriveTime: makeTime(arrH, arrM),
-        durationMin: durMin,
-        stops,
-        price
-      });
-    }
-
-    return list;
   }
 
   function durationLabel(min) {
@@ -481,14 +398,6 @@
     return m2 && m2[1] ? m2[1] : "";
   }
 
-  function toAmadeusTravelClass(cabin) {
-    const c = String(cabin || "").toLowerCase();
-    if (c === "first") return "FIRST";
-    if (c === "business") return "BUSINESS";
-    if (c === "premium") return "PREMIUM_ECONOMY";
-    return "ECONOMY";
-  }
-
   async function fetchDuffelFlights(state, search) {
     try {
       const payload = {
@@ -499,12 +408,12 @@
         adults: state.passengers?.adults || 1,
         children: state.passengers?.children || 0,
         infants: state.passengers?.infants || 0,
-        travelClass: toAmadeusTravelClass(search.cabin),
+        travelClass: search.cabin || "Economy",
         currencyCode: "USD",
         max: 30
       };
 
-      const resp = await fetch("/api/duffel-search", {
+      const resp = await fetch("http://localhost:3002/api/duffel-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -519,44 +428,6 @@
       console.error("Duffel API error:", e);
     }
     return [];
-  }
-
-  async function fetchAmadeusFlights(state, search) {
-    const originLocationCode = extractIata(search.from);
-    const destinationLocationCode = extractIata(search.to);
-    if (!originLocationCode || !destinationLocationCode) {
-      throw new Error("Please pick airports from suggestions (IATA codes required). ");
-    }
-
-    const pax = state.passengers || { adults: 1, children: 0, infants: 0 };
-    const tripType = (state.tripType || search.tripType || "round").toString();
-
-    const body = {
-      originLocationCode,
-      destinationLocationCode,
-      departureDate: search.depart,
-      returnDate: tripType === "round" ? search.return : "",
-      adults: Number(pax.adults || 1),
-      children: Number(pax.children || 0),
-      infants: Number(pax.infants || 0),
-      travelClass: toAmadeusTravelClass(search.cabin),
-      currencyCode: "USD",
-      max: 30
-    };
-
-    const resp = await fetch("/api/amadeus-search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-
-    const data = await resp.json().catch(() => null);
-    if (!resp.ok || !data || !data.ok) {
-      const msg = data && data.error ? data.error : "Amadeus search failed";
-      throw new Error(msg);
-    }
-
-    return Array.isArray(data.flights) ? data.flights : [];
   }
 
   function initResults() {
@@ -632,59 +503,60 @@
       listEl.innerHTML = "";
       if (!list.length) {
         const empty = document.createElement("div");
-        empty.className = "card";
-        empty.innerHTML = '<div class="card__body"><div class="kpi">No flights match your filters</div><div class="muted" style="margin-top:6px">Try increasing your max price or changing stops/airlines.</div></div>';
+        empty.className = "bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm";
+        empty.innerHTML = '<div class="text-lg font-medium text-slate-900 mb-2">No flights match your filters</div><div class="text-slate-500">Try increasing your max price or changing stops/airlines.</div>';
         listEl.appendChild(empty);
         return;
       }
 
       list.forEach((f) => {
         const card = document.createElement("div");
-        card.className = "card";
+        card.className = "bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all overflow-hidden group";
         card.innerHTML =
-          '<div class="card__body">' +
-          '<div class="row space">' +
-          '<div class="row">' +
-          '<div class="logo" aria-hidden="true">' +
-          f.airline.logo +
-          "</div>" +
-          '<div style="display:flex;flex-direction:column;gap:2px">' +
-          '<div class="kpi">' +
-          f.airline.name +
-          "</div>" +
-          '<div class="muted" style="font-weight:700">' +
-          (search.from || "") +
-          " → " +
-          (search.to || "") +
-          "</div>" +
-          "</div>" +
-          "</div>" +
-          '<div style="text-align:right">' +
-          '<div class="price">' +
-          money(f.price) +
-          "</div>" +
-          '<div class="muted" style="font-weight:700">per traveler</div>' +
-          "</div>" +
-          "</div>" +
-          '<div class="hr"></div>' +
-          '<div class="row space">' +
-          '<div class="row" style="gap:10px;flex-wrap:wrap">' +
-          '<span class="pill"><span style="font-weight:950">' +
-          f.departTime +
-          "</span> depart</span>" +
-          '<span class="pill"><span style="font-weight:950">' +
-          f.arriveTime +
-          "</span> arrive</span>" +
-          '<span class="pill">' +
-          durationLabel(f.durationMin) +
-          "</span>" +
-          '<span class="pill">' +
-          (f.stops === 0 ? "Non-stop" : f.stops + " stop" + (f.stops > 1 ? "s" : "")) +
-          "</span>" +
-          "</div>" +
-          '<a class="btn btn-secondary" href="#" data-flight-link>View details</a>' +
-          "</div>" +
-          "</div>";
+          '<div class="p-5">' +
+          '<div class="flex justify-between items-start mb-6">' +
+          '<div class="flex items-center gap-4">' +
+          '<div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm">' +
+          (f.airline.logoUrl ? '<img src="' + f.airline.logoUrl + '" alt="' + f.airline.name + '" class="w-full h-full object-contain" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' + 
+            '<div class="w-full h-full items-center justify-center text-slate-900 font-medium" style="display:none;">' + f.airline.logo + '</div>' : 
+            '<div class="w-full h-full flex items-center justify-center text-slate-900 font-medium">' + f.airline.logo + '</div>') +
+          '</div>' +
+          '<div>' +
+          '<div class="font-medium text-slate-900">' + f.airline.name + '</div>' +
+          '<div class="text-xs font-semibold text-slate-400 mt-0.5">' + (search.from || "ABC") + " → " + (search.to || "XYZ") + '</div>' +
+          '</div>' +
+          '</div>' +
+          '<div class="text-right">' +
+          '<div class="text-xl font-semibold text-green-600">' + money(f.price) + '</div>' +
+          '<div class="text-xs text-slate-400 font-medium">per traveler</div>' +
+          '</div>' +
+          '</div>' + // end header
+
+          '<div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">' +
+          '<div class="bg-slate-50 rounded-lg p-2.5 text-center">' +
+          '<div class="font-medium text-slate-700">' + f.departTime + '</div>' +
+          '<div class="text-xs text-slate-400 font-medium">Depart</div>' +
+          '</div>' +
+          '<div class="bg-slate-50 rounded-lg p-2.5 text-center">' +
+          '<div class="font-medium text-slate-700">' + f.arriveTime + '</div>' +
+          '<div class="text-xs text-slate-400 font-medium">Arrive</div>' +
+          '</div>' +
+          '<div class="bg-slate-50 rounded-lg p-2.5 text-center">' +
+          '<div class="font-medium text-slate-700">' + durationLabel(f.durationMin) + '</div>' +
+          '<div class="text-xs text-slate-400 font-medium">Duration</div>' +
+          '</div>' +
+          '<div class="bg-slate-50 rounded-lg p-2.5 text-center">' +
+          '<div class="font-medium text-slate-700">' + (f.stops === 0 ? "Non-stop" : f.stops + " stop" + (f.stops > 1 ? "s" : "")) + '</div>' +
+          '<div class="text-xs text-slate-400 font-medium">Stops</div>' +
+          '</div>' +
+          '</div>' +
+          '</div>' + // end body
+
+          '<div class="bg-slate-50/50 border-t border-slate-100 p-3 flex justify-end">' +
+          '<a class="inline-flex items-center gap-2 text-sm font-medium text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-4 py-2 rounded-lg transition-colors" href="#" data-flight-link>' +
+          'Select Flight <i class="ph-bold ph-arrow-right"></i>' +
+          '</a>' +
+          '</div>';
 
         const link = card.querySelector("[data-flight-link]");
         if (link) link.setAttribute("href", "details.html?flight=" + encodeURIComponent(f.id));
@@ -736,28 +608,24 @@
     (async () => {
       let flights = null;
 
-      if (window.location.protocol === "file:") {
-        toast("Duffel disabled", "To use live results, run via Netlify (not file://). Showing demo flights.");
-      } else {
-        try {
-          // Try Duffel API
-          flights = await fetchDuffelFlights(state, search);
-          
-          if (!flights || flights.length === 0) {
-            toast("No offers", "Duffel returned no offers for this search. Showing demo flights.");
-            flights = null;
-          } else {
-            toast("Duffel search successful", `Found ${flights.length} flights via Duffel API.`);
-          }
-        } catch (e) {
-          console.error("Duffel API error:", e);
-          const errorMsg = e && e.message ? e.message : "API request failed";
-          toast("Live search unavailable", errorMsg + ". Showing demo flights.");
-          flights = null;
+      try {
+        // Only use Duffel API
+        flights = await fetchDuffelFlights(state, search);
+
+        if (!flights || flights.length === 0) {
+          toast("No flights found", "No flights available for this route and dates. Please try different airports or dates.");
+          return;
+        } else {
+          toast("Duffel search successful", `Found ${flights.length} flights via Duffel API.`);
         }
+      } catch (e) {
+        console.error("API error:", e);
+        const errorMsg = e && e.message ? e.message : "API request failed";
+        toast("Search failed", errorMsg + ". Please try again later.");
+        return;
       }
 
-      if (!flights) flights = seedFlights(search);
+      // Only use real flight data - no demo fallback
       hydrateResults(flights);
     })();
   }
@@ -780,11 +648,20 @@
     writeState({ selectedFlightId: flight.id });
 
     const airline = root.querySelector("[data-airline]");
+    const airlineLogo = root.querySelector("[data-airline-logo]");
     const times = root.querySelector("[data-times]");
     const duration = root.querySelector("[data-duration]");
     const price = root.querySelector("[data-price]");
 
     if (airline) setText(airline, flight.airline.name);
+    if (airlineLogo) {
+      if (flight.airline.logoUrl) {
+        airlineLogo.innerHTML = '<img src="' + flight.airline.logoUrl + '" alt="' + flight.airline.name + '" class="w-full h-full object-contain" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' + 
+          '<div class="w-full h-full flex items-center justify-center text-slate-900 font-medium" style="display:none;">' + flight.airline.logo + '</div>';
+      } else {
+        airlineLogo.innerHTML = '<div class="w-full h-full flex items-center justify-center text-slate-900 font-medium">' + flight.airline.logo + '</div>';
+      }
+    }
     if (times) setText(times, flight.departTime + " → " + flight.arriveTime);
     if (duration) setText(duration, durationLabel(flight.durationMin) + " • " + (flight.stops === 0 ? "Non-stop" : flight.stops + " stop" + (flight.stops > 1 ? "s" : "")));
     if (price) setText(price, money(flight.price));
@@ -813,20 +690,16 @@
 
     function travelerCard(i) {
       const wrap = document.createElement("div");
-      wrap.className = "card";
+      wrap.className = "bg-white rounded-2xl border border-slate-200 shadow-sm p-6";
       wrap.innerHTML =
-        '<div class="card__body">' +
-        '<div class="kpi">Traveler ' +
-        (i + 1) +
-        "</div>" +
-        '<div class="small" style="margin-top:6px">Enter the passenger details exactly as on the travel document.</div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">' +
-        '<div class="field"><div class="label">First name</div><input class="control" name="firstName" placeholder="e.g., Amina" required></div>' +
-        '<div class="field"><div class="label">Last name</div><input class="control" name="lastName" placeholder="e.g., Hassan" required></div>' +
-        '<div class="field"><div class="label">Date of birth</div><input class="control" name="dob" type="date" required></div>' +
-        '<div class="field"><div class="label">Passport/ID</div><input class="control" name="doc" placeholder="Passport number" required></div>' +
-        "</div>" +
-        "</div>";
+        '<div class="font-medium text-lg text-slate-900 mb-2">Traveler ' + (i + 1) + '</div>' +
+        '<div class="text-xs text-slate-500 font-medium mb-6">Enter details exactly as they appear on the travel document.</div>' +
+        '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">' +
+        '<div><label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">First Name</label><input class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none" name="firstName" placeholder="e.g., Amina" required></div>' +
+        '<div><label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Last Name</label><input class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none" name="lastName" placeholder="e.g., Hassan" required></div>' +
+        '<div><label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Date of Birth</label><input class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none" name="dob" type="date" required></div>' +
+        '<div><label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Passport / ID</label><input class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none" name="doc" placeholder="Passport Number" required></div>' +
+        '</div>';
       return wrap;
     }
 

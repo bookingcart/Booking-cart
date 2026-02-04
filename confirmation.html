@@ -4,78 +4,166 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BookingCart — Booking confirmed</title>
-  <meta name="description" content="Booking confirmation, itinerary summary, and ticket download." />
+  <title>BookingCart — Confirmed</title>
+  <meta name="description" content="Booking confirmed." />
+
+  <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="css/bookingcart.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+          colors: {
+            primary: '#0f172a',
+            secondary: '#3b82f6',
+          }
+        }
+      }
+    }
+  </script>
 </head>
 
-<body>
-  <header class="header" aria-label="Top navigation">
-    <div class="container header__inner">
-      <a class="brand" href="index.html" aria-label="BookingCart Home">
-        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
-      </a>
-      <nav class="header__nav" aria-label="Primary">
-        <a href="index.html">New search</a>
-      </nav>
-    </div>
-  </header>
+<body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
 
-  <main class="layout" data-step="confirmation">
-    <div class="container" data-confirmation>
-      <div class="steps" aria-label="Booking steps">
-        <a class="step" data-step-id="search" href="index.html"><span class="step__dot">1</span> Search</a>
-        <a class="step" data-step-id="results" href="results.html"><span class="step__dot">2</span> Results</a>
-        <a class="step" data-step-id="details" href="details.html"><span class="step__dot">3</span> Details</a>
-        <a class="step" data-step-id="passengers" href="passengers.html"><span class="step__dot">4</span> Passengers</a>
-        <a class="step" data-step-id="extras" href="extras.html"><span class="step__dot">5</span> Extras</a>
-        <a class="step" data-step-id="payment" href="payment.html"><span class="step__dot">6</span> Payment</a>
-        <a class="step" data-step-id="confirmation" href="confirmation.html"><span class="step__dot">7</span>
-          Confirm</a>
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="container mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-12">
+        <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight">BookingCart</a>
+        <div class="hidden lg:flex items-center gap-4">
+          <a href="index.html"
+            class="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
+            <i class="ph-bold ph-plus"></i> New Search
+          </a>
+        </div>
       </div>
 
-      <div class="card" style="margin-top:14px">
-        <div class="card__body">
-          <div class="row space" style="flex-wrap:wrap">
-            <div>
-              <div class="kpi" style="font-size:22px">Booking confirmed</div>
-              <div class="muted" style="margin-top:6px;font-weight:650">Your ticket is ready. Reference: <span
-                  class="kpi" data-booking-ref>—</span></div>
-            </div>
-            <div class="pill">Paid: <span class="kpi" data-confirm-total style="margin-left:6px">—</span></div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="kpi">Itinerary</div>
-          <div class="muted" style="margin-top:6px;font-weight:650" data-confirm-flight>—</div>
-
-          <div class="hr"></div>
-
-          <div class="row" style="flex-wrap:wrap">
-            <a class="btn btn-primary" href="#" data-download
-              style="display:inline-flex;align-items:center;justify-content:center">Download ticket</a>
-            <a class="btn btn-secondary" href="#" data-email
-              style="display:inline-flex;align-items:center;justify-content:center">Email ticket</a>
-            <a class="btn btn-secondary" href="#" style="display:inline-flex;align-items:center;justify-content:center"
-              onclick="BookingCart.toast('Manage booking','Demo: manage booking flow can be added next.');return false;">Manage
-              booking</a>
-          </div>
-
-          <div class="small" style="margin-top:12px">This is a UI demo. No real booking was made.</div>
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-200 border border-white shadow-sm">
+          <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User"
+            class="w-full h-full object-cover" />
         </div>
       </div>
     </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto px-6 py-8" data-step="confirmation">
+
+    <!-- Steps -->
+    <div class="flex items-center gap-4 mb-8 overflow-x-auto no-scrollbar steps text-sm font-medium justify-center">
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="search" href="#">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">1</span>
+        Search
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="results" href="#">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">2</span>
+        Results
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="details" href="#">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">3</span>
+        Details
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="passengers" href="#">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">4</span>
+        Passengers
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="extras" href="#">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">5</span>
+        Extras
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="payment" href="#">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">6</span>
+        Payment
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 text-white border border-emerald-600 whitespace-nowrap"
+        data-step-id="confirmation" href="confirmation.html">
+        <span class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold"><i
+            class="ph-bold ph-check"></i></span> Confirmed
+      </a>
+    </div>
+
+    <div class="max-w-3xl mx-auto" data-confirmation>
+
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
+
+        <div class="p-8 text-center border-b border-slate-100">
+          <div
+            class="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto mb-6">
+            <i class="ph-fill ph-check-circle text-5xl"></i>
+          </div>
+          <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Booking Confirmed!</h1>
+          <p class="text-slate-500 text-lg">Your ticket has been issued successfully.</p>
+        </div>
+
+        <div class="p-8 bg-slate-50/50">
+          <div
+            class="flex flex-col md:flex-row justify-between items-center gap-6 mb-8 p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div class="text-center md:text-left">
+              <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Booking Reference</div>
+              <div class="text-3xl font-mono font-bold text-slate-900 tracking-widest" data-booking-ref>—</div>
+            </div>
+            <div class="text-center md:text-right">
+              <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Total Paid</div>
+              <div class="text-3xl font-extrabold text-slate-900" data-confirm-total>—</div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-start gap-4">
+              <i class="ph-duotone ph-airplane-tilt text-2xl text-blue-600 mt-1"></i>
+              <div>
+                <div class="font-bold text-slate-900 text-lg">Itinerary</div>
+                <div class="text-slate-600" data-confirm-flight>—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-8 border-t border-slate-200 bg-white flex flex-col sm:flex-row justify-center gap-4">
+          <button
+            class="btn bg-slate-900 hover:bg-black text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10 transition-all"
+            data-download>
+            <i class="ph-bold ph-download"></i> Download Ticket
+          </button>
+          <button
+            class="btn bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all"
+            data-email>
+            <i class="ph-bold ph-envelope"></i> Email Itinerary
+          </button>
+        </div>
+
+        <div class="bg-slate-50 p-4 text-center text-xs font-semibold text-slate-400 border-t border-slate-100">
+          This is a demonstration. No real flight was booked.
+        </div>
+
+      </div>
+
+    </div>
   </main>
 
-  <footer class="footer" aria-label="Footer">
-    <div class="container footer__inner">
-      <div class="muted">© BookingCart</div>
-      <div class="muted">Confirmation UI</div>
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-100 pt-16 pb-8 mt-auto">
+    <div class="container mx-auto px-6">
+      <div class="flex flex-col items-center">
+        <a href="#" class="text-2xl font-extrabold text-slate-900 tracking-tight mb-4">BookingCart</a>
+        <div class="text-slate-400 text-sm font-medium">© 2025 BookingCart. All rights reserved.</div>
+      </div>
     </div>
   </footer>
 

@@ -635,33 +635,33 @@
           </div>
         </div>
         <div class='hotel-card__body'>
-          <div class='row space' style='gap:10px;flex-wrap:wrap'>
-            <div>
-              <div class='kpi' style='font-size:18px'>${h.name}</div>
-              <div class='small' style='margin-top:4px'>${renderStars(h.stars)} • ${h.propertyType}</div>
-              <div class='muted' style='margin-top:6px'>${h.address} • ${h.distanceKm.toFixed(1)} km from center</div>
+          <div class='row space hotel-card__header'>
+            <div class='hotel-card__meta'>
+              <div class='kpi hotel-card__title'>${h.name}</div>
+              <div class='small hotel-card__sub'>${renderStars(h.stars)} • ${h.propertyType}</div>
+              <div class='muted hotel-card__address'>${h.address} • ${h.distanceKm.toFixed(1)} km from center</div>
             </div>
             <div class='rating-badge' aria-label='Guest rating'>
-              <div class='kpi' style='font-size:16px'>${Number(h.rating).toFixed(1)}</div>
-              <div class='small'>${h.reviews} reviews</div>
+              <div class='kpi hotel-card__rating'>${Number(h.rating).toFixed(1)}</div>
+              <div class='small hotel-card__reviews'>${h.reviews} reviews</div>
             </div>
           </div>
 
-          <div class='row' style='gap:8px;flex-wrap:wrap;margin-top:10px'>${tagHtml}</div>
+          <div class='row hotel-card__tags'>${tagHtml}</div>
 
-          <div class='small' style='margin-top:10px'>${roomPreview}</div>
+          <div class='small hotel-card__room'>${roomPreview}</div>
 
-          <div class='row' style='gap:8px;flex-wrap:wrap;margin-top:10px'>${amenities}</div>
+          <div class='row hotel-card__amenities'>${amenities}</div>
 
           <div class='hr'></div>
 
-          <div class='row space' style='flex-wrap:wrap'>
+          <div class='row space hotel-card__footer'>
             <div>
               <div class='small'>From</div>
-              <div class='price' style='font-size:20px'>${money(prices.nightly)} <span class='small'>/ night</span></div>
-              <div class='muted' style='margin-top:6px'>Total: ${money(prices.total)}</div>
+              <div class='price hotel-card__price'>${money(prices.nightly)} <span class='small'>/ night</span></div>
+              <div class='muted hotel-card__total'>Total: ${money(prices.total)}</div>
             </div>
-            <div class='row' style='gap:10px;flex-wrap:wrap;justify-content:flex-end'>
+            <div class='row hotel-card__actions'>
               <a class='btn btn-secondary' href='stays-details.html?hotel=${encodeURIComponent(h.id)}'>View details</a>
             </div>
           </div>

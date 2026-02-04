@@ -56,20 +56,27 @@
 
   function renderResults(el, data) {
     if (!el) return;
-    el.style.display = 'block';
+    const resultsSection = qs('[data-events-results-section]');
+    if (resultsSection) {
+      resultsSection.style.display = 'none';
+    }
     
     if (data.loading) {
+      if (resultsSection) {
+        resultsSection.style.display = 'block';
+      }
       el.innerHTML = `
-        <div class="panel">
-          <div class="panel__inner">
-            <div class="muted">Loading events…</div>
-          </div>
-        </div>
+        <div class="skeleton" style="height:180px;margin-bottom:16px;border-radius:12px"></div>
+        <div class="skeleton" style="height:180px;margin-bottom:16px;border-radius:12px"></div>
+        <div class="skeleton" style="height:180px;border-radius:12px"></div>
       `;
       return;
     }
     
     if (data.error) {
+      if (resultsSection) {
+        resultsSection.style.display = 'block';
+      }
       el.innerHTML = `
         <div class="panel" style="background:#fee2e2;border-color:#dc2626">
           <div class="panel__inner">
@@ -81,6 +88,9 @@
     }
 
     if (!data.events || data.events.length === 0) {
+      if (resultsSection) {
+        resultsSection.style.display = 'block';
+      }
       el.innerHTML = `
         <div class="panel">
           <div class="panel__inner">
@@ -92,40 +102,40 @@
     }
 
     const eventsHtml = data.events.map(event => `
-      <div class="panel" style="cursor:pointer" onclick="window.open('${escapeHtml(event.url)}', '_blank')">
-        <div class="panel__inner">
-          <div class="row" style="gap:16px;align-items:start">
-            ${event.logo ? `
-              <div style="flex-shrink:0">
-                <img src="${escapeHtml(event.logo.url)}" alt="${escapeHtml(event.name.text)}" style="width:80px;height:80px;object-fit:cover;border-radius:8px" />
+      <div class="event-card" onclick="window.open('${escapeHtml(event.url)}', '_blank')">
+        <div class="event-card__image">
+          ${event.logo ? `
+            <img src="${escapeHtml(event.logo.url)}" alt="${escapeHtml(event.name.text)}" />
+          ` : '<div class="event-card__placeholder"></div>'}
+        </div>
+        <div class="event-card__content">
+          <h3 class="event-card__title">${escapeHtml(event.name.text)}</h3>
+          <div class="event-card__meta">
+            <div class="event-card__date">
+              📅 ${formatDate(event.start.local)} ${formatTime(event.start.local)}
+            </div>
+            ${event.venue ? `
+              <div class="event-card__venue">
+                📍 ${escapeHtml(event.venue.name)}, ${escapeHtml(event.venue.address.city || '')}
               </div>
             ` : ''}
-            <div style="flex:1">
-              <h3 class="h4" style="margin:0 0 8px 0">${escapeHtml(event.name.text)}</h3>
-              <div class="muted" style="font-size:13px;margin-bottom:4px">
-                📅 ${formatDate(event.start.local)} ${formatTime(event.start.local)}
-              </div>
-              ${event.venue ? `
-                <div class="muted" style="font-size:13px;margin-bottom:4px">
-                  📍 ${escapeHtml(event.venue.name)}, ${escapeHtml(event.venue.address.city || '')}
-                </div>
-              ` : ''}
-              <div class="muted" style="font-size:13px;margin-bottom:8px">
-                ${event.is_free ? '🆓 Free' : `💰 ${escapeHtml(event.currency || '$')}${(event.price || 0).toFixed(2)}`}
-              </div>
-              <div class="muted" style="font-size:12px">
-                ${event.description ? escapeHtml(event.description.text.substring(0, 150)) + '...' : ''}
-              </div>
+            <div class="event-card__price">
+              ${event.is_free ? '🆓 Free' : `💰 ${escapeHtml(event.currency || '$')}${(event.price || 0).toFixed(2)}`}
             </div>
           </div>
+          ${event.description ? `
+            <div class="event-card__description">
+              ${escapeHtml(event.description.text.substring(0, 120))}...
+            </div>
+          ` : ''}
         </div>
       </div>
     `).join('');
 
-    el.innerHTML = `
-      <div class="muted" style="margin-bottom:12px">Found ${data.events.length} event${data.events.length === 1 ? '' : 's'}</div>
-      ${eventsHtml}
-    `;
+    if (resultsSection) {
+      resultsSection.style.display = 'block';
+    }
+    el.innerHTML = eventsHtml;
   }
 
   async function searchByLocation(location) {

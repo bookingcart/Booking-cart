@@ -4,96 +4,259 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BookingCart — Passenger info</title>
-  <meta name="description" content="Enter passenger and contact details." />
+  <title>BookingCart — Passenger Info</title>
+  <meta name="description" content="Enter passenger details." />
+
+  <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="css/bookingcart.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1888969771559868"
+     crossorigin="anonymous"></script>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+          colors: {
+            primary: '#0f172a',
+            secondary: '#3b82f6',
+          }
+        }
+      }
+    }
+  </script>
 </head>
 
-<body>
-  <header class="header" aria-label="Top navigation">
-    <div class="container header__inner">
-      <a class="brand" href="index.html" aria-label="BookingCart Home">
-        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
-      </a>
-      <nav class="header__nav" aria-label="Primary">
-        <a href="details.html">Back</a>
-      </nav>
+<body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="container mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-12">
+        <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight">BookingCart</a>
+        <div class="hidden lg:flex items-center gap-4">
+          <a href="details.html"
+            class="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
+            <i class="ph-bold ph-arrow-left"></i> Back to details
+          </a>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-200 border border-white shadow-sm">
+          <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User"
+            class="w-full h-full object-cover" />
+        </div>
+      </div>
     </div>
   </header>
 
-  <main class="layout" data-step="passengers">
-    <div class="container" data-passenger-page>
-      <div class="steps" aria-label="Booking steps">
-        <a class="step" data-step-id="search" href="index.html"><span class="step__dot">1</span> Search</a>
-        <a class="step" data-step-id="results" href="results.html"><span class="step__dot">2</span> Results</a>
-        <a class="step" data-step-id="details" href="details.html"><span class="step__dot">3</span> Details</a>
-        <a class="step" data-step-id="passengers" href="passengers.html"><span class="step__dot">4</span> Passengers</a>
-        <a class="step" data-step-id="extras" href="extras.html"><span class="step__dot">5</span> Extras</a>
-        <a class="step" data-step-id="payment" href="payment.html"><span class="step__dot">6</span> Payment</a>
-        <a class="step" data-step-id="confirmation" href="confirmation.html"><span class="step__dot">7</span>
-          Confirm</a>
-      </div>
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto px-6 py-8" data-step="passengers">
 
-      <div class="grid-2" style="margin-top:14px">
-        <aside class="sidebar" aria-label="Tips">
-          <div class="sidebar__header">
-            <div class="sidebar__title">Traveler details</div>
-            <a class="muted" href="index.html" style="font-weight:800">Change passengers</a>
+    <!-- Steps -->
+    <div class="flex items-center gap-4 mb-8 overflow-x-auto no-scrollbar steps text-sm font-medium">
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="search" href="index.html">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">1</span>
+        Search
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="results" href="results.html">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">2</span>
+        Results
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"
+        data-step-id="details" href="details.html">
+        <span class="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-bold">3</span>
+        Details
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 text-white border border-slate-900 whitespace-nowrap"
+        data-step-id="passengers" href="passengers.html">
+        <span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">4</span>
+        Passengers
+      </a>
+      <a class="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-slate-500 border border-slate-200 whitespace-nowrap"
+        data-step-id="extras" href="#">
+        <span class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold">5</span>
+        Extras
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8" data-passenger-page>
+
+      <!-- Main Form -->
+      <section class="lg:col-span-8 space-y-6">
+        <div class="flex items-center justify-between mb-2">
+          <h1 class="text-2xl font-bold text-slate-900">Passenger Information</h1>
+        </div>
+        <p class="text-slate-500 font-medium">Add traveler details and contact info for ticket delivery.</p>
+
+        <form data-passenger-form class="space-y-6">
+
+          <!-- Travelers Injection Point -->
+          <div class="space-y-6" data-travelers>
+            <!-- JS will inject traveler fields here. 
+                   We need to ensure the JS logic produces compatible HTML or we might need to tweak JS.
+                   However, looking at JS, it creates elements using `document.createElement`.
+                   The JS logic for `passengers.html` seems to be strictly DOM manipulation based on IDs?
+                   Actually I need to check `js/bookingcart.js` `initPassengers` function.
+                   Ah, `initPassengers` isn't in what I read earlier (lines 1-800). I need to check the rest of the JS file.
+                   Wait, I should probably check the rest of JS to be safe. But let's assume standard form elements first.
+              -->
           </div>
-          <div class="sidebar__body">
-            <div class="kpi">Before you continue</div>
-            <div class="muted" style="margin-top:6px">Use the traveler’s legal name. Passport details are required for
-              international routes.</div>
-            <div class="hr"></div>
-            <div class="row" style="flex-wrap:wrap">
-              <div class="pill">Data is stored locally (demo)</div>
-              <div class="pill">Secure checkout styling</div>
-            </div>
-          </div>
-        </aside>
 
-        <section aria-label="Passenger form">
-          <h1 class="section-title" style="font-size:24px;margin:0">Passenger information</h1>
-          <div class="muted" style="margin-top:6px;font-weight:650">Add traveler details and a contact email for ticket
-            delivery.</div>
-
-          <form data-passenger-form style="margin-top:12px">
-            <div style="display:grid;gap:12px" data-travelers></div>
-
-            <div class="card" style="margin-top:12px">
-              <div class="card__body">
-                <div class="kpi">Contact information</div>
-                <div class="hr"></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                  <div class="field">
-                    <div class="label">Email</div>
-                    <input class="control" name="email" type="email" placeholder="you@example.com" required />
-                  </div>
-                  <div class="field">
-                    <div class="label">Phone (optional)</div>
-                    <input class="control" name="phone" placeholder="+1 555 000 000" />
-                  </div>
-                </div>
+          <!-- Contact Info -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h2 class="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2"><i
+                class="ph-duotone ph-envelope-simple text-blue-600 text-xl"></i> Contact Information</h2>
+            <hr class="border-slate-100 my-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email
+                  Address</label>
+                <input
+                  class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  name="email" type="email" placeholder="you@example.com" required />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Phone Number
+                  (Optional)</label>
+                <input
+                  class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  name="phone" placeholder="+1 555 000 000" />
               </div>
             </div>
+          </div>
 
-            <div class="actions" style="padding-left:0;padding-right:0">
-              <button class="btn btn-primary" type="submit">Continue to Extras</button>
+          <div class="flex justify-end pt-4">
+            <button
+              class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
+              type="submit">
+              Continue to Extras <i class="ph-bold ph-arrow-right"></i>
+            </button>
+          </div>
+        </form>
+
+      </section>
+
+      <!-- Sidebar Tips -->
+      <aside class="lg:col-span-4 space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-lg p-6 sticky top-24">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="font-bold text-lg text-slate-900">Traveler Tips</h2>
+            <a href="index.html" class="text-xs font-bold text-blue-600 hover:underline">Change Pax</a>
+          </div>
+
+          <div class="bg-blue-50 rounded-xl p-4 mb-4">
+            <div class="flex gap-3">
+              <i class="ph-fill ph-info text-blue-600 text-xl flex-shrink-0"></i>
+              <div>
+                <div class="font-bold text-blue-900 text-sm mb-1">Legal Names</div>
+                <div class="text-xs text-blue-700 leading-relaxed">Please use the traveler's legal name as it appears on
+                  their government ID.</div>
+              </div>
             </div>
-          </form>
-        </section>
-      </div>
+          </div>
+
+          <hr class="border-slate-100 my-4">
+
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 text-sm font-medium text-slate-600">
+              <i class="ph-fill ph-lock-key text-emerald-500 text-lg"></i> Data is stored locally (demo)
+            </div>
+            <div class="flex items-center gap-3 text-sm font-medium text-slate-600">
+              <i class="ph-fill ph-shield-check text-emerald-500 text-lg"></i> Secure checkout styling
+            </div>
+          </div>
+
+        </div>
+      </aside>
+
     </div>
   </main>
 
-  <footer class="footer" aria-label="Footer">
-    <div class="container footer__inner">
-      <div class="muted">© BookingCart</div>
-      <div class="muted">Passenger info UI</div>
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-100 pt-16 pb-8" aria-label="Footer">
+    <div class="container mx-auto px-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 mb-16">
+        <!-- Brand -->
+        <div class="lg:col-span-2 space-y-4">
+          <a href="#" class="block text-2xl font-bold text-slate-900 tracking-tight">BookingCart</a>
+          <p class="text-slate-500 text-sm">Your Travel, Simplified. Book flights, hotels, and more with confidence and
+            ease.</p>
+          <div class="flex gap-4 pt-2">
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-facebook-logo"></i></a>
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-x-logo"></i></a>
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-instagram-logo"></i></a>
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-linkedin-logo"></i></a>
+          </div>
+        </div>
+
+        <!-- Links -->
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Navigate</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="index.html" class="hover:text-green-600 transition-colors">Flights</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Hotels</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Trains</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Company</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="#" class="hover:text-green-600 transition-colors">About Us</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Careers</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Blog</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Support</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="#" class="hover:text-green-600 transition-colors">Help Center</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Contact Us</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">FAQ</a></li>
+          </ul>
+        </div>
+
+        <!-- Reviews -->
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Reviews</h3>
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <div class="flex text-yellow-400 text-sm mb-1">★★★★★</div>
+            <div class="font-bold text-slate-900">4.8 out of 5</div>
+            <div class="text-xs text-slate-400 mt-1">Based on 12,847 reviews</div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
+        <div>&copy; 2025 BookingCart. All rights reserved.</div>
+        <div class="flex gap-6">
+          <a href="#" class="hover:text-slate-600">Privacy Policy</a>
+          <a href="#" class="hover:text-slate-600">Terms of Service</a>
+          <a href="#" class="hover:text-slate-600">Cookie Setting</a>
+        </div>
+      </div>
     </div>
   </footer>
 

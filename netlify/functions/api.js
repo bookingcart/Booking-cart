@@ -650,7 +650,7 @@ async function handleDuffelSearch(event) {
         code: airlineCode,
         name: airlineName,
         logo: airlineCode.substring(0, 2).toUpperCase(),
-        logoUrl: airlineLogoUrl
+        logoUrl: airlineLogoUrl || `https://airline-logos.com/${airlineCode.toLowerCase()}.png`
       },
       departTime: out.departTime,
       arriveTime: out.arriveTime,

@@ -135,12 +135,24 @@
     </div>
   </main>
 
-  <footer class="footer" aria-label="Footer">
-    <div class="container footer__inner">
-      <div class="muted"> BookingCart</div>
-      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
-        <div class="muted">Stay details</div>
-        <a class="muted" href="terms.html" style="font-weight:800">Terms</a>
+  <footer class="bg-white border-t border-slate-100 pt-16 pb-8" aria-label="Footer">
+    <div class="container mx-auto px-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 mb-16">
+        <div class="lg:col-span-2 space-y-4">
+          <a href="#" class="block text-2xl font-bold text-slate-900 tracking-tight">BookingCart</a>
+          <p class="text-slate-500 text-sm">Your Travel, Simplified. Book flights, hotels, and more with confidence and ease.</p>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Navigate</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="index.html" class="hover:text-green-600 transition-colors">Flights</a></li>
+            <li><a href="stays.html" class="hover:text-green-600 transition-colors">Hotels</a></li>
+            <li><a href="events.html" class="hover:text-green-600 transition-colors">Events</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-slate-100 pt-8 text-center text-xs text-slate-400">
+        &copy; 2025 BookingCart. All rights reserved.
       </div>
     </div>
   </footer>

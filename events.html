@@ -12,6 +12,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/bookingcart.css?v=2" />
+
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1888969771559868"
+     crossorigin="anonymous"></script>
 </head>
 
 <body class="events">
@@ -41,7 +45,7 @@
             <div class="form-grid form-grid--events">
               <div class="field suggest" data-span="2">
                 <div class="label">Location</div>
-                <input class="control" name="location" placeholder="City or country (e.g., London, Kenya, Dubai)" autocomplete="off" required />
+                <input class="control" name="location" placeholder="City or country" autocomplete="off" required />
               </div>
 
               <div class="field field--submit">
@@ -51,22 +55,97 @@
             </div>
           </form>
 
-          
-
-         
-
-          <div data-events-results style="display:none;padding:12px"></div>
+          <div data-events-status style="display:none;margin-top:12px"></div>
         </div>
       </div>
     </div>
   </section>
 
-  <footer class="footer" aria-label="Footer">
-    <div class="container footer__inner">
-      <div class="muted"> BookingCart</div>
-      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
-        <a href="terms.html" class="muted">Terms</a>
-        <a href="privacy.html" class="muted">Privacy</a>
+  <section class="layout" aria-label="Events results" data-events-results-section style="display:none">
+    <div class="container">
+      <div class="section">
+        <div class="section__head">
+          <div>
+            <div class="kpi" style="font-size:18px">Events</div>
+            <div class="muted" style="margin-top:6px">Live events from Eventbrite and Ticketmaster.</div>
+          </div>
+        </div>
+        <div class="events-grid" data-events-results></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-white border-t border-slate-100 pt-16 pb-8" aria-label="Footer">
+    <div class="container mx-auto px-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 mb-16">
+        <!-- Brand -->
+        <div class="lg:col-span-2 space-y-4">
+          <a href="#" class="block text-2xl font-bold text-slate-900 tracking-tight">BookingCart</a>
+          <p class="text-slate-500 text-sm">Your Travel, Simplified. Book flights, hotels, and more with confidence and
+            ease.</p>
+          <div class="flex gap-4 pt-2">
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-facebook-logo"></i></a>
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-x-logo"></i></a>
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-instagram-logo"></i></a>
+            <a href="#"
+              class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-green-50 hover:text-green-600 transition-colors"><i
+                class="ph-fill ph-linkedin-logo"></i></a>
+          </div>
+        </div>
+
+        <!-- Links -->
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Navigate</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="index.html" class="hover:text-green-600 transition-colors">Flights</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Hotels</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Trains</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Company</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="#" class="hover:text-green-600 transition-colors">About Us</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Careers</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Blog</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Support</h3>
+          <ul class="space-y-3 text-sm text-slate-500 font-medium">
+            <li><a href="#" class="hover:text-green-600 transition-colors">Help Center</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">Contact Us</a></li>
+            <li><a href="#" class="hover:text-green-600 transition-colors">FAQ</a></li>
+          </ul>
+        </div>
+
+        <!-- Reviews -->
+        <div>
+          <h3 class="font-bold text-slate-900 mb-4">Reviews</h3>
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+            <div class="flex text-yellow-400 text-sm mb-1">★★★★★</div>
+            <div class="font-bold text-slate-900">4.8 out of 5</div>
+            <div class="text-xs text-slate-400 mt-1">Based on 12,847 reviews</div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
+        <div>&copy; 2025 BookingCart. All rights reserved.</div>
+        <div class="flex gap-6">
+          <a href="#" class="hover:text-slate-600">Privacy Policy</a>
+          <a href="#" class="hover:text-slate-600">Terms of Service</a>
+          <a href="#" class="hover:text-slate-600">Cookie Setting</a>
+        </div>
       </div>
     </div>
   </footer>
