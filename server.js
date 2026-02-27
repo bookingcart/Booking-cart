@@ -19,12 +19,12 @@ const EVENTBRITE_BASE_URL = 'https://www.eventbriteapi.com/v3';
 const TICKETMASTER_BASE_URL = 'https://app.ticketmaster.com/discovery/v2';
 
 // Middleware
+app.use(express.static('.'));
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
+  origin: ['http://localhost:3000', 'http://localhost:8080', 'http://127.0.0.1:3000', 'http://127.0.0.1:8080'],
   credentials: true
 }));
 app.use(express.json());
-app.use(express.static('.'));
 
 // Cache for access token (not needed for Duffel, but keeping for future use)
 let accessToken = null;
@@ -77,13 +77,13 @@ function normalizeTicketmasterEvent(e) {
     logo: logoUrl ? { url: logoUrl } : null,
     venue: venue
       ? {
-          name: String(venue?.name || ''),
-          address: {
-            city: String(venue?.city?.name || ''),
-            region: String(venue?.state?.name || ''),
-            country: String(venue?.country?.name || '')
-          }
+        name: String(venue?.name || ''),
+        address: {
+          city: String(venue?.city?.name || ''),
+          region: String(venue?.state?.name || ''),
+          country: String(venue?.country?.name || '')
         }
+      }
       : null,
     currency,
     price: minPrice === null ? 0 : minPrice,
@@ -154,66 +154,6 @@ async function fetchEventbriteEventsByLocation(location) {
   return { ok: true, status: 200, events: flat };
 }
 
-/**
- * Transform Duffel offer to our frontend format
- */
-function transformDuffelOffer(offer, index) {
-  const itinerary = offer.itineraries[0];
-  const segments = itinerary.segments || [];
-  const firstSegment = segments[0];
-  const lastSegment = segments[segments.length - 1];
-  
-  // Calculate duration
-  const departure = new Date(firstSegment.departure.at);
-  const arrival = new Date(lastSegment.arrival.at);
-  const durationMin = Math.round((arrival - departure) / (1000 * 60));
-  
-  // Extract times
-  const departTime = firstSegment.departure.at.split('T')[1].substring(0, 5);
-  const arriveTime = lastSegment.arrival.at.split('T')[1].substring(0, 5);
-  
-  // Count stops (segments - 1)
-  const stops = Math.max(0, segments.length - 1);
-  
-  // Get airline info
-  const carrierCode = firstSegment.carrierCode;
-  const airlineName = offer.validatingAirlineCodes?.[0] || carrierCode;
-  
-  // Get price (total price for all passengers)
-  const price = parseFloat(offer.price.total) || 0;
-  
-  // Generate unique ID
-  const id = `${carrierCode}-${index}-${Date.now()}`;
-  
-  return {
-    id,
-    airline: {
-      code: carrierCode,
-      name: airlineName,
-      logo: carrierCode.substring(0, 2).toUpperCase()
-    },
-    departTime,
-    arriveTime,
-    durationMin,
-    stops,
-    price: Math.round(price),
-    segments: segments.map(seg => ({
-      departure: {
-        iataCode: seg.departure.iataCode,
-        at: seg.departure.at
-      },
-      arrival: {
-        iataCode: seg.arrival.iataCode,
-        at: seg.arrival.at
-      },
-      carrierCode: seg.carrierCode,
-      number: seg.number,
-      duration: seg.duration
-    })),
-    // Store full offer for later use
-    _duffelOffer: offer
-  };
-}
 
 app.get('/api/events/status', async (req, res) => {
   const eventbriteConfigured = !!EVENTBRITE_TOKEN;
@@ -304,127 +244,7 @@ app.get('/api/events/search-combined', async (req, res) => {
   }
 });
 
-/**
- * Search flights using Duffel Flight Offers Search API
- */
-app.post('/api/duffel-search', async (req, res) => {
-  try {
-    const {
-      originLocationCode,
-      destinationLocationCode,
-      departureDate,
-      returnDate,
-      adults = 1,
-      children = 0,
-      infants = 0,
-      travelClass = 'ECONOMY',
-      currencyCode = 'USD',
-      max = 30
-    } = req.body;
 
-    // Validation
-    if (!originLocationCode || !destinationLocationCode || !departureDate) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Missing required parameters: originLocationCode, destinationLocationCode, departureDate'
-      });
-    }
-
-    // Get access token - Duffel API key is used directly as Bearer token
-    const token = DUFFEL_API_KEY;
-
-    // Build query parameters for GET request (simple version)
-    const params = new URLSearchParams({
-      originLocationCode,
-      destinationLocationCode,
-      departureDate,
-      adults: String(adults),
-      currencyCode,
-      max: String(Math.min(max, 250)), // Duffel max is 250
-    });
-
-    // Add optional parameters
-    if (returnDate) {
-      params.append('returnDate', returnDate);
-    }
-    if (children > 0) {
-      params.append('children', String(children));
-    }
-    if (infants > 0) {
-      params.append('infants', String(infants));
-    }
-    if (travelClass && travelClass !== 'ECONOMY') {
-      params.append('travelClass', travelClass);
-    }
-
-    console.log(`Searching flights from ${originLocationCode} to ${destinationLocationCode} on ${departureDate}`);
-
-    // Return mock data since Duffel API is not working
-    const mockFlights = [
-      {
-        id: "mock_1",
-        airline: "Delta Air Lines",
-        flightNumber: "DL123",
-        origin: { code: originLocationCode, name: "New York JFK" },
-        destination: { code: destinationLocationCode, name: "Los Angeles LAX" },
-        departure: "2025-02-15T08:00:00",
-        arrival: "2025-02-15T11:30:00",
-        duration: "5h 30m",
-        price: 299.99,
-        currency: "USD",
-        seatsAvailable: 15,
-        cabinClass: travelClass
-      },
-      {
-        id: "mock_2", 
-        airline: "United Airlines",
-        flightNumber: "UA456",
-        origin: { code: originLocationCode, name: "New York JFK" },
-        destination: { code: destinationLocationCode, name: "Los Angeles LAX" },
-        departure: "2025-02-15T10:15:00",
-        arrival: "2025-02-15T13:45:00",
-        duration: "5h 30m", 
-        price: 325.50,
-        currency: "USD",
-        seatsAvailable: 8,
-        cabinClass: travelClass
-      },
-      {
-        id: "mock_3",
-        airline: "American Airlines", 
-        flightNumber: "AA789",
-        origin: { code: originLocationCode, name: "New York JFK" },
-        destination: { code: destinationLocationCode, name: "Los Angeles LAX" },
-        departure: "2025-02-15T14:20:00",
-        arrival: "2025-02-15T17:50:00",
-        duration: "5h 30m",
-        price: 287.00,
-        currency: "USD", 
-        seatsAvailable: 22,
-        cabinClass: travelClass
-      }
-    ];
-
-    res.json({
-      ok: true,
-      flights: mockFlights.slice(0, max),
-      meta: {
-        count: mockFlights.length,
-        total: mockFlights.length,
-        source: 'mock'
-      }
-    });
-
-  } catch (error) {
-    console.error('Error searching flights:', error);
-    console.error('Error details:', error.message);
-    console.error('Stack trace:', error.stack);
-    res.status(500).json({
-      ok: false,
-      error: error.message || 'Internal server error'
-    });
-  }
-});
 
 // ============================================================================
 // DUFFEL API ENDPOINTS  
@@ -465,83 +285,60 @@ app.post('/api/duffel-search', async (req, res) => {
 
     console.log(`Duffel search: ${originLocationCode} → ${destinationLocationCode} on ${departureDate}`);
 
-    // Step 1: Create offer request
-    // First, get airport details from Duffel to get full airport objects
-    let originAirport = null;
-    let destinationAirport = null;
-    
-    try {
-      // Search for origin airport
-      const originResponse = await fetch(`${DUFFEL_BASE_URL}/air/airports?iata_code=${originLocationCode}&limit=1`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Duffel-Version': 'v2',
-          'Authorization': `Bearer ${DUFFEL_API_KEY}`
-        }
-      });
-      
-      if (originResponse.ok) {
-        const originData = await originResponse.json();
-        if (originData.data?.length > 0) {
-          originAirport = originData.data[0];
-        }
+    // Build slices - Duffel v2 accepts IATA codes directly as strings
+    const slices = [
+      {
+        origin: originLocationCode,
+        destination: destinationLocationCode,
+        departure_date: departureDate
       }
-      
-      // Search for destination airport
-      const destResponse = await fetch(`${DUFFEL_BASE_URL}/air/airports?iata_code=${destinationLocationCode}&limit=1`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Duffel-Version': 'v2',
-          'Authorization': `Bearer ${DUFFEL_API_KEY}`
-        }
-      });
-      
-      if (destResponse.ok) {
-        const destData = await destResponse.json();
-        if (destData.data?.length > 0) {
-          destinationAirport = destData.data[0];
-        }
-      }
-    } catch (error) {
-      console.log('Error fetching airport details:', error.message);
-    }
-    
-    // If we couldn't find airports, use fallback
-    if (!originAirport || !destinationAirport) {
-      console.log('Using fallback airport data for:', originLocationCode, '→', destinationLocationCode);
-      return res.status(400).json({
-        ok: false,
-        error: `Airports not found in Duffel: ${originLocationCode} or ${destinationLocationCode}. Available airports are limited in current environment.`
+    ];
+
+    // Add return slice if round trip
+    if (returnDate) {
+      slices.push({
+        origin: destinationLocationCode,
+        destination: originLocationCode,
+        departure_date: returnDate
       });
     }
+
+    // Build passengers array - each passenger is a separate object
+    const passengers = [];
+    for (let i = 0; i < adults; i++) {
+      passengers.push({ type: 'adult' });
+    }
+    for (let i = 0; i < children; i++) {
+      passengers.push({ type: 'child' });
+    }
+    for (let i = 0; i < infants; i++) {
+      passengers.push({ type: 'infant_without_seat' });
+    }
+
+    // Map cabin class
+    const cabinMap = {
+      'ECONOMY': 'economy',
+      'Economy': 'economy',
+      'economy': 'economy',
+      'PREMIUM_ECONOMY': 'premium_economy',
+      'Premium Economy': 'premium_economy',
+      'BUSINESS': 'business',
+      'Business': 'business',
+      'FIRST': 'first',
+      'First': 'first'
+    };
+    const cabin = cabinMap[travelClass] || 'economy';
 
     // Create offer request
     const offerRequestData = {
       data: {
-        slices: [
-          {
-            origin_type: "airport",
-            origin: originAirport,
-            destination_type: "airport",
-            destination: destinationAirport,
-            departure_date: departureDate
-          }
-        ],
-        passengers: [
-          {
-            type: "adult",
-            count: adults
-          }
-        ],
-        cabin_class: travelClass.toLowerCase()
+        slices,
+        passengers,
+        cabin_class: cabin
       }
     };
 
-    console.log(`Duffel search: ${originLocationCode} → ${destinationLocationCode} on ${departureDate}`);
-    console.log(`Origin airport: ${originAirport ? originAirport.name : 'Not found'}`);
-    console.log(`Destination airport: ${destinationAirport ? destinationAirport.name : 'Not found'}`);
+    console.log(`Duffel offer request: ${originLocationCode} → ${destinationLocationCode}, ${passengers.length} pax, ${cabin}`);
 
     // Create offer request
     const createResponse = await fetch(`${DUFFEL_BASE_URL}/air/offer_requests`, {
@@ -609,7 +406,7 @@ app.post('/api/duffel-search', async (req, res) => {
     const flights = offers.slice(0, max).map((offer, index) => {
       const slice = offer.slices?.[0] || {};
       const segment = slice.segments?.[0] || {};
-      
+
       // Calculate duration
       let durationMin = 120; // default
       if (slice.duration) {
@@ -625,7 +422,7 @@ app.post('/api/duffel-search', async (req, res) => {
       // Get airline info
       const airline = segment.marketing_carrier || segment.operating_carrier || {};
       const airlineCode = airline.iata_code || 'DF';
-      
+
       // Get times
       let departTime = '00:00';
       let arriveTime = '23:59';
@@ -738,7 +535,7 @@ app.get('/api/amadeus-airports', async (req, res) => {
       { city: "Johannesburg", name: "O.R. Tambo International", code: "JNB", country: "South Africa" }
     ];
 
-    const filtered = commonAirports.filter(airport => 
+    const filtered = commonAirports.filter(airport =>
       airport.city.toLowerCase().includes(keyword.toLowerCase()) ||
       airport.code.toLowerCase().includes(keyword.toLowerCase()) ||
       airport.name.toLowerCase().includes(keyword.toLowerCase())
@@ -769,63 +566,51 @@ app.get('/api/duffel-airports', async (req, res) => {
       return res.json({ ok: true, airports: [] });
     }
 
-    // Duffel doesn't have a public airport search API
-    // Return expanded list of common airports that match the keyword
-    const commonAirports = [
-      { city: "New York", name: "John F. Kennedy International", code: "JFK", country: "United States" },
-      { city: "New York", name: "Newark Liberty International", code: "EWR", country: "United States" },
-      { city: "Los Angeles", name: "Los Angeles International", code: "LAX", country: "United States" },
-      { city: "Chicago", name: "O'Hare International", code: "ORD", country: "United States" },
-      { city: "San Francisco", name: "San Francisco International", code: "SFO", country: "United States" },
-      { city: "Miami", name: "Miami International", code: "MIA", country: "United States" },
-      { city: "Boston", name: "Logan International", code: "BOS", country: "United States" },
-      { city: "Washington", name: "Dulles International", code: "IAD", country: "United States" },
-      { city: "Las Vegas", name: "McCarran International", code: "LAS", country: "United States" },
-      { city: "Seattle", name: "Seattle-Tacoma International", code: "SEA", country: "United States" },
-      { city: "London", name: "Heathrow", code: "LHR", country: "United Kingdom" },
-      { city: "London", name: "Gatwick", code: "LGW", country: "United Kingdom" },
-      { city: "Paris", name: "Charles de Gaulle", code: "CDG", country: "France" },
-      { city: "Amsterdam", name: "Schiphol", code: "AMS", country: "Netherlands" },
-      { city: "Frankfurt", name: "Frankfurt Airport", code: "FRA", country: "Germany" },
-      { city: "Munich", name: "Munich Airport", code: "MUC", country: "Germany" },
-      { city: "Rome", name: "Fiumicino", code: "FCO", country: "Italy" },
-      { city: "Madrid", name: "Barajas", code: "MAD", country: "Spain" },
-      { city: "Barcelona", name: "El Prat", code: "BCN", country: "Spain" },
-      { city: "Istanbul", name: "Istanbul Airport", code: "IST", country: "Turkey" },
-      { city: "Dubai", name: "Dubai International", code: "DXB", country: "UAE" },
-      { city: "Doha", name: "Hamad International", code: "DOH", country: "Qatar" },
-      { city: "Cairo", name: "Cairo International", code: "CAI", country: "Egypt" },
-      { city: "Riyadh", name: "King Khalid International", code: "RUH", country: "Saudi Arabia" },
-      { city: "Jeddah", name: "King Abdulaziz International", code: "JED", country: "Saudi Arabia" },
-      { city: "Mumbai", name: "Chhatrapati Shivaji Maharaj International", code: "BOM", country: "India" },
-      { city: "Delhi", name: "Indira Gandhi International", code: "DEL", country: "India" },
-      { city: "Tokyo", name: "Haneda", code: "HND", country: "Japan" },
-      { city: "Tokyo", name: "Narita", code: "NRT", country: "Japan" },
-      { city: "Seoul", name: "Incheon International", code: "ICN", country: "South Korea" },
-      { city: "Singapore", name: "Changi", code: "SIN", country: "Singapore" },
-      { city: "Hong Kong", name: "Hong Kong International", code: "HKG", country: "Hong Kong" },
-      { city: "Bangkok", name: "Suvarnabhumi", code: "BKK", country: "Thailand" },
-      { city: "Sydney", name: "Kingsford Smith", code: "SYD", country: "Australia" },
-      { city: "Melbourne", name: "Tullamarine", code: "MEL", country: "Australia" },
-      { city: "Toronto", name: "Pearson International", code: "YYZ", country: "Canada" },
-      { city: "Vancouver", name: "Vancouver International", code: "YVR", country: "Canada" },
-      { city: "Mexico City", name: "Benito Juárez International", code: "MEX", country: "Mexico" },
-      { city: "São Paulo", name: "Guarulhos International", code: "GRU", country: "Brazil" },
-      { city: "Nairobi", name: "Jomo Kenyatta International", code: "NBO", country: "Kenya" },
-      { city: "Lagos", name: "Murtala Muhammed International", code: "LOS", country: "Nigeria" },
-      { city: "Johannesburg", name: "O.R. Tambo International", code: "JNB", country: "South Africa" }
-    ];
-
-    const filtered = commonAirports.filter(airport => 
-      airport.city.toLowerCase().includes(keyword.toLowerCase()) ||
-      airport.code.toLowerCase().includes(keyword.toLowerCase()) ||
-      airport.name.toLowerCase().includes(keyword.toLowerCase())
-    );
-
-    res.json({
-      ok: true,
-      airports: filtered.slice(0, 5)
+    // Fetch from Duffel Places API
+    const response = await fetch(`${DUFFEL_BASE_URL}/places/suggestions?query=${encodeURIComponent(keyword)}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Duffel-Version': 'v2',
+        'Authorization': `Bearer ${DUFFEL_API_KEY}`
+      }
     });
+
+    if (!response.ok) {
+      console.error("Duffel places API error:", await response.text());
+      return res.json({ ok: true, airports: [] });
+    }
+
+    const { data } = await response.json();
+
+    // Process results to match our frontend format
+    const airports = [];
+
+    for (const place of data) {
+      if (place.type === 'airport') {
+        airports.push({
+          city: place.city_name || place.name,
+          name: place.name,
+          code: place.iata_code,
+          country: place.iata_country_code
+        });
+      } else if (place.type === 'city' && Array.isArray(place.airports)) {
+        // If it's a city, add its airports
+        for (const airport of place.airports) {
+          airports.push({
+            city: place.name || airport.city_name,
+            name: airport.name,
+            code: airport.iata_code,
+            country: airport.iata_country_code || place.iata_country_code
+          });
+        }
+      }
+    }
+
+    // Remove duplicates by code
+    const uniqueAirports = Array.from(new Map(airports.map(a => [a.code, a])).values());
+
+    res.json({ ok: true, airports: uniqueAirports.slice(0, 8) });
 
   } catch (error) {
     console.error('Error searching Duffel airports:', error);
@@ -841,10 +626,97 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Helper functions for Duffel API
+function mapCabinClass(travelClass) {
+  const c = String(travelClass || "").toLowerCase();
+  if (c === "first") return "first";
+  if (c === "business") return "business";
+  if (c === "premium") return "premium_economy";
+  return "economy";
+}
+
+function transformDuffelData(data) {
+  // Handle both offer_requests response (data.data.offers) and direct offers response (data.data as array)
+  let offers = [];
+  if (data.data && Array.isArray(data.data.offers)) {
+    offers = data.data.offers;
+  } else if (data.data && Array.isArray(data.data)) {
+    offers = data.data;
+  } else {
+    return [];
+  }
+
+  return offers.map((offer) => {
+    try {
+      const slice = offer.slices?.[0];
+      if (!slice || !slice.segments || slice.segments.length === 0) {
+        console.warn('Missing slice/segments data, skipping offer');
+        return null;
+      }
+
+      const firstSegment = slice.segments[0];
+      const lastSegment = slice.segments[slice.segments.length - 1];
+      const owner = firstSegment?.operating_carrier || firstSegment?.marketing_carrier;
+
+      if (!owner) {
+        console.warn('Missing carrier data, skipping offer');
+        return null;
+      }
+
+      // Calculate times from segment departing_at / arriving_at
+      const departTime = new Date(firstSegment.departing_at);
+      const arriveTime = new Date(lastSegment.arriving_at);
+      const durationMs = arriveTime - departTime;
+      const durationMin = Math.round(durationMs / (1000 * 60));
+
+      // Extract HH:MM strings
+      const departTimeStr = firstSegment.departing_at.split('T')[1]?.substring(0, 5) || '00:00';
+      const arriveTimeStr = lastSegment.arriving_at.split('T')[1]?.substring(0, 5) || '00:00';
+
+      // Origin and destination airport info
+      const origin = firstSegment.origin || {};
+      const destination = lastSegment.destination || {};
+
+      // Price - Duffel uses total_amount (string) and total_currency
+      const price = parseFloat(offer.total_amount) || 0;
+
+      return {
+        id: offer.id,
+        airline: {
+          code: owner.iata_code || 'DF',
+          name: owner.name || 'Duffel Airline',
+          logo: (owner.iata_code || 'DF').substring(0, 2).toUpperCase(),
+          logoUrl: owner.logo_symbol_url || owner.logo_lockup_url || ''
+        },
+        from: {
+          city: origin.city_name || origin.iata_code || '',
+          airport: origin.name || origin.iata_code || '',
+          code: origin.iata_code || ''
+        },
+        to: {
+          city: destination.city_name || destination.iata_code || '',
+          airport: destination.name || destination.iata_code || '',
+          code: destination.iata_code || ''
+        },
+        departTime: departTimeStr,
+        arriveTime: arriveTimeStr,
+        durationMin,
+        stops: Math.max(0, (slice.segments?.length || 1) - 1),
+        price: Math.round(price),
+        cabin: offer.cabin_class || 'economy',
+        _duffelOffer: offer
+      };
+    } catch (e) {
+      console.error('Error transforming Duffel offer:', e);
+      return null;
+    }
+  }).filter(Boolean);
+}
+
 app.listen(PORT, () => {
   console.log(`BookingCart server running on http://localhost:${PORT}`);
   console.log(`Duffel API Key configured: ${!!DUFFEL_API_KEY}`);
-  
+
   if (!DUFFEL_API_KEY) {
     console.warn('⚠️  WARNING: Duffel API key not configured!');
     console.warn('   Set DUFFEL_API_KEY environment variable to use live flight data.');
