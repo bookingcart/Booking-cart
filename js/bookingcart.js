@@ -1041,12 +1041,61 @@
 
   // Legacy functions removed — initResults now handles all flight fetching and display
 
+  // Google Auth Integration
+  window.handleGoogleSignIn = function (response) {
+    try {
+      // Decode the JWT token payload from the Google credential
+      const base64Url = response.credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+
+      const payload = JSON.parse(jsonPayload);
+      console.log("Google Sign-In Success:", payload.name);
+
+      // Save user to session
+      localStorage.setItem('bookingcart_user', JSON.stringify(payload));
+
+      // Update UI elements
+      updateAuthUI();
+      toast('Welcome back!', `Signed in as ${payload.name}`);
+
+    } catch (err) {
+      console.error("Error decoding Google JWT:", err);
+      toast('Authentication Error', 'Failed to decode auth token');
+    }
+  };
+
+  function updateAuthUI() {
+    const userStr = localStorage.getItem('bookingcart_user');
+    if (!userStr) return;
+
+    try {
+      const user = JSON.parse(userStr);
+
+      // Hide Google button container
+      const gSignIn = document.querySelector('.g_id_signin');
+      if (gSignIn) gSignIn.style.display = 'none';
+
+      // Update the circular profile button avatar
+      const profileBtn = document.querySelector('.flex.items-center.gap-3 > button.w-11.h-11');
+      if (profileBtn) {
+        profileBtn.innerHTML = `<img src="${user.picture}" alt="${user.name}" title="${user.name}" class="w-full h-full object-cover" />`;
+      }
+    } catch (e) {
+      console.error('Failed to parse user data:', e);
+    }
+  }
+
   window.BookingCart = {
     readState,
     writeState,
     money,
-    toast
+    toast,
+    updateAuthUI
   };
 
   init();
+  updateAuthUI();
 })();

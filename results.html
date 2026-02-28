@@ -35,6 +35,9 @@
       }
     }
   </script>
+
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 
 <body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
@@ -59,11 +62,23 @@
 
             <!-- Right: User/Auth -->
       <div class="flex items-center gap-3">
-        <!-- Sign in with Google -->
-        <button onclick="window.BookingCart.toast('Feature Preview', 'Google Auth integration demo')" type="button" class="hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold py-2.5 px-5 rounded-full shadow-sm transition-all focus:ring-2 focus:ring-green-500 outline-none">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" class="w-4 h-4" />
-          Sign in
-        </button>
+        <!-- Google Sign-In Real Button wrapper -->
+        <div id="g_id_onload"
+             data-client_id="YOUR_GOOGLE_CLIENT_ID"
+             data-context="use"
+             data-ux_mode="popup"
+             data-callback="handleGoogleSignIn"
+             data-auto_prompt="false">
+        </div>
+        
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="pill"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
         <!-- Profile Account Button -->
         <button class="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm hover:border-green-500 transition-all focus:ring-2 focus:ring-green-500 outline-none">
           <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User Profile" class="w-full h-full object-cover" />
