@@ -9,22 +9,28 @@
       }
     }
   ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
   "functions": {
-    "api/*.js": {
+    "api/duffel-search.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/duffel-airports.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/amadeus-airports.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/events-search.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/events-status.js": {
       "runtime": "nodejs18.x"
     }
   },
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

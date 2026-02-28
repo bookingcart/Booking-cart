@@ -41,7 +41,7 @@
 
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1888969771559868"
-     crossorigin="anonymous"></script>
+    crossorigin="anonymous"></script>
 
   <!-- Custom Styles for specific components if needed, though mostly Tailwind -->
   <style type="text/tailwindcss">
@@ -98,21 +98,25 @@
 
       <!-- Center: Nav -->
       <nav class="hidden lg:flex items-center gap-8 text-sm font-semibold text-slate-500">
-        <a href="index.html" class="text-green-600">Plane Tickets</a>
+        <a href="index.html" class="text-green-600">Flight Booking</a>
 
       </nav>
 
-      <!-- Right: User/Loc -->
-      <div class="flex items-center gap-4">
-        <div
-          class="hidden sm:flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-2 rounded-full shadow-sm text-sm font-medium text-slate-700">
-          <i class="ph-fill ph-map-pin text-slate-400"></i>
-         
-        </div>
-        <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-200 border border-white shadow-sm">
-          <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User"
+      <!-- Right: User/Auth -->
+      <div class="flex items-center gap-3">
+        <!-- Sign in with Google -->
+        <button
+          class="hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold py-2.5 px-5 rounded-full shadow-sm transition-all focus:ring-2 focus:ring-green-500 outline-none">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google"
+            class="w-4 h-4" />
+          Sign in
+        </button>
+        <!-- Profile Account Button -->
+        <button
+          class="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm hover:border-green-500 transition-all focus:ring-2 focus:ring-green-500 outline-none">
+          <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User Profile"
             class="w-full h-full object-cover" />
-        </div>
+        </button>
       </div>
     </div>
   </header>
@@ -136,12 +140,9 @@
         Fly Anywhere
       </h1>
       <p class="text-lg lg:text-xl text-slate-600 font-medium mb-8">
-        Fly Budget And Comfortably
+        Affordable Flights, Premium Service.
       </p>
-      <button
-        class="bg-slate-900 text-white px-8 py-3 rounded-2xl font-semibold shadow-lg shadow-slate-900/20 hover:bg-slate-800 hover:-translate-y-0.5 transition-all">
-        Explore
-      </button>
+
 
       <!-- Search Widget Container -->
       <div class="mt-12 w-full max-w-5xl mx-auto text-left" role="region" aria-label="Search panel">
@@ -199,7 +200,8 @@
               <!-- Date -->
               <div class="flex-[2] min-w-[280px] px-4 py-2 lg:py-0 flex gap-4 border-b lg:border-b-0 border-slate-100">
                 <div class="flex-1 field">
-                  <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Departure</label>
+                  <label
+                    class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Departure</label>
                   <div
                     class="w-full flex items-center gap-2 bg-slate-50 border border-transparent hover:border-slate-200 focus-within:bg-white focus-within:ring-2 focus-within:ring-green-500/20 focus-within:border-green-500 rounded-xl px-3 py-2 transition-all cursor-text"
                     onclick="this.querySelector('input').showPicker ? this.querySelector('input').showPicker() : this.querySelector('input').focus()">
@@ -399,7 +401,7 @@
     </div>
   </footer>
 
-  <script src="js/bookingcart.js"></script>
+  <script src="js/bookingcart.js?v=4"></script>
 </body>
 
 </html>
