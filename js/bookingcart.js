@@ -713,6 +713,9 @@
           <div class="relative pl-10 py-2">
             <!-- Timeline Line -->
             <div class="absolute top-0 bottom-0 left-3 w-0.5 bg-slate-200 -z-10"></div>
+            <!-- Airplane Icon in middle of line -->
+            <div class="absolute left-[3px] top-1/2 -translate-y-1/2 bg-white text-slate-400 py-2 z-10"><i class="ph-fill ph-airplane-in-flight text-xl" style="transform: rotate(90deg); display: block;"></i></div>
+            
             <!-- Departure Node -->
             <div class="absolute left-[9px] top-4 w-3.5 h-3.5 rounded-full bg-white border-2 border-slate-300 z-10"></div>
             
