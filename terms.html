@@ -4,124 +4,140 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BookingCart — Terms & Conditions</title>
-  <meta name="description" content="BookingCart terms and conditions." />
-  <link rel="icon" type="image/png" href="images/favicon.png" />
-  <link rel="apple-touch-icon" href="images/favicon.png" />
+  <title>BookingCart — Terms of Service</title>
+  <meta name="description" content="BookingCart Terms of Service — the rules and guidelines for using our platform." />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/bookingcart.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+          colors: {
+            primary: '#14532d',
+            secondary: '#16a34a',
+            muted: '#dcfce7',
+            subtle: '#15803d',
+          },
+        }
+      }
+    }
+  </script>
 </head>
 
-<body>
-  <header class="header" aria-label="Top navigation">
-    <div class="container header__inner">
-      <a class="brand" href="index.html" aria-label="BookingCart Home">
-        <img src="images/logo.png" alt="BookingCart" class="brand__logo" />
-      </a>
-      <nav class="header__nav" aria-label="Primary">
-        <a href="index.html">Flights</a>
-        <a href="stays.html">Stays</a>
-        <a href="visa.html">Visa</a>
-      </nav>
+<body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="container mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-12">
+        <a href="index.html" class="text-2xl font-semibold text-slate-900 tracking-tight">BookingCart</a>
+        <div class="hidden lg:flex items-center gap-4">
+          <a href="index.html"
+            class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+            <i class="ph-bold ph-arrow-left"></i> Back to home
+          </a>
+        </div>
+      </div>
     </div>
   </header>
 
-  <main class="layout">
-    <div class="container" style="max-width:980px">
-      <div style="margin-top:14px">
-        <div class="row" style="justify-content:space-between;flex-wrap:wrap">
-          <h1 class="section-title" style="font-size:24px;margin:0">Terms & Conditions</h1>
-          <a class="muted" href="index.html" style="font-weight:800">Back to Flights</a>
-        </div>
-        <div class="muted" style="margin-top:6px;font-weight:650">Last updated: Jan 2026</div>
-      </div>
+  <!-- Content -->
+  <main class="flex-1 container mx-auto px-6 py-16 max-w-4xl">
 
-      <div class="card" style="margin-top:14px">
-        <div class="card__body" style="display:grid;gap:14px">
-          <div>
-            <div class="kpi">1. Agreement</div>
-            <div class="muted" style="margin-top:6px">
-              By using BookingCart, you agree to these Terms & Conditions. If you do not agree, do not use the website.
-            </div>
-          </div>
+    <h1 class="text-4xl font-bold text-slate-900 mb-2">Terms of Service</h1>
+    <p class="text-sm text-slate-400 mb-10">Last updated: February 28, 2026</p>
 
-          <div class="hr"></div>
+    <div class="space-y-10 text-slate-700 leading-relaxed">
 
-          <div>
-            <div class="kpi">2. Service description</div>
-            <div class="muted" style="margin-top:6px">
-              BookingCart provides a flight search and checkout experience. BookingCart may display flight options, prices, and availability that are subject to change.
-            </div>
-          </div>
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">1. Acceptance of Terms</h2>
+        <p>By accessing or using BookingCart, you agree to be bound by these Terms of Service. If you do not agree with
+          any part of these terms, you may not use our services.</p>
+      </section>
 
-          <div class="hr"></div>
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">2. Use of Service</h2>
+        <p class="mb-3">BookingCart provides a platform for searching and booking flights. When using our service, you
+          agree to:</p>
+        <ul class="list-disc list-inside space-y-2 pl-2">
+          <li>Provide accurate and complete personal and payment information.</li>
+          <li>Use the platform only for lawful purposes.</li>
+          <li>Not attempt to interfere with platform operations or security.</li>
+          <li>Not use automated tools to scrape or collect data from our service.</li>
+        </ul>
+      </section>
 
-          <div>
-            <div class="kpi">3. Pricing, taxes & fees</div>
-            <div class="muted" style="margin-top:6px">
-              Prices may include base fare, optional add-ons, and applicable taxes or fees. Final pricing is confirmed at checkout.
-            </div>
-          </div>
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">3. Booking and Payments</h2>
+        <ul class="list-disc list-inside space-y-2 pl-2">
+          <li>All flight prices are displayed in the currency indicated at the time of search.</li>
+          <li>Prices are subject to change until a booking is confirmed and payment is processed.</li>
+          <li>BookingCart acts as an intermediary between you and the airline. The airline's own terms and conditions
+            also apply to your booking.</li>
+          <li>Payment is processed securely through our third-party payment provider.</li>
+        </ul>
+      </section>
 
-          <div class="hr"></div>
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">4. Cancellations and Refunds</h2>
+        <p>Cancellation and refund policies are determined by the airline operating the flight. BookingCart will assist
+          in facilitating refund requests, but the final decision rests with the airline. Please review the airline's
+          cancellation policy before completing your booking.</p>
+      </section>
 
-          <div>
-            <div class="kpi">4. Payments</div>
-            <div class="muted" style="margin-top:6px">
-              Payments are processed through Stripe Checkout. You authorize BookingCart (and its payment processor) to charge the total shown at checkout.
-            </div>
-          </div>
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">5. User Accounts</h2>
+        <p>If you create an account or sign in via Google, you are responsible for maintaining the confidentiality of
+          your login credentials. You agree to notify us immediately of any unauthorized use of your account.</p>
+      </section>
 
-          <div class="hr"></div>
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">6. Intellectual Property</h2>
+        <p>All content on BookingCart, including text, graphics, logos, and software, is the property of BookingCart or
+          its licensors and is protected by intellectual property laws. You may not reproduce, distribute, or create
+          derivative works without prior written consent.</p>
+      </section>
 
-          <div>
-            <div class="kpi">5. Cancellations, changes & refunds</div>
-            <div class="muted" style="margin-top:6px">
-              Refunds and changes depend on the airline’s fare rules and policies. Fees, penalties, and fare differences may apply.
-            </div>
-          </div>
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">7. Limitation of Liability</h2>
+        <p>BookingCart is provided "as is" without warranties of any kind. We are not liable for any indirect,
+          incidental, or consequential damages arising from your use of our service, including but not limited to missed
+          flights, booking errors by airlines, or service disruptions.</p>
+      </section>
 
-          <div class="hr"></div>
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">8. Changes to Terms</h2>
+        <p>We reserve the right to modify these Terms of Service at any time. Continued use of the platform after
+          changes are posted constitutes your acceptance of the updated terms.</p>
+      </section>
 
-          <div>
-            <div class="kpi">6. Traveler responsibilities</div>
-            <div class="muted" style="margin-top:6px">
-              You are responsible for providing accurate traveler details and ensuring your travel documents (passport/visa) meet requirements.
-            </div>
-          </div>
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">9. Contact Us</h2>
+        <p>For questions about these Terms, please reach out to us at:</p>
+        <p class="mt-3 font-semibold text-green-700">bookingcart.business@gmail.com</p>
+      </section>
 
-          <div class="hr"></div>
-
-          <div>
-            <div class="kpi">7. Limitations of liability</div>
-            <div class="muted" style="margin-top:6px">
-              BookingCart is not responsible for airline schedule changes, delays, cancellations, or service disruptions. To the maximum extent permitted by law, BookingCart’s liability is limited to the amount you paid for the booking.
-            </div>
-          </div>
-
-          <div class="hr"></div>
-
-          <div>
-            <div class="kpi">8. Contact</div>
-            <div class="muted" style="margin-top:6px">
-              Questions about these Terms can be sent to your support contact address.
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </main>
 
-  <footer class="footer" aria-label="Footer">
-    <div class="container footer__inner">
-      <div class="muted"> BookingCart</div>
-      <div class="row" style="gap:12px;flex-wrap:wrap;justify-content:flex-end">
-        <span class="muted">Terms</span>
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-100 py-8 mt-auto">
+    <div
+      class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
+      <div>&copy; 2026 BookingCart. All rights reserved.</div>
+      <div class="flex gap-6">
+        <a href="privacy.html" class="hover:text-slate-600">Privacy Policy</a>
+        <a href="terms.html" class="text-green-600">Terms of Service</a>
       </div>
     </div>
   </footer>
+
 </body>
 
 </html>
