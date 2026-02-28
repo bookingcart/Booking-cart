@@ -536,7 +536,7 @@
           '</div>' +
           '<div>' +
           '<div class="font-medium text-slate-900">' + f.airline.name + '</div>' +
-          '<div class="text-xs font-semibold text-slate-400 mt-0.5">' + (search.from || "") + " → " + (search.to || "") + '</div>' +
+          '<div class="text-xs font-semibold text-slate-400 mt-0.5 flex items-center gap-1.5">' + (search.from || "") + ' <i class="ph-bold ph-airplane-tilt text-sm text-green-600"></i> ' + (search.to || "") + '</div>' +
           '</div>' +
           '</div>' +
           '<div class="text-right">' +
