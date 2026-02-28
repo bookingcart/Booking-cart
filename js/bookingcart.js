@@ -1,4 +1,5 @@
 (function () {
+  console.log("🔥 BOOKINGCART JS LOADED!"); // Simple test
   const STORAGE_KEY = "bookingcart_flights_v1";
 
   function readState() {
@@ -100,19 +101,25 @@
   }
 
   async function searchDuffelAirports(keyword) {
-    if (!keyword || keyword.length < 2) return [];
+    console.log("🔍 searchDuffelAirports called with:", keyword);
+    if (!keyword || keyword.length < 2) {
+      console.log("❌ Keyword too short, returning []");
+      return [];
+    }
     try {
-      console.log("Searching Duffel airports for:", keyword); // Debug log
-      const resp = await fetch(`http://localhost:3002/api/duffel-airports?keyword=${encodeURIComponent(keyword)}`);
-      console.log("Duffel API response status:", resp.status); // Debug log
+      console.log("🔍 Searching Duffel airports for:", keyword);
+      const resp = await fetch(`/api/duffel-airports?keyword=${encodeURIComponent(keyword)}`);
+      console.log("🔍 Duffel API response status:", resp.status);
       const data = await resp.json().catch(() => null);
-      console.log("Duffel API data:", data); // Debug log
+      console.log("🔍 Duffel API data:", data);
       if (data && data.ok && Array.isArray(data.airports)) {
+        console.log("✅ Found airports:", data.airports.length);
         return data.airports;
       }
     } catch (e) {
-      console.warn("Duffel airport search failed:", e);
+      console.error("❌ Duffel airport search failed:", e);
     }
+    console.log("❌ Returning empty array");
     return [];
   }
 
@@ -125,11 +132,15 @@
     let searchTimeout = null;
 
     function render(items) {
+      console.log("🔍 Rendering airport results:", items.length, items);
       list.innerHTML = "";
       if (!items.length) {
+        console.log("🔍 No results, hiding dropdown");
         list.setAttribute("data-open", "false");
         return;
       }
+      console.log("🔍 Showing dropdown with results");
+      list.setAttribute("data-open", "true");
       items.slice(0, 8).forEach((a) => {
         const li = document.createElement("li");
         li.className = "suggest__item";
@@ -176,6 +187,7 @@
 
     input.addEventListener("input", () => {
       const q = input.value.trim();
+      console.log("🔍 Airport input changed:", q);
 
       // Clear previous timeout
       if (searchTimeout) {
@@ -184,8 +196,10 @@
 
       // Only search with API calls for 2+ characters
       if (q.length >= 2) {
+        console.log("🔍 Starting search for:", q);
         searchTimeout = setTimeout(() => performSearch(q), 300);
       } else {
+        console.log("🔍 Too short, clearing results");
         render([]);
       }
     });
@@ -313,7 +327,6 @@
 
   function initSearchForm() {
     const form = document.querySelector("form[data-search-form]");
-    console.log("Search form found:", !!form); // Debug log
     if (!form) return;
 
     // Set minimum dates to today
@@ -338,8 +351,7 @@
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      console.log("Form submitted"); // Debug log
-      
+
       const mode = (readState().tripType || "round").toString();
       const payload = {
         tripType: mode,
@@ -349,28 +361,22 @@
         return: ret ? ret.value : "",
         cabin: cabin ? cabin.value : "Economy"
       };
-      
-      console.log("Form payload:", payload); // Debug log
 
       if (!payload.from || !payload.to) {
-        console.log("Missing route validation failed"); // Debug log
         toast("Missing route", "Please choose a departure and destination airport.");
         return;
       }
 
       if (!payload.depart) {
-        console.log("Missing date validation failed"); // Debug log
         toast("Missing date", "Please select a departure date.");
         return;
       }
 
       if (payload.tripType === "round" && !payload.return) {
-        console.log("Missing return date validation failed"); // Debug log
         toast("Missing return date", "Select a return date or switch to one-way.");
         return;
       }
 
-      console.log("Writing state and redirecting to results.html"); // Debug log
       writeState({ search: payload });
       window.location.href = "results.html";
     });
@@ -413,7 +419,7 @@
         max: 30
       };
 
-      const resp = await fetch("http://localhost:3002/api/duffel-search", {
+      const resp = await fetch("/api/duffel-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -423,6 +429,8 @@
       if (data && data.ok && Array.isArray(data.flights)) {
         console.log(`Duffel search successful: ${data.flights.length} flights`);
         return data.flights;
+      } else if (data && !data.ok) {
+        console.error("Duffel search error:", data.error);
       }
     } catch (e) {
       console.error("Duffel API error:", e);
@@ -437,13 +445,14 @@
     const state = readState();
     const search = state.search || {};
 
+    // Update header
     const headerRoute = document.querySelector("[data-route]");
     const headerMeta = document.querySelector("[data-meta]");
     if (headerRoute) setText(headerRoute, (search.from || "") + " → " + (search.to || ""));
     if (headerMeta) {
       const pax = state.passengers || { adults: 1, children: 0, infants: 0 };
       const total = pax.adults + pax.children + pax.infants;
-      const trip = (state.tripType || "round") === "oneway" ? "One-way" : (state.tripType || "round") === "multi" ? "Multi-city" : "Round-trip";
+      const trip = (state.tripType || "round") === "oneway" ? "One-way" : "Round-trip";
       setText(headerMeta, trip + " • " + (search.depart || "") + (search.return ? " → " + search.return : "") + " • " + total + " pax • " + (search.cabin || "Economy"));
     }
 
@@ -451,7 +460,7 @@
     const sortEl = document.querySelector("select[name='sort']");
 
     const filters = {
-      maxPrice: 1200,
+      maxPrice: 2000,
       stops: "any",
       airline: "any",
       departBucket: "any"
@@ -462,7 +471,7 @@
       const s = document.querySelector("select[name='stops']");
       const a = document.querySelector("select[name='airline']");
       const d = document.querySelector("select[name='departTime']");
-      if (p) filters.maxPrice = Number(p.value || 1200);
+      if (p) filters.maxPrice = Number(p.value || 2000);
       if (s) filters.stops = s.value;
       if (a) filters.airline = a.value;
       if (d) filters.departBucket = d.value;
@@ -470,7 +479,7 @@
 
     function inDepartBucket(time, bucket) {
       if (bucket === "any") return true;
-      const h = Number(time.split(":")[0] || 0);
+      const h = Number((time || "0").split(":")[0] || 0);
       if (bucket === "morning") return h >= 5 && h < 12;
       if (bucket === "afternoon") return h >= 12 && h < 18;
       if (bucket === "evening") return h >= 18 || h < 5;
@@ -480,7 +489,8 @@
     function apply(list) {
       readFiltersFromUI();
       let out = list.filter((f) => {
-        if (f.price > filters.maxPrice) return false;
+        const price = typeof f.price === "object" ? parseFloat(f.price.amount || 0) : f.price;
+        if (price > filters.maxPrice) return false;
         if (filters.stops !== "any" && String(f.stops) !== String(filters.stops)) return false;
         if (filters.airline !== "any" && f.airline.code !== filters.airline) return false;
         if (!inDepartBucket(f.departTime, filters.departBucket)) return false;
@@ -489,9 +499,11 @@
 
       const sort = sortEl ? sortEl.value : "price";
       out = out.slice().sort((a, b) => {
-        if (sort === "price") return a.price - b.price;
-        if (sort === "duration") return a.durationMin - b.durationMin;
-        if (sort === "depart") return a.departTime.localeCompare(b.departTime);
+        const priceA = typeof a.price === "object" ? parseFloat(a.price.amount || 0) : a.price;
+        const priceB = typeof b.price === "object" ? parseFloat(b.price.amount || 0) : b.price;
+        if (sort === "price") return priceA - priceB;
+        if (sort === "duration") return (a.durationMin || 0) - (b.durationMin || 0);
+        if (sort === "depart") return (a.departTime || "").localeCompare(b.departTime || "");
         return 0;
       });
 
@@ -510,6 +522,7 @@
       }
 
       list.forEach((f) => {
+        const priceVal = typeof f.price === "object" ? parseFloat(f.price.amount || 0) : f.price;
         const card = document.createElement("div");
         card.className = "bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all overflow-hidden group";
         card.innerHTML =
@@ -517,32 +530,31 @@
           '<div class="flex justify-between items-start mb-6">' +
           '<div class="flex items-center gap-4">' +
           '<div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm">' +
-          (f.airline.logoUrl ? '<img src="' + f.airline.logoUrl + '" alt="' + f.airline.name + '" class="w-full h-full object-contain" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' + 
-            '<div class="w-full h-full items-center justify-center text-slate-900 font-medium" style="display:none;">' + f.airline.logo + '</div>' : 
+          (f.airline.logoUrl ? '<img src="' + f.airline.logoUrl + '" alt="' + f.airline.name + '" class="w-full h-full object-contain" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' +
+            '<div class="w-full h-full items-center justify-center text-slate-900 font-medium" style="display:none;">' + f.airline.logo + '</div>' :
             '<div class="w-full h-full flex items-center justify-center text-slate-900 font-medium">' + f.airline.logo + '</div>') +
           '</div>' +
           '<div>' +
           '<div class="font-medium text-slate-900">' + f.airline.name + '</div>' +
-          '<div class="text-xs font-semibold text-slate-400 mt-0.5">' + (search.from || "ABC") + " → " + (search.to || "XYZ") + '</div>' +
+          '<div class="text-xs font-semibold text-slate-400 mt-0.5">' + (search.from || "") + " → " + (search.to || "") + '</div>' +
           '</div>' +
           '</div>' +
           '<div class="text-right">' +
-          '<div class="text-xl font-semibold text-green-600">' + money(f.price) + '</div>' +
+          '<div class="text-xl font-semibold text-green-600">' + money(priceVal) + '</div>' +
           '<div class="text-xs text-slate-400 font-medium">per traveler</div>' +
           '</div>' +
-          '</div>' + // end header
-
+          '</div>' +
           '<div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">' +
           '<div class="bg-slate-50 rounded-lg p-2.5 text-center">' +
-          '<div class="font-medium text-slate-700">' + f.departTime + '</div>' +
+          '<div class="font-medium text-slate-700">' + (f.departTime || "--:--") + '</div>' +
           '<div class="text-xs text-slate-400 font-medium">Depart</div>' +
           '</div>' +
           '<div class="bg-slate-50 rounded-lg p-2.5 text-center">' +
-          '<div class="font-medium text-slate-700">' + f.arriveTime + '</div>' +
+          '<div class="font-medium text-slate-700">' + (f.arriveTime || "--:--") + '</div>' +
           '<div class="text-xs text-slate-400 font-medium">Arrive</div>' +
           '</div>' +
           '<div class="bg-slate-50 rounded-lg p-2.5 text-center">' +
-          '<div class="font-medium text-slate-700">' + durationLabel(f.durationMin) + '</div>' +
+          '<div class="font-medium text-slate-700">' + durationLabel(f.durationMin || 0) + '</div>' +
           '<div class="text-xs text-slate-400 font-medium">Duration</div>' +
           '</div>' +
           '<div class="bg-slate-50 rounded-lg p-2.5 text-center">' +
@@ -550,8 +562,7 @@
           '<div class="text-xs text-slate-400 font-medium">Stops</div>' +
           '</div>' +
           '</div>' +
-          '</div>' + // end body
-
+          '</div>' +
           '<div class="bg-slate-50/50 border-t border-slate-100 p-3 flex justify-end">' +
           '<a class="inline-flex items-center gap-2 text-sm font-medium text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-4 py-2 rounded-lg transition-colors" href="#" data-flight-link>' +
           'Select Flight <i class="ph-bold ph-arrow-right"></i>' +
@@ -565,21 +576,14 @@
       });
     }
 
-    if (listEl) {
-      listEl.innerHTML = "";
-      for (let i = 0; i < 4; i++) {
-        const sk = document.createElement("div");
-        sk.className = "skeleton";
-        listEl.appendChild(sk);
-      }
-    }
-
     function hydrateResults(flights) {
       writeState({ flights });
 
       const maxPriceEl = document.querySelector("input[name='maxPrice']");
       if (maxPriceEl) {
-        const mx = Math.max(300, ...flights.map((f) => Number(f.price || 0)));
+        const mx = Math.max(300, ...flights.map((f) => {
+          return typeof f.price === "object" ? parseFloat(f.price.amount || 0) : Number(f.price || 0);
+        }));
         const sliderMax = Math.ceil(mx / 50) * 50;
         maxPriceEl.max = String(sliderMax);
         maxPriceEl.value = String(sliderMax);
@@ -605,28 +609,41 @@
       update();
     }
 
-    (async () => {
-      let flights = null;
+    // Show skeletons and fetch
+    if (listEl) {
+      listEl.innerHTML = "";
+      for (let i = 0; i < 4; i++) {
+        const sk = document.createElement("div");
+        sk.className = "skeleton";
+        listEl.appendChild(sk);
+      }
+    }
 
+    if (!search.from || !search.to || !search.depart) {
+      if (listEl) {
+        listEl.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm"><div class="text-red-500">No search data found. Please go back and search again.</div></div>';
+      }
+      return;
+    }
+
+    (async () => {
       try {
-        // Only use Duffel API
-        flights = await fetchDuffelFlights(state, search);
+        const flights = await fetchDuffelFlights(state, search);
 
         if (!flights || flights.length === 0) {
-          toast("No flights found", "No flights available for this route and dates. Please try different airports or dates.");
+          if (listEl) {
+            listEl.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm"><div class="text-lg font-medium text-slate-900 mb-2">No flights found</div><div class="text-slate-500">No flights available for this route and dates. Try different airports or dates.</div></div>';
+          }
           return;
-        } else {
-          toast("Duffel search successful", `Found ${flights.length} flights via Duffel API.`);
         }
+
+        hydrateResults(flights);
       } catch (e) {
         console.error("API error:", e);
-        const errorMsg = e && e.message ? e.message : "API request failed";
-        toast("Search failed", errorMsg + ". Please try again later.");
-        return;
+        if (listEl) {
+          listEl.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm"><div class="text-red-500">Error loading flights. Please try again.</div></div>';
+        }
       }
-
-      // Only use real flight data - no demo fallback
-      hydrateResults(flights);
     })();
   }
 
@@ -647,6 +664,8 @@
 
     writeState({ selectedFlightId: flight.id });
 
+    // Sidebar Info
+    const priceVal = typeof flight.price === "object" ? parseFloat(flight.price.amount || 0) : flight.price;
     const airline = root.querySelector("[data-airline]");
     const airlineLogo = root.querySelector("[data-airline-logo]");
     const times = root.querySelector("[data-times]");
@@ -654,17 +673,90 @@
     const price = root.querySelector("[data-price]");
 
     if (airline) setText(airline, flight.airline.name);
-    if (airlineLogo) {
-      if (flight.airline.logoUrl) {
-        airlineLogo.innerHTML = '<img src="' + flight.airline.logoUrl + '" alt="' + flight.airline.name + '" class="w-full h-full object-contain" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' + 
-          '<div class="w-full h-full flex items-center justify-center text-slate-900 font-medium" style="display:none;">' + flight.airline.logo + '</div>';
-      } else {
-        airlineLogo.innerHTML = '<div class="w-full h-full flex items-center justify-center text-slate-900 font-medium">' + flight.airline.logo + '</div>';
-      }
+    if (airlineLogo) airlineLogo.innerHTML = '<div class="w-full h-full flex items-center justify-center text-slate-900 font-medium">' + flight.airline.logo + '</div>';
+    if (times) setText(times, (flight.departTime || "--:--") + " → " + (flight.arriveTime || "--:--"));
+    if (duration) setText(duration, durationLabel(flight.durationMin || 0) + " • " + (flight.stops === 0 ? "Non-stop" : flight.stops + " stop" + (flight.stops > 1 ? "s" : "")));
+    if (price) setText(price, money(priceVal));
+
+    // Dynamic Trip Breakdown
+    const segmentsContainer = document.getElementById("flight-segments-container");
+    if (segmentsContainer && flight.segments && flight.segments.length > 0) {
+      let segmentsHtml = `
+        <h2 class="font-medium text-lg text-slate-900 mb-4 flex items-center gap-2">
+          <i class="ph-duotone ph-airplane-tilt text-green-600 text-xl"></i> Trip Breakdown
+        </h2>
+        <div class="flex flex-wrap gap-3 mb-6">
+          <span class="px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-xs font-medium">Gate closes 20 min before</span>
+          <span class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium">Mobile boarding pass</span>
+        </div>
+        <div class="space-y-0 relative before:absolute before:inset-y-0 before:left-3 before:w-0.5 border-slate-200">
+      `;
+
+      flight.segments.forEach((seg, index) => {
+        // Layover block if not the first segment
+        if (index > 0) {
+          const prevArr = flight.segments[index - 1].arriveTime;
+          const currDep = seg.departTime;
+          segmentsHtml += `
+            <div class="py-4 pl-10 relative">
+              <div class="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-orange-400 border-[3px] border-orange-100 z-10"></div>
+              <div class="absolute inset-y-0 left-3 w-0.5 bg-dashed border-l-2 border-dashed border-orange-200"></div>
+              <div class="bg-orange-50 text-orange-700 text-sm font-medium px-4 py-2 rounded-xl inline-flex items-center gap-2">
+                <i class="ph-bold ph-clock"></i> Layover in ${seg.departCity || seg.departAirport}
+              </div>
+            </div>
+          `;
+        }
+
+        // Flight Segment block
+        segmentsHtml += `
+          <div class="relative pl-10 py-2">
+            <!-- Timeline Line -->
+            <div class="absolute top-0 bottom-0 left-3 w-0.5 bg-slate-200 -z-10"></div>
+            <!-- Departure Node -->
+            <div class="absolute left-[9px] top-4 w-3.5 h-3.5 rounded-full bg-white border-2 border-slate-300 z-10"></div>
+            
+            <!-- Departure Info -->
+            <div class="flex justify-between items-start mb-6 pt-2">
+              <div>
+                <div class="text-xl font-semibold text-slate-900">${seg.departTime}</div>
+                <div class="text-sm font-medium text-slate-700 mt-1">${seg.departCity || seg.departAirport} <span class="text-slate-400 font-normal">(${seg.departCode})</span></div>
+                ${seg.departTerminal ? `<div class="text-xs text-slate-500 mt-1">Terminal ${seg.departTerminal}</div>` : ''}
+              </div>
+            </div>
+            
+            <!-- Flight Meta (Duration, Airline, Aircraft) -->
+            <div class="flex gap-4 items-center mb-6 bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-[10px] text-slate-800 shadow-sm">${seg.airlineCode || 'FL'}</div>
+              <div>
+                <div class="text-sm font-medium text-slate-900">${seg.airlineName} <span class="text-slate-500 font-normal ml-1">Flight ${seg.flightNumber || 'TBD'}</span></div>
+                <div class="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                  <span>${durationLabel(seg.durationMin)}</span>
+                  <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                  <span>${seg.aircraft}</span>
+                  ${seg.cabin_class ? `<span class="w-1 h-1 rounded-full bg-slate-300"></span><span class="capitalize">${seg.cabin_class}</span>` : ''}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Arrival Node -->
+            <div class="absolute left-[9px] bottom-5 w-3.5 h-3.5 rounded-full bg-slate-800 z-10"></div>
+            
+            <!-- Arrival Info -->
+            <div class="flex justify-between items-start pb-2">
+              <div>
+                <div class="text-xl font-semibold text-slate-900">${seg.arriveTime}</div>
+                <div class="text-sm font-medium text-slate-700 mt-1">${seg.arriveCity || seg.arriveAirport} <span class="text-slate-400 font-normal">(${seg.arriveCode})</span></div>
+                ${seg.arriveTerminal ? `<div class="text-xs text-slate-500 mt-1">Terminal ${seg.arriveTerminal}</div>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      segmentsHtml += `</div>`;
+      segmentsContainer.innerHTML = segmentsHtml;
     }
-    if (times) setText(times, flight.departTime + " → " + flight.arriveTime);
-    if (duration) setText(duration, durationLabel(flight.durationMin) + " • " + (flight.stops === 0 ? "Non-stop" : flight.stops + " stop" + (flight.stops > 1 ? "s" : "")));
-    if (price) setText(price, money(flight.price));
 
     const cta = root.querySelector("[data-select-flight]");
     if (cta)
@@ -926,6 +1018,7 @@
   }
 
   function init() {
+    console.log("🚀 BookingCart initializing...");
     initStepper();
     initDropdowns();
     initAirportSuggestAll();
@@ -934,19 +1027,23 @@
     initSearchForm();
     initResults();
     initDetails();
+    // Note: fetchFlightsAndDisplay, displayFlights, fetchFlightsFromSearch, extractAirportCode
+    // are legacy functions kept below for backward compatibility but initResults handles everything.
     initPassengers();
     initExtras();
     initPayment();
     initConfirmation();
+    console.log("✅ BookingCart initialization complete");
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  // Legacy functions removed — initResults now handles all flight fetching and display
 
   window.BookingCart = {
     readState,
     writeState,
-    airports,
     money,
     toast
   };
+
+  init();
 })();

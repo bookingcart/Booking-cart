@@ -16,7 +16,7 @@
 
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1888969771559868"
-     crossorigin="anonymous"></script>
+    crossorigin="anonymous"></script>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -99,17 +99,13 @@
         </div>
         <p class="text-slate-500 font-medium">Review the full breakdown, fare rules, and baggage allowances.</p>
 
-        <!-- Trip Breakdown -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <!-- Trip Breakdown container (populated dynamically) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6" id="flight-segments-container">
           <h2 class="font-medium text-lg text-slate-900 mb-4 flex items-center gap-2"><i
               class="ph-duotone ph-airplane-tilt text-green-600 text-xl"></i> Trip Breakdown</h2>
           <hr class="border-slate-100 my-4">
-          <div class="flex flex-wrap gap-3">
-            <span class="px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-xs font-medium">Gate closes 20 min
-              before</span>
-            <span class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium">Mobile boarding
-              pass</span>
-          </div>
+          <div class="text-sm text-slate-500 py-4 flex justify-center items-center"><i
+              class="ph-bold ph-spinner-gap animate-spin mr-2"></i> Loading flight details...</div>
         </div>
 
         <!-- Fare Rules -->
@@ -166,7 +162,9 @@
           <div class="mb-4">
             <div class="text-sm text-slate-500 font-medium">Airline</div>
             <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm" data-airline-logo>
+              <div
+                class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm"
+                data-airline-logo>
                 <div class="w-full h-full flex items-center justify-center text-slate-900 font-medium">—</div>
               </div>
               <div class="text-xl font-medium text-slate-900" data-airline>—</div>

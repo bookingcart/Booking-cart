@@ -704,6 +704,29 @@ function transformDuffelData(data) {
         stops: Math.max(0, (slice.segments?.length || 1) - 1),
         price: Math.round(price),
         cabin: offer.cabin_class || 'economy',
+        segments: slice.segments.map(s => {
+          const sDep = new Date(s.departing_at);
+          const sArr = new Date(s.arriving_at);
+          const sDurMs = sArr - sDep;
+          return {
+            airlineName: s.operating_carrier?.name || s.marketing_carrier?.name || 'Unknown Carrier',
+            airlineCode: s.operating_carrier?.iata_code || s.marketing_carrier?.iata_code || '',
+            flightNumber: s.operating_carrier_flight_number || s.marketing_carrier_flight_number || '',
+            departTime: s.departing_at.split('T')[1]?.substring(0, 5) || '00:00',
+            arriveTime: s.arriving_at.split('T')[1]?.substring(0, 5) || '00:00',
+            departAirport: s.origin?.name || s.origin?.iata_code || '',
+            departCity: s.origin?.city_name || '',
+            departCode: s.origin?.iata_code || '',
+            departTerminal: s.origin_terminal || '',
+            arriveAirport: s.destination?.name || s.destination?.iata_code || '',
+            arriveCity: s.destination?.city_name || '',
+            arriveCode: s.destination?.iata_code || '',
+            arriveTerminal: s.destination_terminal || '',
+            aircraft: s.aircraft?.name || 'Standard Aircraft',
+            durationMin: Math.round(sDurMs / (1000 * 60)),
+            baggage: s.passengers?.[0]?.baggages || []
+          };
+        }),
         _duffelOffer: offer
       };
     } catch (e) {
