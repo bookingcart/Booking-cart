@@ -3,8 +3,11 @@ require('dotenv').config();
 
 const fetch = require('node-fetch');
 
+const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || '';
+const DUFFEL_BASE_URL = 'https://api.duffel.com';
+
 /**
- * Airport search for Duffel (limited implementation)
+ * Airport search for Duffel using live Places API
  */
 module.exports = async (req, res) => {
   // Enable CORS
@@ -23,86 +26,61 @@ module.exports = async (req, res) => {
       return res.json({ ok: true, airports: [] });
     }
 
-    console.log("Searching Duffel airports for:", keyword);
+    if (!DUFFEL_API_KEY) {
+      return res.status(500).json({ ok: false, error: "Duffel API key not configured" });
+    }
 
-    // Expanded airport list for better coverage
-    const airports = [
-      // Major International Airports
-      { city: "London", name: "Heathrow", code: "LHR", country: "United Kingdom" },
-      { city: "London", name: "Gatwick", code: "LGW", country: "United Kingdom" },
-      { city: "Paris", name: "Charles de Gaulle", code: "CDG", country: "France" },
-      { city: "Amsterdam", name: "Schiphol", code: "AMS", country: "Netherlands" },
-      { city: "Frankfurt", name: "Frankfurt", code: "FRA", country: "Germany" },
-      { city: "Munich", name: "Munich", code: "MUC", country: "Germany" },
-      { city: "Rome", name: "Fiumicino", code: "FCO", country: "Italy" },
-      { city: "Madrid", name: "Barajas", code: "MAD", country: "Spain" },
-      { city: "Barcelona", name: "El Prat", code: "BCN", country: "Spain" },
-      { city: "Istanbul", name: "Istanbul", code: "IST", country: "Turkey" },
-      { city: "Dubai", name: "Dubai", code: "DXB", country: "United Arab Emirates" },
-      { city: "Doha", name: "Hamad", code: "DOH", country: "Qatar" },
-      { city: "Cairo", name: "Cairo", code: "CAI", country: "Egypt" },
-      { city: "Riyadh", name: "King Khalid", code: "RUH", country: "Saudi Arabia" },
-      { city: "Jeddah", name: "King Abdulaziz", code: "JED", country: "Saudi Arabia" },
-      { city: "Nairobi", name: "Jomo Kenyatta International", code: "NBO", country: "Kenya" },
-      { city: "Lagos", name: "Murtala Muhammed", code: "LOS", country: "Nigeria" },
-      { city: "Johannesburg", name: "O.R. Tambo", code: "JNB", country: "South Africa" },
-      // North America
-      { city: "New York", name: "JFK", code: "JFK", country: "United States" },
-      { city: "New York", name: "Newark", code: "EWR", country: "United States" },
-      { city: "Boston", name: "Logan", code: "BOS", country: "United States" },
-      { city: "Chicago", name: "O'Hare", code: "ORD", country: "United States" },
-      { city: "Los Angeles", name: "LAX", code: "LAX", country: "United States" },
-      { city: "San Francisco", name: "SFO", code: "SFO", country: "United States" },
-      { city: "Toronto", name: "Pearson", code: "YYZ", country: "Canada" },
-      { city: "Vancouver", name: "YVR", code: "YVR", country: "Canada" },
-      { city: "Mexico City", name: "Benito Juárez", code: "MEX", country: "Mexico" },
-      // South America
-      { city: "São Paulo", name: "Guarulhos", code: "GRU", country: "Brazil" },
-      { city: "Buenos Aires", name: "Ezeiza", code: "EZE", country: "Argentina" },
-      // Asia Pacific
-      { city: "Tokyo", name: "Haneda", code: "HND", country: "Japan" },
-      { city: "Tokyo", name: "Narita", code: "NRT", country: "Japan" },
-      { city: "Seoul", name: "Incheon", code: "ICN", country: "South Korea" },
-      { city: "Singapore", name: "Changi", code: "SIN", country: "Singapore" },
-      { city: "Hong Kong", name: "Hong Kong", code: "HKG", country: "Hong Kong" },
-      { city: "Bangkok", name: "Suvarnabhumi", code: "BKK", country: "Thailand" },
-      { city: "Delhi", name: "Indira Gandhi", code: "DEL", country: "India" },
-      { city: "Mumbai", name: "Chhatrapati Shivaji", code: "BOM", country: "India" },
-      { city: "Sydney", name: "Kingsford Smith", code: "SYD", country: "Australia" },
-      { city: "Melbourne", name: "Tullamarine", code: "MEL", country: "Australia" },
-      // Additional Major Hubs
-      { city: "Atlanta", name: "Hartsfield-Jackson", code: "ATL", country: "United States" },
-      { city: "Miami", name: "International", code: "MIA", country: "United States" },
-      { city: "Dallas", name: "Fort Worth", code: "DFW", country: "United States" },
-      { city: "Denver", name: "International", code: "DEN", country: "United States" },
-      { city: "Seattle", name: "Tacoma International", code: "SEA", country: "United States" },
-      { city: "Las Vegas", name: "McCarran", code: "LAS", country: "United States" },
-      { city: "Orlando", name: "International", code: "MCO", country: "United States" },
-      { city: "Philadelphia", name: "International", code: "PHL", country: "United States" },
-      { city: "Phoenix", name: "Sky Harbor", code: "PHX", country: "United States" },
-      { city: "Houston", name: "George Bush Intercontinental", code: "IAH", country: "United States" },
-      { city: "Detroit", name: "Metropolitan Wayne County", code: "DTW", country: "United States" },
-      { city: "Minneapolis", name: "Saint Paul International", code: "MSP", country: "United States" }
-    ];
-
-    // Filter airports based on keyword
-    const results = airports.filter((airport) => {
-      const searchStr = `${airport.city} ${airport.name} ${airport.code}`.toLowerCase();
-      return searchStr.includes(keyword.toLowerCase());
+    // Fetch from Duffel Places API
+    const response = await fetch(`${DUFFEL_BASE_URL}/places/suggestions?query=${encodeURIComponent(keyword)}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Duffel-Version': 'v2',
+        'Authorization': `Bearer ${DUFFEL_API_KEY}`
+      }
     });
 
-    console.log(`Found ${results.length} airports for "${keyword}"`);
+    if (!response.ok) {
+      console.error("Duffel places API error:", await response.text());
+      return res.json({ ok: true, airports: [] });
+    }
 
-    return res.json({
-      ok: true,
-      airports: results.slice(0, 10) // Limit to 10 results
-    });
+    const { data } = await response.json();
+
+    // Process results to match our frontend format
+    const airports = [];
+
+    for (const place of data) {
+      if (place.type === 'airport') {
+        airports.push({
+          city: place.city_name || place.name,
+          name: place.name,
+          code: place.iata_code,
+          country: place.iata_country_code
+        });
+      } else if (place.type === 'city' && Array.isArray(place.airports)) {
+        // If it's a city, add its airports
+        for (const airport of place.airports) {
+          airports.push({
+            city: place.name || airport.city_name,
+            name: airport.name,
+            code: airport.iata_code,
+            country: airport.iata_country_code || place.iata_country_code
+          });
+        }
+      }
+    }
+
+    // Remove duplicates by code
+    const uniqueAirports = Array.from(new Map(airports.map(a => [a.code, a])).values());
+
+    return res.json({ ok: true, airports: uniqueAirports.slice(0, 8) });
 
   } catch (error) {
-    console.error("Duffel airport search error:", error);
+    console.error('Error searching Duffel airports:', error);
     return res.status(500).json({
       ok: false,
-      error: "Failed to search airports"
+      error: error.message
     });
   }
 };

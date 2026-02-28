@@ -131,59 +131,98 @@ function mapCabinClass(travelClass) {
 }
 
 function transformDuffelData(data) {
-  if (!data.data || !Array.isArray(data.data)) return [];
+  // Handle both offer_requests response (data.data.offers) and direct offers response (data.data as array)
+  let offers = [];
+  if (data.data && Array.isArray(data.data.offers)) {
+    offers = data.data.offers;
+  } else if (data.data && Array.isArray(data.data)) {
+    offers = data.data;
+  } else {
+    return [];
+  }
 
-  return data.data.map((offer) => {
+  return offers.map((offer) => {
     try {
       const slice = offer.slices?.[0];
-      const segment = slice?.segments?.[0];
-      const aircraft = segment?.aircraft;
-      const owner = segment?.operating_carrier || segment?.marketing_carrier;
-      const origin = segment?.origin;
-      const destination = segment?.destination;
-
-      if (!origin || !destination || !owner) {
-        console.warn('Missing required flight data, skipping offer');
+      if (!slice || !slice.segments || slice.segments.length === 0) {
+        console.warn('Missing slice/segments data, skipping offer');
         return null;
       }
 
-      // Calculate times
-      const departTime = new Date(origin.departing_at);
-      const arriveTime = new Date(destination.arriving_at);
+      const firstSegment = slice.segments[0];
+      const lastSegment = slice.segments[slice.segments.length - 1];
+      const owner = firstSegment?.operating_carrier || firstSegment?.marketing_carrier;
+
+      if (!owner) {
+        console.warn('Missing carrier data, skipping offer');
+        return null;
+      }
+
+      // Calculate times from segment departing_at / arriving_at
+      const departTime = new Date(firstSegment.departing_at);
+      const arriveTime = new Date(lastSegment.arriving_at);
       const durationMs = arriveTime - departTime;
-      const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
-      const durationMins = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+      const durationMin = Math.round(durationMs / (1000 * 60));
+
+      // Extract HH:MM strings
+      const departTimeStr = firstSegment.departing_at.split('T')[1]?.substring(0, 5) || '00:00';
+      const arriveTimeStr = lastSegment.arriving_at.split('T')[1]?.substring(0, 5) || '00:00';
+
+      // Origin and destination airport info
+      const origin = firstSegment.origin || {};
+      const destination = lastSegment.destination || {};
+
+      // Price - Duffel uses total_amount (string) and total_currency
+      const price = parseFloat(offer.total_amount) || 0;
 
       return {
         id: offer.id,
         airline: {
-          code: owner.iata_code || "DF",
-          name: owner.name || "Duffel Airline",
-          logo: owner.iata_code?.substring(0, 2).toUpperCase() || "DF",
-          logoUrl: owner.logo_symbol_url || owner.logo_lockup_url || ""
+          code: owner.iata_code || 'DF',
+          name: owner.name || 'Duffel Airline',
+          logo: (owner.iata_code || 'DF').substring(0, 2).toUpperCase(),
+          logoUrl: owner.logo_symbol_url || owner.logo_lockup_url || ''
         },
         from: {
-          city: origin.city_name || origin.iata_code,
-          airport: origin.name || origin.iata_code,
-          code: origin.iata_code
+          city: origin.city_name || origin.iata_code || '',
+          airport: origin.name || origin.iata_code || '',
+          code: origin.iata_code || ''
         },
         to: {
-          city: destination.city_name || destination.iata_code,
-          airport: destination.name || destination.iata_code,
-          code: destination.iata_code
+          city: destination.city_name || destination.iata_code || '',
+          airport: destination.name || destination.iata_code || '',
+          code: destination.iata_code || ''
         },
-        departTime: departTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        arriveTime: arriveTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        departDate: departTime.toLocaleDateString(),
-        arriveDate: arriveTime.toLocaleDateString(),
-        duration: `${durationHours}h ${durationMins}m`,
-        stops: slice?.segments?.length - 1 || 0,
-        price: {
-          amount: offer.total_amount,
-          currency: offer.total_currency
-        },
-        cabin: offer.cabin_class || "Economy",
-        aircraft: aircraft?.iata_code || "Unknown"
+        departTime: departTimeStr,
+        arriveTime: arriveTimeStr,
+        durationMin,
+        stops: Math.max(0, (slice.segments?.length || 1) - 1),
+        price: Math.round(price),
+        cabin: offer.cabin_class || 'economy',
+        segments: slice.segments.map(s => {
+          const sDep = new Date(s.departing_at);
+          const sArr = new Date(s.arriving_at);
+          const sDurMs = sArr - sDep;
+          return {
+            airlineName: s.operating_carrier?.name || s.marketing_carrier?.name || 'Unknown Carrier',
+            airlineCode: s.operating_carrier?.iata_code || s.marketing_carrier?.iata_code || '',
+            flightNumber: s.operating_carrier_flight_number || s.marketing_carrier_flight_number || '',
+            departTime: s.departing_at.split('T')[1]?.substring(0, 5) || '00:00',
+            arriveTime: s.arriving_at.split('T')[1]?.substring(0, 5) || '00:00',
+            departAirport: s.origin?.name || s.origin?.iata_code || '',
+            departCity: s.origin?.city_name || '',
+            departCode: s.origin?.iata_code || '',
+            departTerminal: s.origin_terminal || '',
+            arriveAirport: s.destination?.name || s.destination?.iata_code || '',
+            arriveCity: s.destination?.city_name || '',
+            arriveCode: s.destination?.iata_code || '',
+            arriveTerminal: s.destination_terminal || '',
+            aircraft: s.aircraft?.name || 'Standard Aircraft',
+            durationMin: Math.round(sDurMs / (1000 * 60)),
+            baggage: s.passengers?.[0]?.baggages || []
+          };
+        }),
+        _duffelOffer: offer
       };
     } catch (e) {
       console.error('Error transforming Duffel offer:', e);
