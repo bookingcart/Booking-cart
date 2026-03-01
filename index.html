@@ -83,6 +83,99 @@
     }
   </style>
 
+  <style>
+    /* ── Remove outlines & focus rings on ALL inputs ── */
+    input,
+    select,
+    textarea,
+    button {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    /* ── Date Picker Styling ── */
+    input[type="date"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      position: relative;
+      font-family: inherit;
+      font-weight: 600;
+      color: #1e293b;
+      cursor: pointer;
+      padding-right: 0.5rem;
+    }
+
+    /* Hide default calendar icon and replace */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      background: transparent;
+      color: transparent;
+      cursor: pointer;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+    }
+
+    /* Chrome/Edge date picker dropdown styling */
+    ::-webkit-datetime-edit {
+      font-family: inherit;
+      font-weight: 600;
+      padding: 0;
+    }
+
+    ::-webkit-datetime-edit-fields-wrapper {
+      padding: 0;
+    }
+
+    ::-webkit-datetime-edit-text {
+      color: #94a3b8;
+      padding: 0 2px;
+    }
+
+    ::-webkit-datetime-edit-month-field,
+    ::-webkit-datetime-edit-day-field,
+    ::-webkit-datetime-edit-year-field {
+      color: #1e293b;
+      font-weight: 600;
+    }
+
+    ::-webkit-datetime-edit-month-field:focus,
+    ::-webkit-datetime-edit-day-field:focus,
+    ::-webkit-datetime-edit-year-field:focus {
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    /* Remove inner border on the field wrapper */
+    .field input,
+    .field select {
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Make the input wrapper bg seamless */
+    .field>div {
+      border: none !important;
+    }
+
+    .field>div:focus-within {
+      border: none !important;
+      box-shadow: none !important;
+    }
+  </style>
+
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
@@ -178,11 +271,10 @@
                 class="flex-[1.25] min-w-[160px] px-4 py-2 lg:py-0 field suggest border-b lg:border-b-0 border-slate-100">
                 <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Where
                   From?</label>
-                <div
-                  class="w-full flex items-center gap-3 bg-slate-50 border border-transparent hover:border-slate-200 focus-within:bg-white focus-within:ring-2 focus-within:ring-green-500/20 focus-within:border-green-500 rounded-xl px-3 py-2 transition-all">
+                <div class="w-full flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2 transition-all">
                   <i class="ph ph-airplane-takeoff text-xl text-slate-400"></i>
                   <input
-                    class="w-full bg-transparent border-none p-0 text-slate-900 font-medium placeholder:text-slate-300 focus:ring-0 text-base lg:text-lg"
+                    class="w-full bg-transparent border-none p-0 text-slate-900 font-medium placeholder:text-slate-300 text-base lg:text-lg"
                     name="from" data-airport-input placeholder="City" autocomplete="off" />
                 </div>
                 <ul class="suggest__list" role="listbox"></ul>
@@ -193,11 +285,10 @@
                 class="flex-[1.25] min-w-[160px] px-4 py-2 lg:py-0 field suggest border-b lg:border-b-0 border-slate-100">
                 <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Where
                   To?</label>
-                <div
-                  class="w-full flex items-center gap-3 bg-slate-50 border border-transparent hover:border-slate-200 focus-within:bg-white focus-within:ring-2 focus-within:ring-green-500/20 focus-within:border-green-500 rounded-xl px-3 py-2 transition-all">
+                <div class="w-full flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2 transition-all">
                   <i class="ph ph-airplane-landing text-xl text-slate-400"></i>
                   <input
-                    class="w-full bg-transparent border-none p-0 text-slate-900 font-medium placeholder:text-slate-300 focus:ring-0 text-base lg:text-lg"
+                    class="w-full bg-transparent border-none p-0 text-slate-900 font-medium placeholder:text-slate-300 text-base lg:text-lg"
                     name="to" data-airport-input placeholder="City" autocomplete="off" />
                 </div>
                 <ul class="suggest__list" role="listbox"></ul>
@@ -209,11 +300,10 @@
                   <label
                     class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Departure</label>
                   <div
-                    class="w-full flex items-center gap-2 bg-slate-50 border border-transparent hover:border-slate-200 focus-within:bg-white focus-within:ring-2 focus-within:ring-green-500/20 focus-within:border-green-500 rounded-xl px-3 py-2 transition-all cursor-text"
+                    class="w-full flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 transition-all cursor-text"
                     onclick="this.querySelector('input').showPicker ? this.querySelector('input').showPicker() : this.querySelector('input').focus()">
                     <i class="ph ph-calendar-blank text-xl text-slate-400"></i>
-                    <input
-                      class="w-full bg-transparent border-none p-0 text-slate-900 font-semibold focus:ring-0 cursor-pointer"
+                    <input class="w-full bg-transparent border-none p-0 text-slate-900 font-semibold cursor-pointer"
                       name="depart" type="date" min="" />
                   </div>
                 </div>
@@ -221,11 +311,10 @@
                 <div class="flex-1 field group" data-return-field>
                   <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Return</label>
                   <div
-                    class="w-full flex items-center gap-2 bg-slate-50 border border-transparent hover:border-slate-200 focus-within:bg-white focus-within:ring-2 focus-within:ring-green-500/20 focus-within:border-green-500 rounded-xl px-3 py-2 transition-all cursor-text"
+                    class="w-full flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 transition-all cursor-text"
                     onclick="this.querySelector('input').showPicker ? this.querySelector('input').showPicker() : this.querySelector('input').focus()">
                     <i class="ph ph-calendar-blank text-xl text-slate-400"></i>
-                    <input
-                      class="w-full bg-transparent border-none p-0 text-slate-900 font-semibold focus:ring-0 cursor-pointer"
+                    <input class="w-full bg-transparent border-none p-0 text-slate-900 font-semibold cursor-pointer"
                       name="return" type="date" />
                   </div>
                 </div>
