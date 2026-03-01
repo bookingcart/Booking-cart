@@ -236,9 +236,9 @@
         // Explicit Styling Management for Reliability
         if (isActive) {
           t.classList.remove("text-slate-500", "hover:text-slate-900", "hover:bg-white/50");
-          t.classList.add("text-blue-600", "bg-blue-50/50");
+          t.classList.add("text-green-600", "bg-green-50/50");
         } else {
-          t.classList.remove("text-blue-600", "bg-blue-50/50");
+          t.classList.remove("text-green-600", "bg-green-50/50");
           t.classList.add("text-slate-500", "hover:text-slate-900", "hover:bg-white/50");
         }
       });
