@@ -100,79 +100,156 @@
       box-shadow: none !important;
     }
 
-    /* ── Date Picker Styling ── */
-    input[type="date"] {
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      position: relative;
-      font-family: inherit;
-      font-weight: 600;
-      color: #1e293b;
-      cursor: pointer;
-      padding-right: 0.5rem;
-    }
-
-    /* Hide default calendar icon and replace */
-    input[type="date"]::-webkit-calendar-picker-indicator {
-      background: transparent;
-      color: transparent;
-      cursor: pointer;
+    /* ── Custom Calendar Popup ── */
+    .cal-popup {
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      width: 380px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      padding: 24px;
+      margin-top: 8px;
+      animation: calFadeIn 0.2s ease;
     }
 
-    /* Chrome/Edge date picker dropdown styling */
-    ::-webkit-datetime-edit {
-      font-family: inherit;
-      font-weight: 600;
-      padding: 0;
+    @keyframes calFadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
     }
 
-    ::-webkit-datetime-edit-fields-wrapper {
-      padding: 0;
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
     }
 
-    ::-webkit-datetime-edit-text {
-      color: #94a3b8;
-      padding: 0 2px;
-    }
-
-    ::-webkit-datetime-edit-month-field,
-    ::-webkit-datetime-edit-day-field,
-    ::-webkit-datetime-edit-year-field {
+    .cal-title {
+      font-size: 1.15rem;
+      font-weight: 800;
       color: #1e293b;
+      letter-spacing: -0.01em;
+    }
+
+    .cal-nav {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .cal-nav:hover {
+      background: #16a34a;
+      color: #fff;
+      border-color: #16a34a;
+    }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      margin-bottom: 4px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .cal-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 0;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.15s;
+      min-height: 52px;
+    }
+
+    .cal-cell:hover:not(.cal-cell--empty):not(.cal-cell--disabled) {
+      background: #f0fdf4;
+    }
+
+    .cal-cell--stripe {
+      background: #f8fafc;
+      border-radius: 0;
+    }
+
+    .cal-cell--stripe:first-child {
+      border-radius: 8px 0 0 8px;
+    }
+
+    .cal-cell--stripe:last-child {
+      border-radius: 0 8px 8px 0;
+    }
+
+    .cal-cell--today .cal-day {
+      color: #16a34a;
+    }
+
+    .cal-cell--selected {
+      background: #16a34a !important;
+      border-radius: 12px !important;
+    }
+
+    .cal-cell--selected .cal-day {
+      color: #fff !important;
+      font-weight: 800;
+    }
+
+    .cal-cell--selected .cal-price {
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .cal-cell--disabled {
+      opacity: 0.3;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .cal-day {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #334155;
+      line-height: 1;
+    }
+
+    .cal-price {
+      font-size: 0.625rem;
       font-weight: 600;
+      color: #16a34a;
+      margin-top: 2px;
     }
 
-    ::-webkit-datetime-edit-month-field:focus,
-    ::-webkit-datetime-edit-day-field:focus,
-    ::-webkit-datetime-edit-year-field:focus {
-      background: #dcfce7;
-      color: #166534;
-      border-radius: 4px;
-      outline: none;
-    }
-
-    /* Remove inner border on the field wrapper */
-    .field input,
-    .field select {
-      border: none !important;
-      outline: none !important;
-      box-shadow: none !important;
-    }
-
-    /* Make the input wrapper bg seamless */
-    .field>div {
-      border: none !important;
-    }
-
-    .field>div:focus-within {
-      border: none !important;
-      box-shadow: none !important;
+    .cal-cell--empty {
+      cursor: default;
     }
   </style>
 
@@ -264,11 +341,10 @@
         <div class="relative z-10 max-w-7xl w-full mx-auto -mt-8 px-4 lg:px-0">
           <div class="bg-white rounded-3xl p-3 shadow-2xl ring-1 ring-slate-100">
             <form data-search-form
-              class="flex flex-col lg:flex-row flex-wrap items-stretch lg:items-end gap-2 lg:gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
+              class="flex flex-col lg:flex-row lg:flex-nowrap items-stretch lg:items-end gap-2 lg:gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
 
               <!-- From -->
-              <div
-                class="flex-[1.25] min-w-[160px] px-4 py-2 lg:py-0 field suggest border-b lg:border-b-0 border-slate-100">
+              <div class="flex-1 min-w-0 px-4 py-2 lg:py-0 field suggest border-b lg:border-b-0 border-slate-100">
                 <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Where
                   From?</label>
                 <div class="w-full flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2 transition-all">
@@ -281,8 +357,7 @@
               </div>
 
               <!-- To -->
-              <div
-                class="flex-[1.25] min-w-[160px] px-4 py-2 lg:py-0 field suggest border-b lg:border-b-0 border-slate-100">
+              <div class="flex-1 min-w-0 px-4 py-2 lg:py-0 field suggest border-b lg:border-b-0 border-slate-100">
                 <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Where
                   To?</label>
                 <div class="w-full flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2 transition-all">
@@ -295,28 +370,26 @@
               </div>
 
               <!-- Date -->
-              <div class="flex-[2] min-w-[280px] px-4 py-2 lg:py-0 flex gap-4 border-b lg:border-b-0 border-slate-100">
+              <div class="flex-[1.5] min-w-0 px-4 py-2 lg:py-0 flex gap-4 border-b lg:border-b-0 border-slate-100">
                 <div class="flex-1 field">
                   <label
                     class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Departure</label>
-                  <div
-                    class="w-full flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 transition-all cursor-text"
-                    onclick="this.querySelector('input').showPicker ? this.querySelector('input').showPicker() : this.querySelector('input').focus()">
+                  <button type="button" data-cal-trigger="depart"
+                    class="w-full flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 transition-all cursor-pointer text-left">
                     <i class="ph ph-calendar-blank text-xl text-slate-400"></i>
-                    <input class="w-full bg-transparent border-none p-0 text-slate-900 font-semibold cursor-pointer"
-                      name="depart" type="date" min="" />
-                  </div>
+                    <span class="text-slate-900 font-semibold text-sm" data-cal-label="depart">Select date</span>
+                  </button>
+                  <input type="hidden" name="depart" />
                 </div>
                 <div class="w-px bg-slate-100 hidden lg:block my-2"></div>
                 <div class="flex-1 field group" data-return-field>
                   <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Return</label>
-                  <div
-                    class="w-full flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 transition-all cursor-text"
-                    onclick="this.querySelector('input').showPicker ? this.querySelector('input').showPicker() : this.querySelector('input').focus()">
+                  <button type="button" data-cal-trigger="return"
+                    class="w-full flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 transition-all cursor-pointer text-left">
                     <i class="ph ph-calendar-blank text-xl text-slate-400"></i>
-                    <input class="w-full bg-transparent border-none p-0 text-slate-900 font-semibold cursor-pointer"
-                      name="return" type="date" />
-                  </div>
+                    <span class="text-slate-900 font-semibold text-sm" data-cal-label="return">Select date</span>
+                  </button>
+                  <input type="hidden" name="return" />
                 </div>
               </div>
 
@@ -414,6 +487,19 @@
                 </div>
 
             </form>
+
+            <!-- Custom Calendar Popup (outside form to not break flex layout) -->
+            <div id="cal-popup" class="cal-popup" style="display:none;">
+              <div class="cal-header">
+                <button type="button" class="cal-nav" data-cal-prev><i class="ph-bold ph-caret-left"></i></button>
+                <span class="cal-title" data-cal-title></span>
+                <button type="button" class="cal-nav" data-cal-next><i class="ph-bold ph-caret-right"></i></button>
+              </div>
+              <div class="cal-weekdays">
+                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+              </div>
+              <div class="cal-grid" data-cal-grid></div>
+            </div>
           </div>
         </div>
 

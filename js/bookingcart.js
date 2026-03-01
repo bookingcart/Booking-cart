@@ -325,16 +325,199 @@
     writeCounts(readCounts());
   }
 
+  /* ─── Custom Calendar ─── */
+  function initCalendar() {
+    const popup = document.getElementById("cal-popup");
+    if (!popup) return;
+
+    const titleEl = popup.querySelector("[data-cal-title]");
+    const gridEl = popup.querySelector("[data-cal-grid]");
+    const prevBtn = popup.querySelector("[data-cal-prev]");
+    const nextBtn = popup.querySelector("[data-cal-next]");
+
+    let activeField = null; // "depart" or "return"
+    let viewYear, viewMonth; // current calendar view
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const MONTHS = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"];
+
+    function formatLabel(dateStr) {
+      if (!dateStr) return "Select date";
+      const d = new Date(dateStr + "T00:00:00");
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function pad(n) { return String(n).padStart(2, "0"); }
+
+    function renderMonth() {
+      if (!titleEl || !gridEl) return;
+      titleEl.textContent = MONTHS[viewMonth] + " " + viewYear;
+      gridEl.innerHTML = "";
+
+      const firstDay = new Date(viewYear, viewMonth, 1);
+      let startDow = firstDay.getDay(); // 0=Sun
+      startDow = startDow === 0 ? 6 : startDow - 1; // Convert to Mon=0
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+      // Get currently selected value for this field
+      const form = document.querySelector("form[data-search-form]");
+      const hiddenInput = form ? form.querySelector("input[name='" + activeField + "']") : null;
+      const selectedVal = hiddenInput ? hiddenInput.value : "";
+
+      let weekIndex = 0;
+
+      // Empty cells before first day
+      for (let i = 0; i < startDow; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cal-cell cal-cell--empty" + (weekIndex % 2 === 1 ? " cal-cell--stripe" : "");
+        gridEl.appendChild(cell);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const colIndex = (startDow + d - 1) % 7;
+        if (colIndex === 0 && d > 1) weekIndex++;
+
+        const dateObj = new Date(viewYear, viewMonth, d);
+        const dateStr = viewYear + "-" + pad(viewMonth + 1) + "-" + pad(d);
+        const isPast = dateObj < today;
+        const isToday = dateObj.getTime() === today.getTime();
+        const isSelected = dateStr === selectedVal;
+
+        const cell = document.createElement("div");
+        let cls = "cal-cell";
+        if (weekIndex % 2 === 1) cls += " cal-cell--stripe";
+        if (isPast) cls += " cal-cell--disabled";
+        if (isToday) cls += " cal-cell--today";
+        if (isSelected) cls += " cal-cell--selected";
+        cell.className = cls;
+
+        // Day number
+        const daySpan = document.createElement("span");
+        daySpan.className = "cal-day";
+        daySpan.textContent = d;
+        cell.appendChild(daySpan);
+
+        if (!isPast) {
+          cell.addEventListener("click", () => {
+            selectDate(dateStr);
+          });
+        }
+
+        gridEl.appendChild(cell);
+      }
+
+      // Fill remaining cells in last row
+      const totalCells = startDow + daysInMonth;
+      const remainder = totalCells % 7;
+      if (remainder > 0) {
+        for (let i = 0; i < 7 - remainder; i++) {
+          const cell = document.createElement("div");
+          cell.className = "cal-cell cal-cell--empty" + (weekIndex % 2 === 1 ? " cal-cell--stripe" : "");
+          gridEl.appendChild(cell);
+        }
+      }
+    }
+
+    function selectDate(dateStr) {
+      const form = document.querySelector("form[data-search-form]");
+      if (!form) return;
+
+      // Set hidden input
+      const hiddenInput = form.querySelector("input[name='" + activeField + "']");
+      if (hiddenInput) hiddenInput.value = dateStr;
+
+      // Update label
+      const label = document.querySelector("[data-cal-label='" + activeField + "']");
+      if (label) label.textContent = formatLabel(dateStr);
+
+      closeCalendar();
+    }
+
+    function openCalendar(field) {
+      activeField = field;
+      const trigger = document.querySelector("[data-cal-trigger='" + field + "']");
+      if (!trigger) return;
+
+      // Position the popup near the trigger
+      const parent = trigger.closest(".field") || trigger.parentElement;
+      popup.style.display = "block";
+      parent.style.position = "relative";
+      parent.appendChild(popup);
+
+      // Set view month based on existing value or today
+      const form = document.querySelector("form[data-search-form]");
+      const hiddenInput = form ? form.querySelector("input[name='" + field + "']") : null;
+      const val = hiddenInput ? hiddenInput.value : "";
+      if (val) {
+        const d = new Date(val + "T00:00:00");
+        viewYear = d.getFullYear();
+        viewMonth = d.getMonth();
+      } else {
+        viewYear = today.getFullYear();
+        viewMonth = today.getMonth();
+      }
+
+      renderMonth();
+    }
+
+    function closeCalendar() {
+      popup.style.display = "none";
+      activeField = null;
+    }
+
+    // Wire triggers
+    document.querySelectorAll("[data-cal-trigger]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const field = btn.getAttribute("data-cal-trigger");
+        if (activeField === field) {
+          closeCalendar();
+        } else {
+          openCalendar(field);
+        }
+      });
+    });
+
+    // Nav buttons
+    if (prevBtn) prevBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      viewMonth--;
+      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      renderMonth();
+    });
+    if (nextBtn) nextBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      viewMonth++;
+      if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+      renderMonth();
+    });
+
+    // Close on outside click
+    document.addEventListener("click", (e) => {
+      if (activeField && !popup.contains(e.target) && !e.target.closest("[data-cal-trigger]")) {
+        closeCalendar();
+      }
+    });
+
+    // Restore labels from state
+    const st = readState();
+    if (st.search) {
+      if (st.search.depart) {
+        const lbl = document.querySelector("[data-cal-label='depart']");
+        if (lbl) lbl.textContent = formatLabel(st.search.depart);
+      }
+      if (st.search.return) {
+        const lbl = document.querySelector("[data-cal-label='return']");
+        if (lbl) lbl.textContent = formatLabel(st.search.return);
+      }
+    }
+  }
+
   function initSearchForm() {
     const form = document.querySelector("form[data-search-form]");
     if (!form) return;
-
-    // Set minimum dates to today
-    const today = new Date().toISOString().split('T')[0];
-    const departInput = form.querySelector("input[name='depart']");
-    const returnInput = form.querySelector("input[name='return']");
-    if (departInput) departInput.min = today;
-    if (returnInput) returnInput.min = today;
 
     const st = readState();
     const from = form.querySelector("input[name='from']");
@@ -1027,6 +1210,7 @@
     initAirportSuggestAll();
     initTripTabs();
     initPassengerControls();
+    initCalendar();
     initSearchForm();
     initResults();
     initDetails();
