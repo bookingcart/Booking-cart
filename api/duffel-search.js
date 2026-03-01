@@ -85,13 +85,15 @@ module.exports = async (req, res) => {
       headers: {
         'Authorization': `Bearer ${DUFFEL_API_KEY}`,
         'Content-Type': 'application/json',
-        'Duffel-Version': 'v1'
+        'Duffel-Version': 'v2'
       },
       body: JSON.stringify({
-        slices,
-        passengers,
-        max_connections: (max && parseInt(max) > 0) ? parseInt(max) : 10,
-        cabin_class: mapCabinClass(travelClass)
+        data: {
+          slices,
+          passengers,
+          max_connections: (max && parseInt(max) > 0) ? parseInt(max) : 10,
+          cabin_class: mapCabinClass(travelClass)
+        }
       })
     });
 
