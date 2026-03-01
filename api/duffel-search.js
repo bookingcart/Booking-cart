@@ -91,7 +91,7 @@ module.exports = async (req, res) => {
         data: {
           slices,
           passengers,
-          max_connections: (max && parseInt(max) > 0) ? parseInt(max) : 10,
+          max_connections: 2,
           cabin_class: mapCabinClass(travelClass)
         }
       })
