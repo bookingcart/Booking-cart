@@ -1144,6 +1144,33 @@
     const refEl = root.querySelector("[data-booking-ref]");
     if (refEl) setText(refEl, state.bookingRef || "—");
 
+    // ── Save booking to server (once) ──
+    if (state.bookingRef && !state._bookingSaved) {
+      const s = state.search || {};
+      const flight = (state.flights || []).find(f => f.id === state.selectedFlightId) || (state.flights || [])[0];
+      const totals = computeTotals(state);
+      const booking = {
+        ref: state.bookingRef,
+        route: (s.from || "") + " → " + (s.to || ""),
+        dates: (s.depart || "") + (s.return ? " → " + s.return : ""),
+        flight: flight ? { airline: flight.airline.name, time: flight.departTime + " → " + flight.arriveTime } : null,
+        contact: state.contact || {},
+        passengers: state.passengers || [],
+        total: totals.total,
+        extras: state.extras || {}
+      };
+      fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", booking })
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          writeState({ _bookingSaved: true });
+          console.log("✅ Booking saved to server:", state.bookingRef);
+        }
+      }).catch(err => console.error("Booking save error:", err));
+    }
+
     const totals = computeTotals(state);
     const totalEl = root.querySelector("[data-confirm-total]");
     if (totalEl) setText(totalEl, money(totals.total));

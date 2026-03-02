@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BookingCart — Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: { primary: '#14532d', secondary: '#16a34a', muted: '#dcfce7', subtle: '#15803d' }
+                }
+            }
+        }
+    </script>
+    <style>
+        input,
+        select,
+        button {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
+
+    <!-- Login -->
+    <div id="login-overlay"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
+            <div class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i class="ph-fill ph-lock-key text-green-600 text-2xl"></i>
+            </div>
+            <h2 class="text-xl font-extrabold text-slate-900 mb-1">Admin Access</h2>
+            <p class="text-sm text-slate-500 mb-6">Enter your admin PIN to continue.</p>
+            <input id="pin-input" type="password" maxlength="10" placeholder="Enter PIN"
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-center text-lg font-bold tracking-widest mb-4" />
+            <button id="pin-btn"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all">
+                Unlock Dashboard
+            </button>
+            <p id="pin-error" class="text-red-500 text-sm font-medium mt-3" style="display:none;">Invalid PIN</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div class="container mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight">BookingCart</a>
+                <span
+                    class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full uppercase tracking-wider">Admin</span>
+            </div>
+            <button id="refresh-btn"
+                class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-xl transition-all text-sm">
+                <i class="ph ph-arrows-clockwise"></i> Refresh
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-6 py-8">
+        <!-- Stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="stats">
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Bookings</div>
+                <div class="text-2xl font-extrabold text-slate-900" id="stat-total">0</div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+                <div class="text-xs font-bold text-yellow-500 uppercase tracking-wider mb-1">New / Pending</div>
+                <div class="text-2xl font-extrabold text-yellow-600" id="stat-new">0</div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+                <div class="text-xs font-bold text-green-500 uppercase tracking-wider mb-1">Confirmed</div>
+                <div class="text-2xl font-extrabold text-green-600" id="stat-confirmed">0</div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Revenue</div>
+                <div class="text-2xl font-extrabold text-slate-900" id="stat-revenue">$0</div>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div class="flex items-center gap-3 mb-6">
+            <span class="text-sm font-bold text-slate-500">Filter:</span>
+            <button class="admin-filter px-3 py-1.5 rounded-lg text-sm font-semibold bg-slate-900 text-white"
+                data-filter="all">All</button>
+            <button
+                class="admin-filter px-3 py-1.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200"
+                data-filter="new">New</button>
+            <button
+                class="admin-filter px-3 py-1.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200"
+                data-filter="confirmed">Confirmed</button>
+            <button
+                class="admin-filter px-3 py-1.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200"
+                data-filter="cancelled">Cancelled</button>
+        </div>
+
+        <!-- Bookings Table -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm" id="bookings-table">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200">
+                            <th class="text-left px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-xs">
+                                Ref</th>
+                            <th class="text-left px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-xs">
+                                Client</th>
+                            <th class="text-left px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-xs">
+                                Route</th>
+                            <th class="text-left px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-xs">
+                                Date</th>
+                            <th class="text-left px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-xs">
+                                Total</th>
+                            <th class="text-left px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-xs">
+                                Status</th>
+                            <th class="text-right px-6 py-4 font-bold text-slate-500 uppercase tracking-wider text-xs">
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-body"></tbody>
+                </table>
+            </div>
+            <div id="empty-state" class="py-16 text-center text-slate-400 font-medium" style="display:none;">
+                <i class="ph ph-airplane-tilt text-4xl mb-2"></i>
+                <p>No bookings yet.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let adminPin = '';
+        let allBookings = [];
+        let currentFilter = 'all';
+
+        // ── PIN Login ──
+        const overlay = document.getElementById('login-overlay');
+        const pinInput = document.getElementById('pin-input');
+        const pinBtn = document.getElementById('pin-btn');
+        const pinError = document.getElementById('pin-error');
+
+        pinBtn.addEventListener('click', tryLogin);
+        pinInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+        async function tryLogin() {
+            adminPin = pinInput.value.trim();
+            if (!adminPin) return;
+            pinError.style.display = 'none';
+            try {
+                const resp = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'list', pin: adminPin })
+                });
+                const data = await resp.json();
+                if (!data.ok) {
+                    pinError.textContent = data.error || 'Invalid PIN';
+                    pinError.style.display = 'block';
+                    return;
+                }
+                overlay.style.display = 'none';
+                allBookings = data.bookings || [];
+                renderAll();
+            } catch (err) {
+                pinError.textContent = 'Error: ' + err.message;
+                pinError.style.display = 'block';
+            }
+        }
+
+        // ── Refresh ──
+        document.getElementById('refresh-btn').addEventListener('click', loadBookings);
+
+        async function loadBookings() {
+            try {
+                const resp = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'list', pin: adminPin })
+                });
+                const data = await resp.json();
+                if (data.ok) {
+                    allBookings = data.bookings || [];
+                    renderAll();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // ── Filters ──
+        document.querySelectorAll('.admin-filter').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentFilter = btn.dataset.filter;
+                document.querySelectorAll('.admin-filter').forEach(b => {
+                    b.className = 'admin-filter px-3 py-1.5 rounded-lg text-sm font-semibold ' +
+                        (b.dataset.filter === currentFilter
+                            ? 'bg-slate-900 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200');
+                });
+                renderTable();
+            });
+        });
+
+        // ── Render ──
+        function renderAll() {
+            renderStats();
+            renderTable();
+        }
+
+        function renderStats() {
+            document.getElementById('stat-total').textContent = allBookings.length;
+            document.getElementById('stat-new').textContent = allBookings.filter(b => b.status === 'new').length;
+            document.getElementById('stat-confirmed').textContent = allBookings.filter(b => b.status === 'confirmed').length;
+            const revenue = allBookings
+                .filter(b => b.status === 'confirmed')
+                .reduce((sum, b) => sum + (parseFloat(b.total) || 0), 0);
+            document.getElementById('stat-revenue').textContent = '$' + Math.round(revenue).toLocaleString();
+        }
+
+        function renderTable() {
+            const filtered = currentFilter === 'all'
+                ? allBookings
+                : allBookings.filter(b => b.status === currentFilter);
+
+            const body = document.getElementById('bookings-body');
+            const empty = document.getElementById('empty-state');
+
+            if (!filtered.length) {
+                body.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            body.innerHTML = filtered.map(b => {
+                const statusColors = {
+                    new: 'bg-yellow-100 text-yellow-700',
+                    confirmed: 'bg-green-100 text-green-700',
+                    cancelled: 'bg-red-100 text-red-700'
+                };
+                const badge = statusColors[b.status] || 'bg-slate-100 text-slate-700';
+                const email = (b.contact && b.contact.email) || '—';
+                const total = b.total ? ('$' + b.total) : '—';
+
+                return `
+          <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+            <td class="px-6 py-4 font-bold text-slate-900">${b.ref || '—'}</td>
+            <td class="px-6 py-4 text-slate-600">${email}</td>
+            <td class="px-6 py-4 font-medium text-slate-700">${b.route || '—'}</td>
+            <td class="px-6 py-4 text-slate-600">${b.dates || '—'}</td>
+            <td class="px-6 py-4 font-bold text-green-600">${total}</td>
+            <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge} capitalize">${b.status}</span></td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex justify-end gap-2">
+                ${b.status !== 'confirmed' ? `<button onclick="setStatus('${b.ref}','confirmed')" class="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-bold hover:bg-green-200 transition-colors">Confirm</button>` : ''}
+                ${b.status !== 'cancelled' ? `<button onclick="setStatus('${b.ref}','cancelled')" class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-bold hover:bg-red-200 transition-colors">Cancel</button>` : ''}
+              </div>
+            </td>
+          </tr>`;
+            }).join('');
+        }
+
+        // ── Status Update ──
+        async function setStatus(ref, newStatus) {
+            try {
+                const resp = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'status', id: ref, status: newStatus, pin: adminPin })
+                });
+                const data = await resp.json();
+                if (data.ok) {
+                    await loadBookings();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown'));
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

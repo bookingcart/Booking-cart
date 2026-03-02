@@ -736,6 +736,46 @@ function transformDuffelData(data) {
   }).filter(Boolean);
 }
 
+// ── Bookings API (local dev – in-memory) ──
+const localBookings = [];
+const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
+
+app.post('/api/bookings', (req, res) => {
+  const { action, booking, email, id, status, pin } = req.body || {};
+
+  if (action === 'save') {
+    if (!booking) return res.status(400).json({ ok: false, error: 'Missing booking' });
+    booking.createdAt = new Date().toISOString();
+    booking.status = 'new';
+    localBookings.unshift(booking);
+    return res.json({ ok: true, id: booking.ref });
+  }
+
+  if (action === 'list') {
+    if (pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: 'Invalid PIN' });
+    return res.json({ ok: true, bookings: localBookings });
+  }
+
+  if (action === 'lookup') {
+    if (!email) return res.status(400).json({ ok: false, error: 'Missing email' });
+    const found = localBookings.filter(b =>
+      ((b.contact && b.contact.email) || '').toLowerCase() === email.toLowerCase()
+    );
+    return res.json({ ok: true, bookings: found });
+  }
+
+  if (action === 'status') {
+    if (pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: 'Invalid PIN' });
+    if (!id || !status) return res.status(400).json({ ok: false, error: 'Missing id or status' });
+    const idx = localBookings.findIndex(b => b.ref === id);
+    if (idx === -1) return res.status(404).json({ ok: false, error: 'Not found' });
+    localBookings[idx].status = status;
+    return res.json({ ok: true, booking: localBookings[idx] });
+  }
+
+  return res.status(400).json({ ok: false, error: 'Unknown action' });
+});
+
 app.listen(PORT, () => {
   console.log(`BookingCart server running on http://localhost:${PORT}`);
   console.log(`Duffel API Key configured: ${!!DUFFEL_API_KEY}`);
