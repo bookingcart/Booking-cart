@@ -776,6 +776,10 @@ app.post('/api/bookings', (req, res) => {
   return res.status(400).json({ ok: false, error: 'Unknown action' });
 });
 
+// ── Flight Deals API (local dev) ──
+const flightDealsHandler = require('./api/flight-deals');
+app.all('/api/flight-deals', (req, res) => flightDealsHandler(req, res));
+
 app.listen(PORT, () => {
   console.log(`BookingCart server running on http://localhost:${PORT}`);
   console.log(`Duffel API Key configured: ${!!DUFFEL_API_KEY}`);
