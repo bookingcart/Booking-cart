@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BookingCart — My Bookings</title>
-    <meta name="description" content="View your flight bookings." />
+    <meta name="description" content="View and manage your flight bookings." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
@@ -16,8 +16,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
-                    colors: { primary: '#14532d', secondary: '#16a34a', muted: '#dcfce7', subtle: '#15803d' }
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }
                 }
             }
         }
@@ -28,74 +27,196 @@
             outline: none !important;
             box-shadow: none !important;
         }
+
+        .tab-active {
+            background: #16a34a;
+            color: #fff;
+        }
+
+        .booking-card {
+            transition: all 0.2s;
+        }
+
+        .booking-card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .timeline-line {
+            background: repeating-linear-gradient(90deg, #cbd5e1 0, #cbd5e1 4px, transparent 4px, transparent 8px);
+            height: 2px;
+        }
     </style>
 </head>
 
-<body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
+<body class="bg-slate-100 text-slate-900 antialiased font-sans">
 
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="container mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight">BookingCart</a>
-            <nav class="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-500">
-                <a href="index.html" class="hover:text-green-600 transition-colors">Flights</a>
-                <a href="my-bookings.html" class="text-green-600">My Bookings</a>
+        <div class="container mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-extrabold text-slate-900 tracking-tight">BookingCart</a>
+            <nav class="flex items-center gap-6 text-sm font-semibold text-slate-500">
+                <a href="index.html" class="hover:text-green-600 transition-colors flex items-center gap-1.5">
+                    <i class="ph ph-airplane-tilt"></i> Flights
+                </a>
+                <a href="my-bookings.html" class="text-green-600 flex items-center gap-1.5">
+                    <i class="ph ph-suitcase-rolling"></i> My Bookings
+                </a>
             </nav>
         </div>
     </header>
 
-    <main class="flex-grow container mx-auto px-6 py-12 max-w-3xl">
-        <!-- Lookup Form -->
-        <div class="text-center mb-10">
-            <h1 class="text-3xl font-extrabold text-slate-900 mb-2">My Bookings</h1>
-            <p class="text-slate-500 font-medium">Enter your email to view your bookings.</p>
-        </div>
+    <div class="container mx-auto px-6 py-8 flex gap-8 max-w-7xl">
 
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-8">
-            <div class="flex gap-3">
-                <div class="flex-1 relative">
-                    <i class="ph ph-envelope absolute left-4 top-3.5 text-slate-400 text-xl"></i>
-                    <input id="lookup-email" type="email" placeholder="Your email address"
-                        class="w-full bg-slate-50 border-none rounded-xl p-3 pl-12 text-sm font-semibold" />
+        <!-- Left Sidebar -->
+        <aside class="w-64 flex-shrink-0 hidden lg:block">
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <!-- User Info -->
+                <div class="p-5 border-b border-slate-100" id="sidebar-user">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <i class="ph ph-user text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-slate-900" id="user-name">Guest</div>
+                            <div class="text-xs text-slate-400" id="user-email">Sign in to view bookings</div>
+                        </div>
+                    </div>
                 </div>
-                <button id="lookup-btn"
-                    class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 rounded-xl transition-all flex items-center gap-2">
-                    <i class="ph ph-magnifying-glass"></i> Find
-                </button>
+                <!-- Nav -->
+                <nav class="p-3">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider px-3 py-2">My Bookings</div>
+                    <a href="#" data-sidebar-filter="all"
+                        class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-green-600 bg-green-50 transition-all">
+                        <i class="ph ph-list-bullets text-lg"></i> All
+                    </a>
+                    <a href="#" data-sidebar-filter="flights"
+                        class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
+                        <i class="ph ph-airplane text-lg"></i> Flights
+                    </a>
+                    <div class="border-t border-slate-100 my-2 mx-3"></div>
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider px-3 py-2">Account</div>
+                    <a href="#"
+                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
+                        <i class="ph ph-heart text-lg"></i> Saved
+                    </a>
+                    <a href="#"
+                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
+                        <i class="ph ph-bell text-lg"></i> Price Alerts
+                    </a>
+                </nav>
             </div>
-        </div>
+        </aside>
 
-        <!-- Results -->
-        <div id="bookings-status" class="text-center text-slate-400 font-medium py-8" style="display:none;"></div>
-        <div id="bookings-list" class="space-y-4"></div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-100 py-8">
-        <div
-            class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
-            <div>&copy; 2026 BookingCart. All rights reserved.</div>
-            <div class="flex gap-6">
-                <a href="privacy.html" class="hover:text-slate-600">Privacy Policy</a>
-                <a href="terms.html" class="hover:text-slate-600">Terms of Service</a>
+        <!-- Main Content -->
+        <main class="flex-1 min-w-0">
+            <!-- Page Header -->
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-2xl font-extrabold text-slate-900">My Bookings</h1>
+                <div class="text-xs text-slate-400 font-medium" id="booking-count"></div>
             </div>
-        </div>
-    </footer>
+
+            <!-- Email Lookup (for non-signed-in users or to search) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 mb-6" id="lookup-section">
+                <div class="flex gap-3">
+                    <div class="flex-1 relative">
+                        <i class="ph ph-envelope absolute left-4 top-3.5 text-slate-400 text-xl"></i>
+                        <input id="lookup-email" type="email" placeholder="Enter your email to find bookings"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-12 text-sm font-semibold" />
+                    </div>
+                    <button id="lookup-btn"
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 rounded-xl transition-all flex items-center gap-2 text-sm">
+                        <i class="ph ph-magnifying-glass"></i> Find
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Tabs -->
+            <div class="flex gap-1 bg-white rounded-2xl border border-slate-200 p-1.5 mb-6">
+                <button data-tab="all"
+                    class="tab-active flex-1 py-2.5 rounded-xl text-sm font-bold transition-all">All</button>
+                <button data-tab="new"
+                    class="flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all">Awaiting
+                    Confirmation</button>
+                <button data-tab="confirmed"
+                    class="flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all">Confirmed</button>
+                <button data-tab="cancelled"
+                    class="flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all">Cancelled</button>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="text-center py-12 text-slate-400" style="display:none;">
+                <i class="ph ph-circle-notch text-3xl animate-spin"></i>
+                <p class="mt-2 text-sm font-medium">Finding your bookings...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="text-center py-16" style="display:none;">
+                <div class="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-airplane-tilt text-3xl text-slate-300"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-700 mb-1">No bookings found</h3>
+                <p class="text-sm text-slate-400 mb-6">Your booked trips will appear here.</p>
+                <a href="index.html"
+                    class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-xl transition-all text-sm">
+                    <i class="ph ph-magnifying-glass"></i> Search Flights
+                </a>
+            </div>
+
+            <!-- Bookings List -->
+            <div id="bookings-list" class="space-y-4"></div>
+        </main>
+    </div>
 
     <script>
+        let allBookings = [];
+        let currentTab = 'all';
+
         const emailInput = document.getElementById('lookup-email');
         const lookupBtn = document.getElementById('lookup-btn');
-        const statusEl = document.getElementById('bookings-status');
+        const loadingEl = document.getElementById('loading');
+        const emptyEl = document.getElementById('empty-state');
         const listEl = document.getElementById('bookings-list');
+        const countEl = document.getElementById('booking-count');
 
+        // Check if user is signed in
+        const userStr = localStorage.getItem('bookingcart_user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                document.getElementById('user-name').textContent = user.name || 'User';
+                document.getElementById('user-email').textContent = user.email || '';
+                const avatar = document.querySelector('#sidebar-user .w-10');
+                if (avatar && user.picture) {
+                    avatar.innerHTML = `<img src="${user.picture}" class="w-full h-full object-cover rounded-full" />`;
+                }
+                // Auto-lookup by email
+                emailInput.value = user.email || '';
+                if (user.email) setTimeout(() => lookup(), 300);
+            } catch (e) { }
+        }
+
+        // Events
         lookupBtn.addEventListener('click', lookup);
         emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); });
+
+        // Tabs
+        document.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentTab = btn.dataset.tab;
+                document.querySelectorAll('[data-tab]').forEach(b => {
+                    b.className = b.dataset.tab === currentTab
+                        ? 'tab-active flex-1 py-2.5 rounded-xl text-sm font-bold transition-all'
+                        : 'flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all';
+                });
+                renderBookings();
+            });
+        });
 
         async function lookup() {
             const email = emailInput.value.trim();
             if (!email) return;
-            statusEl.style.display = 'block';
-            statusEl.textContent = 'Searching...';
+            loadingEl.style.display = 'block';
+            emptyEl.style.display = 'none';
             listEl.innerHTML = '';
 
             try {
@@ -105,60 +226,123 @@
                     body: JSON.stringify({ action: 'lookup', email })
                 });
                 const data = await resp.json();
-                if (!data.ok || !data.bookings.length) {
-                    statusEl.textContent = 'No bookings found for this email.';
-                    return;
-                }
-                statusEl.style.display = 'none';
-                listEl.innerHTML = data.bookings.map(b => bookingCard(b)).join('');
+                loadingEl.style.display = 'none';
+                allBookings = data.ok ? (data.bookings || []) : [];
+                renderBookings();
             } catch (err) {
-                statusEl.textContent = 'Error: ' + err.message;
+                loadingEl.style.display = 'none';
+                emptyEl.style.display = 'block';
             }
         }
 
-        function bookingCard(b) {
-            const statusColors = {
-                new: 'bg-yellow-100 text-yellow-700',
-                confirmed: 'bg-green-100 text-green-700',
-                cancelled: 'bg-red-100 text-red-700'
-            };
-            const badge = statusColors[b.status] || 'bg-slate-100 text-slate-700';
-            const route = b.route || '—';
-            const dates = b.dates || '—';
-            const airline = (b.flight && b.flight.airline) || '—';
-            const total = b.total ? ('$' + b.total) : '—';
+        function renderBookings() {
+            const filtered = currentTab === 'all'
+                ? allBookings
+                : allBookings.filter(b => b.status === currentTab);
 
-            return `
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Booking Ref</span>
-              <div class="text-lg font-extrabold text-slate-900">${b.ref || '—'}</div>
+            countEl.textContent = filtered.length + ' booking' + (filtered.length !== 1 ? 's' : '');
+
+            if (!filtered.length) {
+                listEl.innerHTML = '';
+                emptyEl.style.display = 'block';
+                return;
+            }
+            emptyEl.style.display = 'none';
+
+            listEl.innerHTML = filtered.map(b => {
+                const statusMap = {
+                    new: { label: 'Awaiting Confirmation', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
+                    confirmed: { label: 'Confirmed', color: 'text-green-600 bg-green-50 border-green-200' },
+                    cancelled: { label: 'Cancelled', color: 'text-red-500 bg-red-50 border-red-200' }
+                };
+                const st = statusMap[b.status] || statusMap.new;
+                const route = b.route || '—';
+                const parts = route.split(' → ');
+                const from = parts[0] || '—';
+                const to = parts[1] || '—';
+                const flight = b.flight || {};
+                const times = (flight.time || '').split(' → ');
+                const departTime = times[0] || '';
+                const arriveTime = times[1] || '';
+                const dates = b.dates || '';
+                const dateParts = dates.split(' → ');
+                const departDate = dateParts[0] || '';
+                const returnDate = dateParts[1] || '';
+                const total = b.total ? ('$' + Number(b.total).toLocaleString(undefined, { minimumFractionDigits: 2 })) : '—';
+                const paxCount = (b.passengers && b.passengers.length) || 1;
+                const paxName = (b.passengers && b.passengers[0]) ? (b.passengers[0].first + ' ' + b.passengers[0].last).toUpperCase() : (b.contact && b.contact.email ? b.contact.email.split('@')[0].toUpperCase() : 'PASSENGER');
+
+                return `
+        <div class="booking-card bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <!-- Booking Header -->
+          <div class="flex items-center justify-between px-6 py-3 bg-slate-50 border-b border-slate-100">
+            <div class="flex items-center gap-4 text-xs text-slate-500 font-medium">
+              <span class="flex items-center gap-1.5">
+                <i class="ph ph-airplane-tilt text-base"></i>
+                Booking No. <span class="font-bold text-slate-700">${b.ref || '—'}</span>
+              </span>
+              <span>Booking Date: ${b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}</span>
             </div>
-            <span class="px-3 py-1 rounded-full text-xs font-bold ${badge} capitalize">${b.status || 'new'}</span>
+            <span class="px-3 py-1 rounded-full text-xs font-bold border ${st.color}">${st.label}</span>
           </div>
-          <div class="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span class="text-slate-400 font-medium block">Route</span>
-              <span class="font-semibold text-slate-900">${route}</span>
+
+          <!-- Flight Card -->
+          <div class="p-6">
+            <div class="flex items-start gap-6">
+              <!-- Route Header -->
+              <div class="flex-1">
+                <h3 class="text-lg font-extrabold text-slate-900 mb-4">${from} → ${to}</h3>
+
+                <!-- Timeline Row -->
+                <div class="flex items-center gap-4">
+                  <!-- Depart -->
+                  <div class="text-center">
+                    <div class="text-xl font-extrabold text-slate-900">${departTime || '—'}</div>
+                    <div class="text-xs text-slate-400 font-medium mt-0.5">${departDate}</div>
+                  </div>
+
+                  <!-- Timeline -->
+                  <div class="flex-1 flex flex-col items-center gap-1">
+                    <div class="timeline-line w-full"></div>
+                    <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                      <i class="ph ph-airplane text-sm"></i>
+                    </div>
+                  </div>
+
+                  <!-- Arrive -->
+                  <div class="text-center">
+                    <div class="text-xl font-extrabold text-slate-900">${arriveTime || '—'}</div>
+                    <div class="text-xs text-slate-400 font-medium mt-0.5">${returnDate || departDate}</div>
+                  </div>
+
+                  <!-- Airline -->
+                  <div class="ml-6 pl-6 border-l border-slate-100">
+                    <div class="flex items-center gap-2">
+                      <div class="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center">
+                        <i class="ph ph-airplane text-sm text-slate-500"></i>
+                      </div>
+                      <div>
+                        <div class="text-sm font-bold text-slate-700">${flight.airline || '—'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Passenger -->
+                  <div class="ml-4 pl-4 border-l border-slate-100">
+                    <div class="text-sm font-bold text-slate-700">${paxName}</div>
+                    <div class="text-xs text-slate-400">${paxCount} passenger${paxCount > 1 ? 's' : ''}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Price -->
+              <div class="text-right pl-6 border-l border-slate-100">
+                <div class="text-xl font-extrabold text-green-600">${total}</div>
+              </div>
             </div>
-            <div>
-              <span class="text-slate-400 font-medium block">Dates</span>
-              <span class="font-semibold text-slate-900">${dates}</span>
-            </div>
-            <div>
-              <span class="text-slate-400 font-medium block">Airline</span>
-              <span class="font-semibold text-slate-900">${airline}</span>
-            </div>
-            <div>
-              <span class="text-slate-400 font-medium block">Total</span>
-              <span class="font-extrabold text-green-600">${total}</span>
-            </div>
-          </div>
-          <div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-400">
-            Booked on ${b.createdAt ? new Date(b.createdAt).toLocaleDateString() : '—'}
           </div>
         </div>`;
+            }).join('');
         }
     </script>
 </body>

@@ -1308,19 +1308,34 @@
 
   function updateAuthUI() {
     const userStr = localStorage.getItem('bookingcart_user');
-    if (!userStr) return;
+    const profileDropdown = document.querySelector('[data-profile-dropdown]');
+
+    if (!userStr) {
+      // Not signed in — hide the profile dropdown entirely
+      if (profileDropdown) profileDropdown.style.display = 'none';
+      return;
+    }
 
     try {
       const user = JSON.parse(userStr);
 
-      // Hide Google button container
+      // Show profile dropdown for signed-in users
+      if (profileDropdown) profileDropdown.style.display = '';
+
+      // Hide Google sign-in button
       const gSignIn = document.querySelector('.g_id_signin');
       if (gSignIn) gSignIn.style.display = 'none';
 
-      // Update the circular profile button avatar
-      const profileBtn = document.querySelector('.flex.items-center.gap-3 > button.w-11.h-11');
-      if (profileBtn) {
-        profileBtn.innerHTML = `<img src="${user.picture}" alt="${user.name}" title="${user.name}" class="w-full h-full object-cover" />`;
+      // Update profile avatar
+      const profileTrigger = document.querySelector('[data-profile-trigger]');
+      if (profileTrigger) {
+        profileTrigger.innerHTML = `<img src="${user.picture}" alt="${user.name}" title="${user.name}" class="w-full h-full object-cover" />`;
+      }
+
+      // Update "My Account" label in dropdown
+      const accountLink = document.querySelector('[data-profile-menu] a:first-child');
+      if (accountLink) {
+        accountLink.innerHTML = `<i class="ph ph-user-circle text-xl text-slate-400"></i> ${user.name}`;
       }
     } catch (e) {
       console.error('Failed to parse user data:', e);
