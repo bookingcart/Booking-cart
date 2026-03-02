@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BookingCart — Admin Dashboard</title>
+    <title>BookingCart â€” Admin Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
@@ -56,7 +56,7 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div class="container mx-auto px-6 h-20 flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight">BookingCart</a>
+                <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight"><img src="images/logo.png" alt="BookingCart" class="h-10 rounded-xl" /></a>
                 <span
                     class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full uppercase tracking-wider">Admin</span>
             </div>
@@ -141,7 +141,7 @@
         let allBookings = [];
         let currentFilter = 'all';
 
-        // ── PIN Login ──
+        // â”€â”€ PIN Login â”€â”€
         const overlay = document.getElementById('login-overlay');
         const pinInput = document.getElementById('pin-input');
         const pinBtn = document.getElementById('pin-btn');
@@ -175,7 +175,7 @@
             }
         }
 
-        // ── Refresh ──
+        // â”€â”€ Refresh â”€â”€
         document.getElementById('refresh-btn').addEventListener('click', loadBookings);
 
         async function loadBookings() {
@@ -193,7 +193,7 @@
             } catch (e) { console.error(e); }
         }
 
-        // ── Filters ──
+        // â”€â”€ Filters â”€â”€
         document.querySelectorAll('.admin-filter').forEach(btn => {
             btn.addEventListener('click', () => {
                 currentFilter = btn.dataset.filter;
@@ -207,7 +207,7 @@
             });
         });
 
-        // ── Render ──
+        // â”€â”€ Render â”€â”€
         function renderAll() {
             renderStats();
             renderTable();
@@ -245,15 +245,15 @@
                     cancelled: 'bg-red-100 text-red-700'
                 };
                 const badge = statusColors[b.status] || 'bg-slate-100 text-slate-700';
-                const email = (b.contact && b.contact.email) || '—';
-                const total = b.total ? ('$' + b.total) : '—';
+                const email = (b.contact && b.contact.email) || 'â€”';
+                const total = b.total ? ('$' + b.total) : 'â€”';
 
                 return `
           <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-            <td class="px-6 py-4 font-bold text-slate-900">${b.ref || '—'}</td>
+            <td class="px-6 py-4 font-bold text-slate-900">${b.ref || 'â€”'}</td>
             <td class="px-6 py-4 text-slate-600">${email}</td>
-            <td class="px-6 py-4 font-medium text-slate-700">${b.route || '—'}</td>
-            <td class="px-6 py-4 text-slate-600">${b.dates || '—'}</td>
+            <td class="px-6 py-4 font-medium text-slate-700">${b.route || 'â€”'}</td>
+            <td class="px-6 py-4 text-slate-600">${b.dates || 'â€”'}</td>
             <td class="px-6 py-4 font-bold text-green-600">${total}</td>
             <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge} capitalize">${b.status}</span></td>
             <td class="px-6 py-4 text-right">
@@ -266,7 +266,7 @@
             }).join('');
         }
 
-        // ── Status Update ──
+        // â”€â”€ Status Update â”€â”€
         async function setStatus(ref, newStatus) {
             try {
                 const resp = await fetch('/api/bookings', {
