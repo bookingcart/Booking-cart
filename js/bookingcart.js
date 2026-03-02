@@ -1230,10 +1230,38 @@
       });
   }
 
+  /* ─── Profile Dropdown ─── */
+  function initProfileDropdown() {
+    const trigger = document.querySelector("[data-profile-trigger]");
+    const menu = document.querySelector("[data-profile-menu]");
+    if (!trigger || !menu) return;
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.classList.toggle("hidden");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target) && !trigger.contains(e.target)) {
+        menu.classList.add("hidden");
+      }
+    });
+
+    // Sign out
+    const signout = menu.querySelector("[data-signout]");
+    if (signout) {
+      signout.addEventListener("click", () => {
+        localStorage.removeItem("bc_user");
+        window.location.reload();
+      });
+    }
+  }
+
   function init() {
     console.log("🚀 BookingCart initializing...");
     initStepper();
     initDropdowns();
+    initProfileDropdown();
     initAirportSuggestAll();
     initTripTabs();
     initPassengerControls();
