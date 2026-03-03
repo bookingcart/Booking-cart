@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Account Settings — BookingCart</title>
+    <meta name="description"
+        content="Manage your BookingCart profile, security, payments, travel preferences, notifications and rewards." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: { primary: '#14532d', secondary: '#16a34a', muted: '#dcfce7', subtle: '#15803d' }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none !important;
+        }
+
+        /* Sidebar */
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 16px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #475569;
+            transition: all 0.18s;
+            cursor: pointer;
+        }
+
+        .sidebar-link:hover {
+            background: #f0fdf4;
+            color: #15803d;
+        }
+
+        .sidebar-link.active {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .sidebar-link i {
+            font-size: 1.2rem;
+        }
+
+        /* Section panels */
+        .settings-section {
+            display: none;
+            animation: fadeIn 0.22s ease;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Input styles */
+        .field-input {
+            width: 100%;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: #1e293b;
+            background: #f8fafc;
+            transition: border-color 0.15s;
+        }
+
+        .field-input:focus {
+            border-color: #16a34a;
+            background: #fff;
+        }
+
+        .field-input.error {
+            border-color: #ef4444;
+            background: #fff5f5;
+        }
+
+        .field-input.success {
+            border-color: #16a34a;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 5px;
+        }
+
+        /* Toggle */
+        .toggle-wrap {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-wrap input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #cbd5e1;
+            border-radius: 34px;
+            transition: .3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: .3s;
+        }
+
+        .toggle-wrap input:checked+.toggle-slider {
+            background: #16a34a;
+        }
+
+        .toggle-wrap input:checked+.toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Card */
+        .settings-card {
+            background: #fff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .settings-card-header {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .settings-card-sub {
+            font-size: 0.82rem;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+
+        /* Btn */
+        .btn-primary {
+            background: #16a34a;
+            color: #fff;
+            font-weight: 700;
+            padding: 10px 24px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary:hover {
+            background: #15803d;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 700;
+            padding: 10px 24px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+
+        /* Toast */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 260px;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .toast.success {
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .toast.error {
+            background: #fff5f5;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #16a34a, #4ade80);
+            transition: width 1s ease;
+        }
+
+        /* Avatar ring */
+        #avatar-preview {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #16a34a;
+        }
+
+        /* Payment card */
+        .pay-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            margin-bottom: 12px;
+        }
+
+        .pay-card.default {
+            border-color: #16a34a;
+            background: #f0fdf4;
+        }
+
+        /* Login activity */
+        .activity-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .activity-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 420px;
+            width: 100%;
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.open .modal-box {
+            transform: scale(1);
+        }
+
+        /* Mobile menu toggle */
+        #mobile-sidebar-toggle {
+            display: none;
+        }
+
+        #sidebar-drawer {
+            transition: transform 0.3s ease;
+        }
+
+        @media (max-width: 1023px) {
+            #mobile-sidebar-toggle {
+                display: flex;
+            }
+
+            #sidebar-drawer {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 260px;
+                z-index: 500;
+                background: #fff;
+                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.12);
+                transform: translateX(-100%);
+                padding-top: 70px;
+            }
+
+            #sidebar-drawer.open {
+                transform: translateX(0);
+            }
+
+            #sidebar-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.3);
+                z-index: 499;
+                display: none;
+            }
+
+            #sidebar-overlay.open {
+                display: block;
+            }
+        }
+
+        /* Password strength */
+        .strength-bar {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .strength-seg {
+            flex: 1;
+            height: 4px;
+            border-radius: 99px;
+            background: #e2e8f0;
+            transition: background 0.3s;
+        }
+
+        /* Airline chip */
+        .airline-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            border: 1.5px solid transparent;
+            border-radius: 99px;
+            padding: 5px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .airline-chip.selected {
+            background: #dcfce7;
+            border-color: #16a34a;
+            color: #15803d;
+        }
+
+        /* Verified badge */
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #dcfce7;
+            color: #15803d;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 99px;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <!-- Delete account modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal-box">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <i class="ph ph-warning text-2xl text-red-600"></i>
+                </div>
+                <div>
+                    <div class="font-800 text-lg font-extrabold text-slate-900">Delete Account?</div>
+                    <div class="text-sm text-slate-500">This action is permanent and cannot be undone.</div>
+                </div>
+            </div>
+            <p class="text-sm text-slate-600 mb-4">All your bookings, payment methods, preferences, and loyalty points
+                will be permanently deleted. Please type <strong>DELETE</strong> to confirm.</p>
+            <input id="delete-confirm-input" type="text" class="field-input mb-4"
+                placeholder="Type DELETE to confirm" />
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="btn-secondary flex-1">Cancel</button>
+                <button id="confirm-delete-btn" onclick="confirmDelete()" class="btn-danger flex-1" disabled>Delete
+                    Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Card Modal -->
+    <div class="modal-overlay" id="add-card-modal">
+        <div class="modal-box">
+            <div class="font-extrabold text-lg text-slate-900 mb-1">Add New Card</div>
+            <div class="text-sm text-slate-500 mb-5">Card data is tokenized and never stored.</div>
+            <div class="space-y-4">
+                <div>
+                    <label class="field-label">Card Number</label>
+                    <input id="card-number-input" type="text" maxlength="19" class="field-input"
+                        placeholder="•••• •••• •••• ••••" />
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="field-label">Expiry</label>
+                        <input id="card-expiry-input" type="text" maxlength="5" class="field-input"
+                            placeholder="MM/YY" />
+                    </div>
+                    <div>
+                        <label class="field-label">CVC</label>
+                        <input id="card-cvc-input" type="text" maxlength="4" class="field-input" placeholder="•••" />
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label">Cardholder Name</label>
+                    <input id="card-name-input" type="text" class="field-input" placeholder="Full name on card" />
+                </div>
+            </div>
+            <div class="flex gap-3 mt-5">
+                <button onclick="document.getElementById('add-card-modal').classList.remove('open')"
+                    class="btn-secondary flex-1">Cancel</button>
+                <button onclick="addCard()" class="btn-primary flex-1">Add Card</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- Header -->
+    <header
+        class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-100 h-[64px] flex items-center px-6">
+        <div class="max-w-7xl mx-auto w-full flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button id="mobile-sidebar-toggle" onclick="toggleSidebar()"
+                    class="lg:hidden w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                    <i class="ph ph-list text-xl"></i>
+                </button>
+                <a href="index.html"><img src="images/logo.png" alt="BookingCart" class="h-9 rounded-xl"
+                        onerror="this.style.display='none';this.nextSibling.style.display='block'" /><span
+                        style="display:none" class="text-xl font-extrabold text-green-700">BookingCart</span></a>
+            </div>
+            <nav class="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-500">
+                <a href="index.html" class="hover:text-green-600 transition-colors">Flights</a>
+                <a href="stays.html" class="hover:text-green-600 transition-colors">Stays</a>
+                <a href="my-bookings.html" class="hover:text-green-600 transition-colors">My Bookings</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <div id="header-avatar-wrap" class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <div class="text-sm font-700 font-bold text-slate-800" id="header-name">My Account</div>
+                        <div class="text-xs text-slate-400" id="header-email">account settings</div>
+                    </div>
+                    <img id="header-avatar"
+                        src="https://ui-avatars.com/api/?name=User&background=dcfce7&color=15803d&size=80"
+                        class="w-10 h-10 rounded-full border-2 border-green-500 object-cover" />
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main layout -->
+    <div class="max-w-7xl mx-auto px-4 lg:px-6 py-8 flex gap-6 items-start">
+
+        <!-- Sidebar -->
+        <aside id="sidebar-drawer" class="w-60 flex-shrink-0 lg:sticky lg:top-[80px]">
+            <div class="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm">
+                <!-- User mini-profile -->
+                <div class="flex items-center gap-3 px-3 py-3 mb-2 border-b border-slate-100">
+                    <img id="sidebar-avatar"
+                        src="https://ui-avatars.com/api/?name=User&background=dcfce7&color=15803d&size=80"
+                        class="w-10 h-10 rounded-full object-cover border-2 border-green-500" />
+                    <div class="overflow-hidden">
+                        <div class="text-sm font-bold text-slate-800 truncate" id="sidebar-name">My Account</div>
+                        <div class="text-xs text-slate-400 truncate" id="sidebar-email">Loading...</div>
+                    </div>
+                </div>
+                <nav class="space-y-1">
+                    <div class="sidebar-link active" data-section="profile" onclick="switchSection('profile')"><i
+                            class="ph ph-user-circle"></i> Profile</div>
+                    <div class="sidebar-link" data-section="security" onclick="switchSection('security')"><i
+                            class="ph ph-shield-check"></i> Security</div>
+                    <div class="sidebar-link" data-section="payments" onclick="switchSection('payments')"><i
+                            class="ph ph-credit-card"></i> Payments</div>
+                    <div class="sidebar-link" data-section="preferences" onclick="switchSection('preferences')"><i
+                            class="ph ph-airplane"></i> Travel Preferences</div>
+                    <div class="sidebar-link" data-section="notifications" onclick="switchSection('notifications')"><i
+                            class="ph ph-bell"></i> Notifications</div>
+                    <div class="sidebar-link" data-section="rewards" onclick="switchSection('rewards')"><i
+                            class="ph ph-star"></i> Rewards</div>
+                </nav>
+                <div class="mt-3 pt-3 border-t border-slate-100">
+                    <a href="index.html" class="sidebar-link text-slate-400"><i class="ph ph-arrow-left"></i> Back to
+                        Home</a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <main class="flex-1 min-w-0">
+
+            <!-- ── PROFILE ── -->
+            <section id="section-profile" class="settings-section active">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-extrabold text-slate-900">Profile Information</h1>
+                    <p class="text-slate-500 text-sm mt-1">Manage your personal details and preferences</p>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-card-header">Profile Picture</div>
+                    <div class="settings-card-sub">Upload a photo to personalize your account</div>
+                    <div class="flex items-center gap-6 flex-wrap">
+                        <img id="avatar-preview"
+                            src="https://ui-avatars.com/api/?name=User&background=dcfce7&color=15803d&size=200"
+                            alt="Your avatar" />
+                        <div>
+                            <label for="avatar-upload" class="btn-primary cursor-pointer inline-block"><i
+                                    class="ph ph-upload-simple mr-1"></i> Upload Photo</label>
+                            <input type="file" id="avatar-upload" accept="image/*" class="hidden"
+                                onchange="previewAvatar(this)" />
+                            <p class="text-xs text-slate-400 mt-2">JPG, PNG or GIF · Max 5 MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-card-header">Personal Details</div>
+                    <div class="settings-card-sub">Update your name, email, and contact information</div>
+                    <form id="profile-form" onsubmit="saveProfile(event)" novalidate>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="field-label" for="firstName">First Name</label>
+                                <input id="firstName" name="firstName" type="text" class="field-input"
+                                    placeholder="John" required />
+                                <div class="text-xs text-red-500 mt-1 hidden" id="firstName-err">Required field</div>
+                            </div>
+                            <div>
+                                <label class="field-label" for="lastName">Last Name</label>
+                                <input id="lastName" name="lastName" type="text" class="field-input" placeholder="Doe"
+                                    required />
+                                <div class="text-xs text-red-500 mt-1 hidden" id="lastName-err">Required field</div>
+                            </div>
+                            <div>
+                                <label class="field-label" for="email">Email Address</label>
+                                <div class="relative">
+                                    <input id="email" name="email" type="email" class="field-input pr-24"
+                                        placeholder="john@example.com" required />
+                                    <span class="verified-badge absolute right-3 top-1/2 -translate-y-1/2"><i
+                                            class="ph ph-seal-check"></i> Verified</span>
+                                </div>
+                                <div class="text-xs text-red-500 mt-1 hidden" id="email-err">Enter a valid email</div>
+                            </div>
+                            <div>
+                                <label class="field-label" for="phone">Phone Number</label>
+                                <div class="flex gap-2">
+                                    <select id="phone-code" class="field-input w-28 flex-shrink-0">
+                                        <option value="+1">🇺🇸 +1</option>
+                                        <option value="+44">🇬🇧 +44</option>
+                                        <option value="+91">🇮🇳 +91</option>
+                                        <option value="+971">🇦🇪 +971</option>
+                                        <option value="+966">🇸🇦 +966</option>
+                                        <option value="+234">🇳🇬 +234</option>
+                                        <option value="+254">🇰🇪 +254</option>
+                                        <option value="+27">🇿🇦 +27</option>
+                                        <option value="+20">🇪🇬 +20</option>
+                                        <option value="+49">🇩🇪 +49</option>
+                                        <option value="+33">🇫🇷 +33</option>
+                                        <option value="+86">🇨🇳 +86</option>
+                                        <option value="+81">🇯🇵 +81</option>
+                                        <option value="+55">🇧🇷 +55</option>
+                                    </select>
+                                    <input id="phone" name="phone" type="tel" class="field-input flex-1"
+                                        placeholder="(555) 000-0000" />
+                                </div>
+                            </div>
+                            <div>
+                                <label class="field-label" for="dob">Date of Birth</label>
+                                <input id="dob" name="dob" type="date" class="field-input" />
+                            </div>
+                            <div>
+                                <label class="field-label" for="nationality">Nationality</label>
+                                <select id="nationality" name="nationality" class="field-input">
+                                    <option value="">Select country…</option>
+                                    <option>American</option>
+                                    <option>British</option>
+                                    <option>Canadian</option>
+                                    <option>Chinese</option>
+                                    <option>French</option>
+                                    <option>German</option>
+                                    <option>Indian</option>
+                                    <option>Japanese</option>
+                                    <option>Nigerian</option>
+                                    <option>South African</option>
+                                    <option>Kenyan</option>
+                                    <option>Emirati</option>
+                                    <option>Saudi</option>
+                                    <option>Brazilian</option>
+                                    <option>Australian</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="field-label" for="language">Preferred Language</label>
+                                <select id="language" name="language" class="field-input">
+                                    <option value="en">English</option>
+                                    <option value="fr">Français</option>
+                                    <option value="de">Deutsch</option>
+                                    <option value="ar">العربية</option>
+                                    <option value="zh">中文</option>
+                                    <option value="es">Español</option>
+                                    <option value="pt">Português</option>
+                                    <option value="ja">日本語</option>
+                                    <option value="hi">हिन्दी</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 mt-6">
+                            <button type="submit" class="btn-primary flex items-center gap-2"><i
+                                    class="ph ph-floppy-disk"></i> Save Changes</button>
+                            <button type="button" onclick="resetProfile()" class="btn-secondary">Discard</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- ── SECURITY ── -->
+            <section id="section-security" class="settings-section">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-extrabold text-slate-900">Security Settings</h1>
+                    <p class="text-slate-500 text-sm mt-1">Keep your account protected</p>
+                </div>
+
+                <!-- Change Password -->
+                <div class="settings-card">
+                    <div class="settings-card-header">Change Password</div>
+                    <div class="settings-card-sub">Use a strong, unique password you don't use elsewhere</div>
+                    <form id="password-form" onsubmit="changePassword(event)" novalidate>
+                        <div class="space-y-4 max-w-md">
+                            <div>
+                                <label class="field-label" for="current-pass">Current Password</label>
+                                <div class="relative">
+                                    <input id="current-pass" type="password" class="field-input pr-10"
+                                        placeholder="Enter current password" required />
+                                    <button type="button" onclick="togglePass('current-pass')"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                        <i class="ph ph-eye" id="current-pass-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="field-label" for="new-pass">New Password</label>
+                                <div class="relative">
+                                    <input id="new-pass" type="password" class="field-input pr-10"
+                                        placeholder="Min. 8 characters" required oninput="checkStrength(this.value)" />
+                                    <button type="button" onclick="togglePass('new-pass')"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                        <i class="ph ph-eye" id="new-pass-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="strength-bar mt-2">
+                                    <div class="strength-seg" id="s1"></div>
+                                    <div class="strength-seg" id="s2"></div>
+                                    <div class="strength-seg" id="s3"></div>
+                                    <div class="strength-seg" id="s4"></div>
+                                </div>
+                                <div class="text-xs text-slate-400 mt-1" id="strength-label">Enter a password</div>
+                            </div>
+                            <div>
+                                <label class="field-label" for="confirm-pass">Confirm New Password</label>
+                                <input id="confirm-pass" type="password" class="field-input"
+                                    placeholder="Repeat new password" required />
+                                <div class="text-xs text-red-500 mt-1 hidden" id="confirm-pass-err">Passwords do not
+                                    match</div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary mt-5 flex items-center gap-2"><i
+                                class="ph ph-lock-key"></i> Update Password</button>
+                    </form>
+                </div>
+
+                <!-- 2FA -->
+                <div class="settings-card">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="settings-card-header">Two-Factor Authentication</div>
+                            <div class="text-sm text-slate-500 mt-1">Add an extra layer of protection using your phone
+                            </div>
+                            <div id="tfa-status" class="mt-2 text-xs font-semibold text-slate-400">Status: <span
+                                    class="text-red-500">Disabled</span></div>
+                        </div>
+                        <label class="toggle-wrap mt-1 flex-shrink-0">
+                            <input type="checkbox" id="tfa-toggle" onchange="toggle2FA(this.checked)" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div id="tfa-setup" class="hidden mt-4 bg-green-50 rounded-xl p-4 text-sm text-green-800">
+                        <i class="ph ph-check-circle mr-1"></i> 2FA enabled via Authenticator App. Scan the QR code in
+                        your authenticator to confirm.
+                    </div>
+                </div>
+
+                <!-- Login Activity -->
+                <div class="settings-card">
+                    <div class="settings-card-header">Recent Login Activity</div>
+                    <div class="settings-card-sub">Review recent sign-ins to detect unauthorised access</div>
+                    <div id="login-activity-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <button onclick="logoutAll()" class="btn-secondary mt-4 flex items-center gap-2"><i
+                            class="ph ph-sign-out"></i> Logout from All Devices</button>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="settings-card border-red-200 bg-red-50/30">
+                    <div class="settings-card-header text-red-700">Danger Zone</div>
+                    <div class="settings-card-sub">Irreversible actions — proceed with caution</div>
+                    <div
+                        class="flex items-center justify-between flex-wrap gap-4 p-4 bg-white border border-red-200 rounded-xl">
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">Delete My Account</div>
+                            <div class="text-xs text-slate-500 mt-0.5">All data will be permanently removed</div>
+                        </div>
+                        <button onclick="openDeleteModal()" class="btn-danger flex items-center gap-2"><i
+                                class="ph ph-trash"></i> Delete Account</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── PAYMENTS ── -->
+            <section id="section-payments" class="settings-section">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-extrabold text-slate-900">Payment Methods</h1>
+                    <p class="text-slate-500 text-sm mt-1">Manage saved cards. All data is PCI-compliant and tokenized.
+                    </p>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-card-header">Saved Cards</div>
+                    <div class="settings-card-sub">Select a default card for faster checkout</div>
+                    <div id="cards-list"></div>
+                    <button onclick="document.getElementById('add-card-modal').classList.add('open')"
+                        class="btn-primary mt-2 flex items-center gap-2 w-full justify-center">
+                        <i class="ph ph-plus"></i> Add New Card
+                    </button>
+                </div>
+
+                <div class="settings-card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph ph-shield-check text-2xl text-green-600"></i>
+                        <div>
+                            <div class="font-bold text-sm text-slate-800">PCI DSS Compliant</div>
+                            <div class="text-xs text-slate-500">Your card details are tokenized and never stored on our
+                                servers</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-lock text-2xl text-blue-500"></i>
+                        <div>
+                            <div class="font-bold text-sm text-slate-800">SSL Encrypted</div>
+                            <div class="text-xs text-slate-500">All payment data is protected with 256-bit encryption
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── TRAVEL PREFERENCES ── -->
+            <section id="section-preferences" class="settings-section">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-extrabold text-slate-900">Travel Preferences</h1>
+                    <p class="text-slate-500 text-sm mt-1">Personalize your booking experience</p>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-card-header">Flight Preferences</div>
+                    <div class="settings-card-sub">These preferences auto-fill during booking</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="field-label" for="home-airport">Home Airport (IATA)</label>
+                            <div class="flex gap-2">
+                                <input id="home-airport" type="text" maxlength="3" class="field-input uppercase"
+                                    placeholder="e.g. LHR" />
+                                <button onclick="autoDetectAirport()"
+                                    class="btn-secondary flex-shrink-0 text-xs px-3 flex items-center gap-1"><i
+                                        class="ph ph-map-pin"></i> Auto-detect</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label" for="cabin-pref">Cabin Class</label>
+                            <select id="cabin-pref" class="field-input">
+                                <option>Economy</option>
+                                <option>Premium Economy</option>
+                                <option>Business Class</option>
+                                <option>First Class</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label" for="seat-pref">Seat Preference</label>
+                            <div class="flex gap-3">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="seat-pref" value="window" class="accent-green-600"
+                                        checked /> <span class="text-sm font-medium">🪟 Window</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="seat-pref" value="aisle" class="accent-green-600" /> <span
+                                        class="text-sm font-medium">💺 Aisle</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="seat-pref" value="middle" class="accent-green-600" />
+                                    <span class="text-sm font-medium">🔲 Middle</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label" for="meal-pref">Meal Preference</label>
+                            <select id="meal-pref" class="field-input">
+                                <option>Standard</option>
+                                <option>Vegetarian</option>
+                                <option>Vegan</option>
+                                <option>Halal</option>
+                                <option>Kosher</option>
+                                <option>Gluten-Free</option>
+                                <option>No Preference</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-card-header">Preferred Airlines</div>
+                    <div class="settings-card-sub">Click to select your favourite airlines</div>
+                    <div id="airlines-grid" class="flex flex-wrap gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <button onclick="savePreferences()" class="btn-primary flex items-center gap-2 mt-2"><i
+                        class="ph ph-floppy-disk"></i> Save Preferences</button>
+            </section>
+
+            <!-- ── NOTIFICATIONS ── -->
+            <section id="section-notifications" class="settings-section">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-extrabold text-slate-900">Notification Settings</h1>
+                    <p class="text-slate-500 text-sm mt-1">Choose what updates you'd like to receive</p>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-card-header">Email Notifications</div>
+                    <div class="settings-card-sub">Manage emails sent to your registered email address</div>
+                    <div class="space-y-5" id="email-notifications">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="settings-card mt-4">
+                    <div class="settings-card-header">SMS & Push Notifications</div>
+                    <div class="settings-card-sub">Manage mobile alerts and push notifications</div>
+                    <div class="space-y-5" id="sms-notifications">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <button onclick="saveNotifications()" class="btn-primary flex items-center gap-2 mt-2"><i
+                        class="ph ph-floppy-disk"></i> Save Preferences</button>
+            </section>
+
+            <!-- ── REWARDS ── -->
+            <section id="section-rewards" class="settings-section">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-extrabold text-slate-900">Rewards & Loyalty</h1>
+                    <p class="text-slate-500 text-sm mt-1">Your TravelPoints membership overview</p>
+                </div>
+
+                <!-- Membership card -->
+                <div class="rounded-2xl p-6 mb-5"
+                    style="background: linear-gradient(135deg, #14532d 0%, #16a34a 60%, #4ade80 100%);">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <div class="text-green-200 text-xs font-bold uppercase tracking-widest mb-1">TravelPoints
+                            </div>
+                            <div class="text-white text-2xl font-extrabold" id="reward-level-badge">Gold Member</div>
+                        </div>
+                        <i class="ph ph-star text-5xl text-yellow-300 opacity-80"></i>
+                    </div>
+                    <div class="text-white/80 text-sm mb-1">Available Points</div>
+                    <div class="text-white text-4xl font-extrabold tracking-tight" id="reward-points">12,450</div>
+                    <div class="text-white/60 text-xs mt-1">≈ $124.50 in travel credits</div>
+                </div>
+
+                <!-- Progress to next tier -->
+                <div class="settings-card">
+                    <div class="settings-card-header">Progress to Platinum</div>
+                    <div class="settings-card-sub">Earn <span class="font-bold text-green-600">7,550 more points</span>
+                        to reach Platinum status</div>
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
+                        <span>Gold — 12,450 pts</span>
+                        <span>Platinum — 20,000 pts</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+                    </div>
+                    <div class="text-right text-xs text-slate-400 mt-1">62.3% complete</div>
+                </div>
+
+                <!-- Benefits -->
+                <div class="settings-card">
+                    <div class="settings-card-header">Your Gold Member Benefits</div>
+                    <div class="settings-card-sub">Exclusive perks included with your membership</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
+                            <i class="ph ph-briefcase text-2xl text-green-600"></i>
+                            <div>
+                                <div class="font-bold text-sm">Priority Boarding</div>
+                                <div class="text-xs text-slate-500">Skip the queue at the gate</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
+                            <i class="ph ph-seat text-2xl text-green-600"></i>
+                            <div>
+                                <div class="font-bold text-sm">Free Seat Selection</div>
+                                <div class="text-xs text-slate-500">Choose your seat at no cost</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
+                            <i class="ph ph-percent text-2xl text-green-600"></i>
+                            <div>
+                                <div class="font-bold text-sm">10% Points Bonus</div>
+                                <div class="text-xs text-slate-500">Earn extra on every trip</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
+                            <i class="ph ph-headset text-2xl text-green-600"></i>
+                            <div>
+                                <div class="font-bold text-sm">Priority Support</div>
+                                <div class="text-xs text-slate-500">Dedicated customer service line</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Points history -->
+                <div class="settings-card">
+                    <div class="settings-card-header">Points History</div>
+                    <div class="settings-card-sub">Recent transactions on your account</div>
+                    <div id="points-history"></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-100 pt-10 pb-6 mt-10">
+        <div
+            class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
+            <div>&copy; 2026 BookingCart. All rights reserved.</div>
+            <div class="flex gap-6">
+                <a href="privacy.html" class="hover:text-slate-600">Privacy Policy</a>
+                <a href="terms.html" class="hover:text-slate-600">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/account-settings.js"></script>
+</body>
+
+</html>
