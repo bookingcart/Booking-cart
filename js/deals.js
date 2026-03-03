@@ -177,7 +177,7 @@
             ? '<span class="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1"><i class="ph-fill ph-fire-simple"></i> Hot Deal</span>'
             : '';
 
-        const searchParams = new URLSearchParams({ from: originCode, to: deal.to, depart: deal.date || '', adults: 1 });
+
 
         return `
     <div class="group bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300">
@@ -221,11 +221,10 @@
         </div>
 
         <!-- CTA -->
-        <a href="results.html?${searchParams.toString()}"
-           onclick="window.dealsModule && window.dealsModule.trackBook('${deal.to}','${deal.city}')"
-           class="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all text-sm group-hover:shadow-lg group-hover:shadow-green-600/20">
+        <button onclick="window.dealsModule.bookDeal('${originCode}','${deal.to}','${deal.date || ''}','${deal.city}')"
+           class="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all text-sm cursor-pointer group-hover:shadow-lg group-hover:shadow-green-600/20">
           <i class="ph ph-paper-plane-tilt"></i> Book Now
-        </a>
+        </button>
       </div>
     </div>`;
     }
@@ -297,7 +296,24 @@
     }
 
     window.dealsModule = {
-        trackBook(iata, city) { recordSearch(iata); recordSearch(city); }
+        trackBook(iata, city) { recordSearch(iata); recordSearch(city); },
+        bookDeal(from, to, date, city) {
+            // Write search state to localStorage so results.html picks it up
+            const STORAGE_KEY = 'bookingcart_flights_v1';
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                const current = raw ? JSON.parse(raw) : {};
+                current.search = { from, to, depart: date, return: '', cabin: 'Economy' };
+                current.tripType = 'oneway';
+                current.passengers = current.passengers || { adults: 1, children: 0, infants: 0 };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+            } catch (e) {
+                console.error('Failed to write deal state:', e);
+            }
+            recordSearch(to);
+            recordSearch(city);
+            window.location.href = 'results.html';
+        }
     };
 
     // ── Init ──────────────────────────────────────────────────────────────────
