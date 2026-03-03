@@ -2,574 +2,737 @@
    BookingCart — Account Settings JS
    ═══════════════════════════════════════════════════ */
 
-'use strict';
+"use strict";
 
 /* ── State ── */
+const storedUser = JSON.parse(localStorage.getItem('bookingcart_user') || 'null');
+const defaultName = storedUser ? storedUser.name : "Alex Johnson";
+const defFirst = storedUser ? storedUser.given_name || storedUser.name.split(' ')[0] : "Alex";
+const defLast = storedUser ? storedUser.family_name || storedUser.name.split(' ').slice(1).join(' ') : "Johnson";
+const defEmail = storedUser ? storedUser.email : "alex.johnson@email.com";
+const defAvatar = storedUser ? storedUser.picture : `https://ui-avatars.com/api/?name=${encodeURIComponent(defaultName)}&background=dcfce7&color=15803d&size=200`;
+
 const state = {
-    profile: {
-        firstName: 'Alex', lastName: 'Johnson',
-        email: 'alex.johnson@email.com',
-        phone: '+1 (555) 012-3456', phoneCode: '+1',
-        dob: '1990-06-15', nationality: 'American',
-        language: 'en',
-        avatar: 'https://ui-avatars.com/api/?name=Alex+Johnson&background=dcfce7&color=15803d&size=200'
+  profile: {
+    firstName: defFirst,
+    lastName: defLast,
+    email: defEmail,
+    phone: "+1 (555) 012-3456",
+    phoneCode: "+1",
+    dob: "1990-06-15",
+    nationality: "American",
+    language: "en",
+    avatar: defAvatar,
+  },
+  cards: [
+    { id: 1, brand: "Visa", last4: "4587", expiry: "12/26", isDefault: true },
+    {
+      id: 2,
+      brand: "Mastercard",
+      last4: "1234",
+      expiry: "08/25",
+      isDefault: false,
     },
-    cards: [
-        { id: 1, brand: 'Visa', last4: '4587', expiry: '12/26', isDefault: true },
-        { id: 2, brand: 'Mastercard', last4: '1234', expiry: '08/25', isDefault: false }
+  ],
+  notifications: {
+    email: {
+      booking_confirmations: true,
+      price_alerts: true,
+      promotions: false,
+      newsletter: false,
+    },
+    sms: {
+      sms_notifications: true,
+      push_notifications: false,
+    },
+  },
+  preferences: {
+    homeAirport: "LHR",
+    cabin: "Economy",
+    seat: "window",
+    meal: "Standard",
+    airlines: ["Emirates", "British Airways"],
+  },
+  rewards: {
+    level: "Gold",
+    points: 12450,
+    nextLevel: "Platinum",
+    nextThreshold: 20000,
+    history: [
+      { desc: "Dubai → London (EK001)", pts: +450, date: "2 Mar 2026" },
+      { desc: "Points redeemed — hotel", pts: -200, date: "18 Feb 2026" },
+      { desc: "New York → Paris", pts: +680, date: "5 Feb 2026" },
+      { desc: "Referral bonus", pts: +200, date: "1 Feb 2026" },
+      { desc: "Annual Gold bonus", pts: +500, date: "1 Jan 2026" },
     ],
-    notifications: {
-        email: {
-            booking_confirmations: true,
-            price_alerts: true,
-            promotions: false,
-            newsletter: false
-        },
-        sms: {
-            sms_notifications: true,
-            push_notifications: false
-        }
+  },
+  loginActivity: [
+    {
+      device: "Chrome on Windows",
+      location: "Nairobi, KE",
+      date: "Today, 17:32",
+      current: true,
     },
-    preferences: {
-        homeAirport: 'LHR',
-        cabin: 'Economy',
-        seat: 'window',
-        meal: 'Standard',
-        airlines: ['Emirates', 'British Airways']
+    {
+      device: "Safari on iPhone 15",
+      location: "Dubai, UAE",
+      date: "Yesterday, 09:14",
+      current: false,
     },
-    rewards: {
-        level: 'Gold',
-        points: 12450,
-        nextLevel: 'Platinum',
-        nextThreshold: 20000,
-        history: [
-            { desc: 'Dubai → London (EK001)', pts: +450, date: '2 Mar 2026' },
-            { desc: 'Points redeemed — hotel', pts: -200, date: '18 Feb 2026' },
-            { desc: 'New York → Paris', pts: +680, date: '5 Feb 2026' },
-            { desc: 'Referral bonus', pts: +200, date: '1 Feb 2026' },
-            { desc: 'Annual Gold bonus', pts: +500, date: '1 Jan 2026' }
-        ]
+    {
+      device: "Firefox on macOS",
+      location: "London, UK",
+      date: "28 Feb 2026, 21:05",
+      current: false,
     },
-    loginActivity: [
-        { device: 'Chrome on Windows', location: 'Nairobi, KE', date: 'Today, 17:32', current: true },
-        { device: 'Safari on iPhone 15', location: 'Dubai, UAE', date: 'Yesterday, 09:14', current: false },
-        { device: 'Firefox on macOS', location: 'London, UK', date: '28 Feb 2026, 21:05', current: false }
-    ]
+  ],
 };
 
 const AIRLINES = [
-    'Emirates', 'British Airways', 'Qatar Airways', 'Etihad Airways',
-    'Turkish Airlines', 'Lufthansa', 'Air France', 'KLM',
-    'Singapore Airlines', 'Cathay Pacific', 'Delta', 'United Airlines',
-    'American Airlines', 'Kenya Airways', 'South African Airways'
+  "Emirates",
+  "British Airways",
+  "Qatar Airways",
+  "Etihad Airways",
+  "Turkish Airlines",
+  "Lufthansa",
+  "Air France",
+  "KLM",
+  "Singapore Airlines",
+  "Cathay Pacific",
+  "Delta",
+  "United Airlines",
+  "American Airlines",
+  "Kenya Airways",
+  "South African Airways",
 ];
 
 /* ══════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-    loadProfile();
-    renderCards();
-    renderLoginActivity();
-    renderNotifications();
-    renderAirlines();
-    renderRewards();
-    loadPreferences();
-    setTimeout(() => {
-        const fill = document.getElementById('progress-fill');
-        if (fill) fill.style.width = ((state.rewards.points / state.rewards.nextThreshold) * 100).toFixed(1) + '%';
-    }, 300);
+document.addEventListener("DOMContentLoaded", () => {
+  loadProfile();
+  renderCards();
+  renderLoginActivity();
+  renderNotifications();
+  renderAirlines();
+  renderRewards();
+  loadPreferences();
+  setTimeout(() => {
+    const fill = document.getElementById("progress-fill");
+    if (fill)
+      fill.style.width =
+        ((state.rewards.points / state.rewards.nextThreshold) * 100).toFixed(
+          1,
+        ) + "%";
+  }, 300);
 });
 
 /* ══════════════════════════════════════════════════
    SECTION NAVIGATION
 ══════════════════════════════════════════════════ */
 function switchSection(name) {
-    document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-    const sec = document.getElementById('section-' + name);
-    if (sec) sec.classList.add('active');
-    document.querySelectorAll(`.sidebar-link[data-section="${name}"]`).forEach(l => l.classList.add('active'));
-    closeSidebar();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  document
+    .querySelectorAll(".settings-section")
+    .forEach((s) => s.classList.remove("active"));
+  document
+    .querySelectorAll(".sidebar-link")
+    .forEach((l) => l.classList.remove("active"));
+  const sec = document.getElementById("section-" + name);
+  if (sec) sec.classList.add("active");
+  document
+    .querySelectorAll(`.sidebar-link[data-section="${name}"]`)
+    .forEach((l) => l.classList.add("active"));
+  closeSidebar();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function toggleSidebar() {
-    document.getElementById('sidebar-drawer').classList.toggle('open');
-    document.getElementById('sidebar-overlay').classList.toggle('open');
+  document.getElementById("sidebar-drawer").classList.toggle("open");
+  document.getElementById("sidebar-overlay").classList.toggle("open");
 }
 
 function closeSidebar() {
-    document.getElementById('sidebar-drawer').classList.remove('open');
-    document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById("sidebar-drawer").classList.remove("open");
+  document.getElementById("sidebar-overlay").classList.remove("open");
 }
 
 /* ══════════════════════════════════════════════════
    TOAST NOTIFICATIONS
 ══════════════════════════════════════════════════ */
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    const icon = type === 'success' ? 'ph-check-circle' : 'ph-x-circle';
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `<i class="ph ${icon} text-xl"></i> ${message}`;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(40px)';
-        toast.style.transition = 'all 0.3s ease';
-        setTimeout(() => toast.remove(), 320);
-    }, 3500);
+function showToast(message, type = "success") {
+  const container = document.getElementById("toast-container");
+  const toast = document.createElement("div");
+  const icon = type === "success" ? "ph-check-circle" : "ph-x-circle";
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i class="ph ${icon} text-xl"></i> ${message}`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(40px)";
+    toast.style.transition = "all 0.3s ease";
+    setTimeout(() => toast.remove(), 320);
+  }, 3500);
 }
 
 /* ══════════════════════════════════════════════════
    PROFILE
 ══════════════════════════════════════════════════ */
 function loadProfile() {
-    const p = state.profile;
-    setVal('firstName', p.firstName);
-    setVal('lastName', p.lastName);
-    setVal('email', p.email);
-    setVal('phone', p.phone.replace(p.phoneCode, '').trim());
-    setVal('dob', p.dob);
-    setVal('nationality', p.nationality);
-    setVal('language', p.language);
-    setVal('phone-code', p.phoneCode);
-    updateHeaderInfo();
+  const p = state.profile;
+  setVal("firstName", p.firstName);
+  setVal("lastName", p.lastName);
+  setVal("email", p.email);
+  setVal("phone", p.phone.replace(p.phoneCode, "").trim());
+  setVal("dob", p.dob);
+  setVal("nationality", p.nationality);
+  setVal("language", p.language);
+  setVal("phone-code", p.phoneCode);
+  updateHeaderInfo();
 }
 
 function setVal(id, val) {
-    const el = document.getElementById(id);
-    if (el) el.value = val;
+  const el = document.getElementById(id);
+  if (el) el.value = val;
 }
 
 function updateHeaderInfo() {
-    const p = state.profile;
-    const fullName = `${p.firstName} ${p.lastName}`.trim();
-    setText('header-name', fullName || 'My Account');
-    setText('header-email', p.email);
-    setText('sidebar-name', fullName || 'My Account');
-    setText('sidebar-email', p.email);
-    const avatarSrc = p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=dcfce7&color=15803d&size=200`;
-    ['header-avatar', 'sidebar-avatar', 'avatar-preview'].forEach(id => {
-        const img = document.getElementById(id);
-        if (img) img.src = avatarSrc;
-    });
+  const p = state.profile;
+  const fullName = `${p.firstName} ${p.lastName}`.trim();
+  setText("header-name", fullName || "My Account");
+  setText("header-email", p.email);
+  setText("sidebar-name", fullName || "My Account");
+  setText("sidebar-email", p.email);
+  const avatarSrc =
+    p.avatar ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=dcfce7&color=15803d&size=200`;
+  ["header-avatar", "sidebar-avatar", "avatar-preview"].forEach((id) => {
+    const img = document.getElementById(id);
+    if (img) img.src = avatarSrc;
+  });
 }
 
 function setText(id, text) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = text;
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
 }
 
 function previewAvatar(input) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
-    if (file.size > 5 * 1024 * 1024) { showToast('Image must be under 5 MB', 'error'); return; }
-    const reader = new FileReader();
-    reader.onload = e => {
-        state.profile.avatar = e.target.result;
-        updateHeaderInfo();
-        showToast('Profile photo updated!');
-    };
-    reader.readAsDataURL(file);
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    showToast("Image must be under 5 MB", "error");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state.profile.avatar = e.target.result;
+    updateHeaderInfo();
+    showToast("Profile photo updated!");
+  };
+  reader.readAsDataURL(file);
 }
 
 function saveProfile(e) {
-    e.preventDefault();
-    let valid = true;
+  e.preventDefault();
+  let valid = true;
 
-    const firstName = document.getElementById('firstName').value.trim();
-    const lastName = document.getElementById('lastName').value.trim();
-    const email = document.getElementById('email').value.trim();
+  const firstName = document.getElementById("firstName").value.trim();
+  const lastName = document.getElementById("lastName").value.trim();
+  const email = document.getElementById("email").value.trim();
 
-    toggleErr('firstName-err', !firstName);
-    toggleErr('lastName-err', !lastName);
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    toggleErr('email-err', !emailOk);
+  toggleErr("firstName-err", !firstName);
+  toggleErr("lastName-err", !lastName);
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  toggleErr("email-err", !emailOk);
 
-    if (!firstName || !lastName || !emailOk) { valid = false; }
+  if (!firstName || !lastName || !emailOk) {
+    valid = false;
+  }
 
-    if (!valid) { showToast('Please fix the errors before saving', 'error'); return; }
+  if (!valid) {
+    showToast("Please fix the errors before saving", "error");
+    return;
+  }
 
-    state.profile.firstName = firstName;
-    state.profile.lastName = lastName;
-    state.profile.email = email;
-    state.profile.phoneCode = document.getElementById('phone-code').value;
-    state.profile.phone = document.getElementById('phone').value.trim();
-    state.profile.dob = document.getElementById('dob').value;
-    state.profile.nationality = document.getElementById('nationality').value;
-    state.profile.language = document.getElementById('language').value;
+  state.profile.firstName = firstName;
+  state.profile.lastName = lastName;
+  state.profile.email = email;
+  state.profile.phoneCode = document.getElementById("phone-code").value;
+  state.profile.phone = document.getElementById("phone").value.trim();
+  state.profile.dob = document.getElementById("dob").value;
+  state.profile.nationality = document.getElementById("nationality").value;
+  state.profile.language = document.getElementById("language").value;
 
-    updateHeaderInfo();
-    showToast('Profile updated successfully!');
+  updateHeaderInfo();
+  showToast("Profile updated successfully!");
 }
 
 function resetProfile() {
-    loadProfile();
-    showToast('Changes discarded', 'error');
+  loadProfile();
+  showToast("Changes discarded", "error");
 }
 
 function toggleErr(id, show) {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('hidden', !show);
-    const inputId = id.replace('-err', '');
-    const input = document.getElementById(inputId);
-    if (input) input.classList.toggle('error', show);
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle("hidden", !show);
+  const inputId = id.replace("-err", "");
+  const input = document.getElementById(inputId);
+  if (input) input.classList.toggle("error", show);
 }
 
 /* ══════════════════════════════════════════════════
    SECURITY — PASSWORD
 ══════════════════════════════════════════════════ */
 function togglePass(id) {
-    const inp = document.getElementById(id);
-    const eye = document.getElementById(id + '-eye');
-    if (!inp || !eye) return;
-    if (inp.type === 'password') {
-        inp.type = 'text';
-        eye.className = 'ph ph-eye-slash';
-    } else {
-        inp.type = 'password';
-        eye.className = 'ph ph-eye';
-    }
+  const inp = document.getElementById(id);
+  const eye = document.getElementById(id + "-eye");
+  if (!inp || !eye) return;
+  if (inp.type === "password") {
+    inp.type = "text";
+    eye.className = "ph ph-eye-slash";
+  } else {
+    inp.type = "password";
+    eye.className = "ph ph-eye";
+  }
 }
 
 function checkStrength(val) {
-    let score = 0;
-    if (val.length >= 8) score++;
-    if (/[A-Z]/.test(val)) score++;
-    if (/[0-9]/.test(val)) score++;
-    if (/[^A-Za-z0-9]/.test(val)) score++;
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
 
-    const colors = ['#ef4444', '#f97316', '#eab308', '#16a34a'];
-    const labels = ['Weak', 'Fair', 'Good', 'Strong'];
-    for (let i = 1; i <= 4; i++) {
-        const seg = document.getElementById('s' + i);
-        if (seg) seg.style.background = i <= score ? colors[score - 1] : '#e2e8f0';
-    }
-    const lbl = document.getElementById('strength-label');
-    if (lbl) lbl.textContent = score ? `Strength: ${labels[score - 1]}` : 'Enter a password';
+  const colors = ["#ef4444", "#f97316", "#eab308", "#16a34a"];
+  const labels = ["Weak", "Fair", "Good", "Strong"];
+  for (let i = 1; i <= 4; i++) {
+    const seg = document.getElementById("s" + i);
+    if (seg) seg.style.background = i <= score ? colors[score - 1] : "#e2e8f0";
+  }
+  const lbl = document.getElementById("strength-label");
+  if (lbl)
+    lbl.textContent = score
+      ? `Strength: ${labels[score - 1]}`
+      : "Enter a password";
 }
 
 function changePassword(e) {
-    e.preventDefault();
-    const cur = document.getElementById('current-pass').value;
-    const nw = document.getElementById('new-pass').value;
-    const conf = document.getElementById('confirm-pass').value;
-    const errEl = document.getElementById('confirm-pass-err');
+  e.preventDefault();
+  const cur = document.getElementById("current-pass").value;
+  const nw = document.getElementById("new-pass").value;
+  const conf = document.getElementById("confirm-pass").value;
+  const errEl = document.getElementById("confirm-pass-err");
 
-    if (!cur || !nw || !conf) { showToast('All password fields are required', 'error'); return; }
-    if (nw !== conf) {
-        errEl.classList.remove('hidden');
-        document.getElementById('confirm-pass').classList.add('error');
-        showToast('Passwords don\'t match', 'error');
-        return;
-    }
-    if (nw.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+  if (!cur || !nw || !conf) {
+    showToast("All password fields are required", "error");
+    return;
+  }
+  if (nw !== conf) {
+    errEl.classList.remove("hidden");
+    document.getElementById("confirm-pass").classList.add("error");
+    showToast("Passwords don't match", "error");
+    return;
+  }
+  if (nw.length < 8) {
+    showToast("Password must be at least 8 characters", "error");
+    return;
+  }
 
-    errEl.classList.add('hidden');
-    document.getElementById('confirm-pass').classList.remove('error');
-    document.getElementById('password-form').reset();
-    ['s1', 's2', 's3', 's4'].forEach(id => {
-        const s = document.getElementById(id);
-        if (s) s.style.background = '#e2e8f0';
-    });
-    document.getElementById('strength-label').textContent = 'Enter a password';
-    showToast('Password changed successfully!');
+  errEl.classList.add("hidden");
+  document.getElementById("confirm-pass").classList.remove("error");
+  document.getElementById("password-form").reset();
+  ["s1", "s2", "s3", "s4"].forEach((id) => {
+    const s = document.getElementById(id);
+    if (s) s.style.background = "#e2e8f0";
+  });
+  document.getElementById("strength-label").textContent = "Enter a password";
+  showToast("Password changed successfully!");
 }
 
 /* ── 2FA ── */
 function toggle2FA(enabled) {
-    const status = document.getElementById('tfa-status');
-    const setup = document.getElementById('tfa-setup');
-    if (enabled) {
-        status.innerHTML = 'Status: <span class="text-green-600">Enabled</span>';
-        setup.classList.remove('hidden');
-        showToast('Two-Factor Authentication enabled!');
-    } else {
-        status.innerHTML = 'Status: <span class="text-red-500">Disabled</span>';
-        setup.classList.add('hidden');
-        showToast('2FA disabled. Your account is less secure.', 'error');
-    }
+  const status = document.getElementById("tfa-status");
+  const setup = document.getElementById("tfa-setup");
+  if (enabled) {
+    status.innerHTML = 'Status: <span class="text-green-600">Enabled</span>';
+    setup.classList.remove("hidden");
+    showToast("Two-Factor Authentication enabled!");
+  } else {
+    status.innerHTML = 'Status: <span class="text-red-500">Disabled</span>';
+    setup.classList.add("hidden");
+    showToast("2FA disabled. Your account is less secure.", "error");
+  }
 }
 
 /* ── Login Activity ── */
 function renderLoginActivity() {
-    const list = document.getElementById('login-activity-list');
-    if (!list) return;
-    list.innerHTML = state.loginActivity.map(a => `
+  const list = document.getElementById("login-activity-list");
+  if (!list) return;
+  list.innerHTML = state.loginActivity
+    .map(
+      (a) => `
     <div class="activity-row">
-      <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${a.current ? 'bg-green-100' : 'bg-slate-100'}">
-        <i class="ph ph-${a.device.includes('iPhone') || a.device.includes('iPad') ? 'device-mobile' : 'desktop'} text-xl ${a.current ? 'text-green-600' : 'text-slate-500'}"></i>
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${a.current ? "bg-green-100" : "bg-slate-100"}">
+        <i class="ph ph-${a.device.includes("iPhone") || a.device.includes("iPad") ? "device-mobile" : "desktop"} text-xl ${a.current ? "text-green-600" : "text-slate-500"}"></i>
       </div>
       <div class="flex-1 min-w-0">
-        <div class="text-sm font-bold text-slate-800 truncate">${a.device} ${a.current ? '<span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1">Current</span>' : ''}</div>
+        <div class="text-sm font-bold text-slate-800 truncate">${a.device} ${a.current ? '<span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1">Current</span>' : ""}</div>
         <div class="text-xs text-slate-500">${a.location} · ${a.date}</div>
       </div>
-      ${!a.current ? `<button onclick="removeDevice('${a.device}')" class="text-xs text-red-500 font-semibold hover:text-red-700 flex-shrink-0">Revoke</button>` : ''}
+      ${!a.current ? `<button onclick="removeDevice('${a.device}')" class="text-xs text-red-500 font-semibold hover:text-red-700 flex-shrink-0">Revoke</button>` : ""}
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
 function removeDevice(device) {
-    state.loginActivity = state.loginActivity.filter(a => a.device !== device);
-    renderLoginActivity();
-    showToast(`Session for "${device}" revoked`);
+  state.loginActivity = state.loginActivity.filter((a) => a.device !== device);
+  renderLoginActivity();
+  showToast(`Session for "${device}" revoked`);
 }
 
 function logoutAll() {
-    state.loginActivity = state.loginActivity.filter(a => a.current);
-    renderLoginActivity();
-    showToast('Logged out from all other devices');
+  state.loginActivity = state.loginActivity.filter((a) => a.current);
+  renderLoginActivity();
+  showToast("Logged out from all other devices");
 }
 
 /* ── Delete Account Modal ── */
 function openDeleteModal() {
-    document.getElementById('delete-modal').classList.add('open');
-    document.getElementById('delete-confirm-input').value = '';
-    document.getElementById('confirm-delete-btn').disabled = true;
+  document.getElementById("delete-modal").classList.add("open");
+  document.getElementById("delete-confirm-input").value = "";
+  document.getElementById("confirm-delete-btn").disabled = true;
 }
 
 function closeDeleteModal() {
-    document.getElementById('delete-modal').classList.remove('open');
+  document.getElementById("delete-modal").classList.remove("open");
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('delete-confirm-input');
-    const btn = document.getElementById('confirm-delete-btn');
-    if (input && btn) {
-        input.addEventListener('input', () => {
-            btn.disabled = input.value !== 'DELETE';
-        });
-    }
-    // Close modals on overlay click
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', e => {
-            if (e.target === overlay) overlay.classList.remove('open');
-        });
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("delete-confirm-input");
+  const btn = document.getElementById("confirm-delete-btn");
+  if (input && btn) {
+    input.addEventListener("input", () => {
+      btn.disabled = input.value !== "DELETE";
     });
+  }
+  // Close modals on overlay click
+  document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.classList.remove("open");
+    });
+  });
 });
 
 function confirmDelete() {
-    closeDeleteModal();
-    showToast('Account deletion requested. You will receive a confirmation email.', 'error');
+  closeDeleteModal();
+  showToast(
+    "Account deletion requested. You will receive a confirmation email.",
+    "error",
+  );
 }
 
 /* ══════════════════════════════════════════════════
    PAYMENTS
 ══════════════════════════════════════════════════ */
-const CARD_ICONS = { Visa: '💳', Mastercard: '💳', Amex: '💳', Default: '💳' };
+const CARD_ICONS = { Visa: "💳", Mastercard: "💳", Amex: "💳", Default: "💳" };
 
 function renderCards() {
-    const list = document.getElementById('cards-list');
-    if (!list) return;
-    if (state.cards.length === 0) {
-        list.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No saved cards yet.</p>';
-        return;
-    }
-    list.innerHTML = state.cards.map(card => `
-    <div class="pay-card ${card.isDefault ? 'default' : ''}" id="card-${card.id}">
+  const list = document.getElementById("cards-list");
+  if (!list) return;
+  if (state.cards.length === 0) {
+    list.innerHTML =
+      '<p class="text-sm text-slate-400 text-center py-4">No saved cards yet.</p>';
+    return;
+  }
+  list.innerHTML = state.cards
+    .map(
+      (card) => `
+    <div class="pay-card ${card.isDefault ? "default" : ""}" id="card-${card.id}">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-2xl ${card.isDefault ? 'bg-green-100' : 'bg-slate-100'}">
-          ${card.brand === 'Visa' ? '🟦' : card.brand === 'Mastercard' ? '🔴' : '💳'}
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-2xl ${card.isDefault ? "bg-green-100" : "bg-slate-100"}">
+          ${card.brand === "Visa" ? "🟦" : card.brand === "Mastercard" ? "🔴" : "💳"}
         </div>
         <div>
           <div class="font-bold text-sm text-slate-800">${card.brand} •••• ${card.last4}</div>
           <div class="text-xs text-slate-500">Expires ${card.expiry}</div>
-          ${card.isDefault ? '<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Default</span>' : ''}
+          ${card.isDefault ? '<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Default</span>' : ""}
         </div>
       </div>
       <div class="flex items-center gap-2">
-        ${!card.isDefault ? `<button onclick="setDefault(${card.id})" class="text-xs font-semibold text-slate-500 hover:text-green-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:border-green-500 transition-all">Set Default</button>` : ''}
+        ${!card.isDefault ? `<button onclick="setDefault(${card.id})" class="text-xs font-semibold text-slate-500 hover:text-green-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:border-green-500 transition-all">Set Default</button>` : ""}
         <button onclick="removeCard(${card.id})" class="text-xs font-semibold text-red-500 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-all"><i class="ph ph-trash"></i></button>
       </div>
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
 function setDefault(id) {
-    state.cards.forEach(c => c.isDefault = (c.id === id));
-    renderCards();
-    showToast('Default payment method updated!');
+  state.cards.forEach((c) => (c.isDefault = c.id === id));
+  renderCards();
+  showToast("Default payment method updated!");
 }
 
 function removeCard(id) {
-    const card = state.cards.find(c => c.id === id);
-    if (card && card.isDefault && state.cards.length > 1) {
-        showToast('Cannot remove default card. Set another as default first.', 'error');
-        return;
-    }
-    state.cards = state.cards.filter(c => c.id !== id);
-    renderCards();
-    showToast('Card removed successfully');
+  const card = state.cards.find((c) => c.id === id);
+  if (card && card.isDefault && state.cards.length > 1) {
+    showToast(
+      "Cannot remove default card. Set another as default first.",
+      "error",
+    );
+    return;
+  }
+  state.cards = state.cards.filter((c) => c.id !== id);
+  renderCards();
+  showToast("Card removed successfully");
 }
 
 function addCard() {
-    const number = document.getElementById('card-number-input').value.replace(/\s/g, '');
-    const expiry = document.getElementById('card-expiry-input').value;
-    const cvc = document.getElementById('card-cvc-input').value;
-    const name = document.getElementById('card-name-input').value.trim();
+  const number = document
+    .getElementById("card-number-input")
+    .value.replace(/\s/g, "");
+  const expiry = document.getElementById("card-expiry-input").value;
+  const cvc = document.getElementById("card-cvc-input").value;
+  const name = document.getElementById("card-name-input").value.trim();
 
-    if (number.length < 13 || !expiry || cvc.length < 3 || !name) {
-        showToast('Please fill in all card details correctly', 'error');
-        return;
-    }
-    if (!/^\d+$/.test(number)) { showToast('Invalid card number', 'error'); return; }
-    if (!/^\d{2}\/\d{2}$/.test(expiry)) { showToast('Use MM/YY format for expiry', 'error'); return; }
+  if (number.length < 13 || !expiry || cvc.length < 3 || !name) {
+    showToast("Please fill in all card details correctly", "error");
+    return;
+  }
+  if (!/^\d+$/.test(number)) {
+    showToast("Invalid card number", "error");
+    return;
+  }
+  if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+    showToast("Use MM/YY format for expiry", "error");
+    return;
+  }
 
-    const last4 = number.slice(-4);
-    const brand = number.startsWith('4') ? 'Visa' : number.startsWith('5') ? 'Mastercard' : number.startsWith('3') ? 'Amex' : 'Card';
-    const newId = state.cards.length ? Math.max(...state.cards.map(c => c.id)) + 1 : 1;
-    state.cards.push({ id: newId, brand, last4, expiry, isDefault: state.cards.length === 0 });
+  const last4 = number.slice(-4);
+  const brand = number.startsWith("4")
+    ? "Visa"
+    : number.startsWith("5")
+      ? "Mastercard"
+      : number.startsWith("3")
+        ? "Amex"
+        : "Card";
+  const newId = state.cards.length
+    ? Math.max(...state.cards.map((c) => c.id)) + 1
+    : 1;
+  state.cards.push({
+    id: newId,
+    brand,
+    last4,
+    expiry,
+    isDefault: state.cards.length === 0,
+  });
 
-    document.getElementById('add-card-modal').classList.remove('open');
-    ['card-number-input', 'card-expiry-input', 'card-cvc-input', 'card-name-input'].forEach(id => setVal(id, ''));
-    renderCards();
-    showToast(`${brand} card ending in ${last4} added!`);
+  document.getElementById("add-card-modal").classList.remove("open");
+  [
+    "card-number-input",
+    "card-expiry-input",
+    "card-cvc-input",
+    "card-name-input",
+  ].forEach((id) => setVal(id, ""));
+  renderCards();
+  showToast(`${brand} card ending in ${last4} added!`);
 }
 
 // Format card number input with spaces
-document.addEventListener('DOMContentLoaded', () => {
-    const cardInput = document.getElementById('card-number-input');
-    if (cardInput) {
-        cardInput.addEventListener('input', function () {
-            let v = this.value.replace(/\D/g, '').substring(0, 16);
-            this.value = v.match(/.{1,4}/g)?.join(' ') || v;
-        });
-    }
-    const expiryInput = document.getElementById('card-expiry-input');
-    if (expiryInput) {
-        expiryInput.addEventListener('input', function () {
-            let v = this.value.replace(/\D/g, '').substring(0, 4);
-            if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2);
-            this.value = v;
-        });
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  const cardInput = document.getElementById("card-number-input");
+  if (cardInput) {
+    cardInput.addEventListener("input", function () {
+      let v = this.value.replace(/\D/g, "").substring(0, 16);
+      this.value = v.match(/.{1,4}/g)?.join(" ") || v;
+    });
+  }
+  const expiryInput = document.getElementById("card-expiry-input");
+  if (expiryInput) {
+    expiryInput.addEventListener("input", function () {
+      let v = this.value.replace(/\D/g, "").substring(0, 4);
+      if (v.length >= 2) v = v.substring(0, 2) + "/" + v.substring(2);
+      this.value = v;
+    });
+  }
 });
 
 /* ══════════════════════════════════════════════════
    TRAVEL PREFERENCES
 ══════════════════════════════════════════════════ */
 function renderAirlines() {
-    const grid = document.getElementById('airlines-grid');
-    if (!grid) return;
-    grid.innerHTML = AIRLINES.map(airline => `
-    <div class="airline-chip ${state.preferences.airlines.includes(airline) ? 'selected' : ''}" onclick="toggleAirline('${airline}', this)">
+  const grid = document.getElementById("airlines-grid");
+  if (!grid) return;
+  grid.innerHTML = AIRLINES.map(
+    (airline) => `
+    <div class="airline-chip ${state.preferences.airlines.includes(airline) ? "selected" : ""}" onclick="toggleAirline('${airline}', this)">
       <i class="ph ph-airplane-tilt text-sm"></i> ${airline}
     </div>
-  `).join('');
+  `,
+  ).join("");
 }
 
 function toggleAirline(name, el) {
-    const idx = state.preferences.airlines.indexOf(name);
-    if (idx > -1) {
-        state.preferences.airlines.splice(idx, 1);
-        el.classList.remove('selected');
-    } else {
-        state.preferences.airlines.push(name);
-        el.classList.add('selected');
-    }
+  const idx = state.preferences.airlines.indexOf(name);
+  if (idx > -1) {
+    state.preferences.airlines.splice(idx, 1);
+    el.classList.remove("selected");
+  } else {
+    state.preferences.airlines.push(name);
+    el.classList.add("selected");
+  }
 }
 
 function loadPreferences() {
-    const p = state.preferences;
-    setVal('home-airport', p.homeAirport);
-    setVal('cabin-pref', p.cabin);
-    setVal('meal-pref', p.meal);
-    const radios = document.querySelectorAll('input[name="seat-pref"]');
-    radios.forEach(r => { r.checked = (r.value === p.seat); });
+  const p = state.preferences;
+  setVal("home-airport", p.homeAirport);
+  setVal("cabin-pref", p.cabin);
+  setVal("meal-pref", p.meal);
+  const radios = document.querySelectorAll('input[name="seat-pref"]');
+  radios.forEach((r) => {
+    r.checked = r.value === p.seat;
+  });
 }
 
 function autoDetectAirport() {
-    if (!navigator.geolocation) { showToast('Geolocation not supported by your browser', 'error'); return; }
-    showToast('Detecting your location…');
-    navigator.geolocation.getCurrentPosition(pos => {
-        // In production: reverse geocode → nearest airport
-        // Mock: show success with a placeholder
-        const { latitude, longitude } = pos.coords;
-        showToast(`Location detected (${latitude.toFixed(2)}, ${longitude.toFixed(2)}). Using nearest major airport.`);
-        setVal('home-airport', 'NBO');
-    }, () => {
-        showToast('Could not detect location. Please enter manually.', 'error');
-    });
+  if (!navigator.geolocation) {
+    showToast("Geolocation not supported by your browser", "error");
+    return;
+  }
+  showToast("Detecting your location…");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      // In production: reverse geocode → nearest airport
+      // Mock: show success with a placeholder
+      const { latitude, longitude } = pos.coords;
+      showToast(
+        `Location detected (${latitude.toFixed(2)}, ${longitude.toFixed(2)}). Using nearest major airport.`,
+      );
+      setVal("home-airport", "NBO");
+    },
+    () => {
+      showToast("Could not detect location. Please enter manually.", "error");
+    },
+  );
 }
 
 function savePreferences() {
-    state.preferences.homeAirport = (document.getElementById('home-airport')?.value || '').toUpperCase();
-    state.preferences.cabin = document.getElementById('cabin-pref')?.value || 'Economy';
-    state.preferences.meal = document.getElementById('meal-pref')?.value || 'Standard';
-    const selectedSeat = document.querySelector('input[name="seat-pref"]:checked');
-    if (selectedSeat) state.preferences.seat = selectedSeat.value;
-    showToast('Travel preferences saved!');
+  state.preferences.homeAirport = (
+    document.getElementById("home-airport")?.value || ""
+  ).toUpperCase();
+  state.preferences.cabin =
+    document.getElementById("cabin-pref")?.value || "Economy";
+  state.preferences.meal =
+    document.getElementById("meal-pref")?.value || "Standard";
+  const selectedSeat = document.querySelector(
+    'input[name="seat-pref"]:checked',
+  );
+  if (selectedSeat) state.preferences.seat = selectedSeat.value;
+  showToast("Travel preferences saved!");
 }
 
 /* ══════════════════════════════════════════════════
    NOTIFICATIONS
 ══════════════════════════════════════════════════ */
 const EMAIL_NOTIF = [
-    { key: 'booking_confirmations', label: 'Booking Confirmations', desc: 'Get notified when a booking is confirmed or cancelled' },
-    { key: 'price_alerts', label: 'Flight Price Alerts', desc: 'Alerts when prices drop on your saved routes' },
-    { key: 'promotions', label: 'Promotions & Offers', desc: 'Exclusive deals and limited-time offers' },
-    { key: 'newsletter', label: 'Newsletter', desc: 'Monthly travel inspiration and destination guides' }
+  {
+    key: "booking_confirmations",
+    label: "Booking Confirmations",
+    desc: "Get notified when a booking is confirmed or cancelled",
+  },
+  {
+    key: "price_alerts",
+    label: "Flight Price Alerts",
+    desc: "Alerts when prices drop on your saved routes",
+  },
+  {
+    key: "promotions",
+    label: "Promotions & Offers",
+    desc: "Exclusive deals and limited-time offers",
+  },
+  {
+    key: "newsletter",
+    label: "Newsletter",
+    desc: "Monthly travel inspiration and destination guides",
+  },
 ];
 const SMS_NOTIF = [
-    { key: 'sms_notifications', label: 'SMS Notifications', desc: 'Text messages for booking updates and alerts' },
-    { key: 'push_notifications', label: 'Push Notifications', desc: 'Browser push alerts for real-time updates' }
+  {
+    key: "sms_notifications",
+    label: "SMS Notifications",
+    desc: "Text messages for booking updates and alerts",
+  },
+  {
+    key: "push_notifications",
+    label: "Push Notifications",
+    desc: "Browser push alerts for real-time updates",
+  },
 ];
 
 function renderNotifications() {
-    renderNotifGroup('email-notifications', EMAIL_NOTIF, 'email');
-    renderNotifGroup('sms-notifications', SMS_NOTIF, 'sms');
+  renderNotifGroup("email-notifications", EMAIL_NOTIF, "email");
+  renderNotifGroup("sms-notifications", SMS_NOTIF, "sms");
 }
 
 function renderNotifGroup(containerId, items, group) {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    el.innerHTML = items.map(item => `
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = items
+    .map(
+      (item) => `
     <div class="flex items-center justify-between gap-4">
       <div>
         <div class="font-bold text-sm text-slate-800">${item.label}</div>
         <div class="text-xs text-slate-500 mt-0.5">${item.desc}</div>
       </div>
       <label class="toggle-wrap flex-shrink-0">
-        <input type="checkbox" id="notif-${item.key}" ${state.notifications[group][item.key] ? 'checked' : ''} onchange="toggleNotif('${group}','${item.key}',this.checked)" />
+        <input type="checkbox" id="notif-${item.key}" ${state.notifications[group][item.key] ? "checked" : ""} onchange="toggleNotif('${group}','${item.key}',this.checked)" />
         <span class="toggle-slider"></span>
       </label>
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
 function toggleNotif(group, key, val) {
-    state.notifications[group][key] = val;
+  state.notifications[group][key] = val;
 }
 
 function saveNotifications() {
-    showToast('Notification preferences saved!');
+  showToast("Notification preferences saved!");
 }
 
 /* ══════════════════════════════════════════════════
    REWARDS
 ══════════════════════════════════════════════════ */
 function renderRewards() {
-    const r = state.rewards;
-    setText('reward-level-badge', `${r.level} Member`);
-    setText('reward-points', r.points.toLocaleString());
+  const r = state.rewards;
+  setText("reward-level-badge", `${r.level} Member`);
+  setText("reward-points", r.points.toLocaleString());
 
-    const history = document.getElementById('points-history');
-    if (history) {
-        history.innerHTML = r.history.map(h => `
+  const history = document.getElementById("points-history");
+  if (history) {
+    history.innerHTML = r.history
+      .map(
+        (h) => `
       <div class="activity-row">
-        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${h.pts > 0 ? 'bg-green-100' : 'bg-red-50'}">
-          <i class="ph ph-${h.pts > 0 ? 'plus-circle' : 'minus-circle'} text-lg ${h.pts > 0 ? 'text-green-600' : 'text-red-500'}"></i>
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${h.pts > 0 ? "bg-green-100" : "bg-red-50"}">
+          <i class="ph ph-${h.pts > 0 ? "plus-circle" : "minus-circle"} text-lg ${h.pts > 0 ? "text-green-600" : "text-red-500"}"></i>
         </div>
         <div class="flex-1 min-w-0">
           <div class="text-sm font-semibold text-slate-800 truncate">${h.desc}</div>
           <div class="text-xs text-slate-400">${h.date}</div>
         </div>
-        <div class="font-bold text-sm ${h.pts > 0 ? 'text-green-600' : 'text-red-500'} flex-shrink-0">
-          ${h.pts > 0 ? '+' : ''}${h.pts.toLocaleString()} pts
+        <div class="font-bold text-sm ${h.pts > 0 ? "text-green-600" : "text-red-500"} flex-shrink-0">
+          ${h.pts > 0 ? "+" : ""}${h.pts.toLocaleString()} pts
         </div>
       </div>
-    `).join('');
-    }
+    `,
+      )
+      .join("");
+  }
 }
