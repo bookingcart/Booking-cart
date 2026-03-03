@@ -211,24 +211,28 @@ module.exports = async (req, res) => {
 
     // If override provided in query/body, use it
     const overrideIata = (req.query && req.query.origin) || (req.body && req.body.origin) || '';
+    const clientCity = (req.body && req.body.city) || '';
+    const clientCountry = (req.body && req.body.country) || '';
 
     // Check cache first
     const cacheKey = `deals_${overrideIata || ip}`;
     const cached = getCached(cacheKey);
     if (cached) return res.json({ ok: true, ...cached, cached: true });
 
-    // Step 1: Geolocate IP
-    let city = '', country = '', iata = overrideIata || '';
+    // Step 1: Geolocate IP (server-side fallback if client didn't detect)
+    let city = clientCity, country = clientCountry, iata = overrideIata || '';
+    if (!iata && clientCity) {
+        iata = CITY_TO_IATA[clientCity.toLowerCase()] || COUNTRY_TO_IATA[clientCountry] || '';
+    }
     if (!iata) {
         try {
-            // Skip geolocation for local IPs
             const isLocal = ['::1', '127.0.0.1', 'localhost', ''].includes(ip) || ip.startsWith('192.168') || ip.startsWith('10.');
             if (!isLocal) {
                 const geoResp = await fetch(`http://ip-api.com/json/${ip}?fields=city,country,query`, { timeout: 3000 });
                 if (geoResp.ok) {
                     const geo = await geoResp.json();
-                    city = geo.city || '';
-                    country = geo.country || '';
+                    city = geo.city || city;
+                    country = geo.country || country;
                     iata = CITY_TO_IATA[city.toLowerCase()] || COUNTRY_TO_IATA[country] || '';
                 }
             }
@@ -257,17 +261,50 @@ module.exports = async (req, res) => {
         return { ...mock, ...route, from: iata };
     }).filter(Boolean);
 
-    // Enrich with image URL (Unsplash source)
+    // Curated Pexels images per destination
+    const DEST_IMAGES = {
+        'dubai': 'https://images.pexels.com/photos/325193/pexels-photo-325193.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'london': 'https://images.pexels.com/photos/460672/pexels-photo-460672.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'paris': 'https://images.pexels.com/photos/338515/pexels-photo-338515.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'new-york': 'https://images.pexels.com/photos/290386/pexels-photo-290386.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'nairobi': 'https://images.pexels.com/photos/3935702/pexels-photo-3935702.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'johannesburg': 'https://images.pexels.com/photos/259447/pexels-photo-259447.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'cairo': 'https://images.pexels.com/photos/3290075/pexels-photo-3290075.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'istanbul': 'https://images.pexels.com/photos/2064827/pexels-photo-2064827.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'singapore': 'https://images.pexels.com/photos/777059/pexels-photo-777059.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'bangkok': 'https://images.pexels.com/photos/1682748/pexels-photo-1682748.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'amsterdam': 'https://images.pexels.com/photos/2031706/pexels-photo-2031706.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'mumbai': 'https://images.pexels.com/photos/2104152/pexels-photo-2104152.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'miami': 'https://images.pexels.com/photos/421655/pexels-photo-421655.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'los-angeles': 'https://images.pexels.com/photos/2263683/pexels-photo-2263683.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+        'cancun': 'https://images.pexels.com/photos/1174732/pexels-photo-1174732.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    };
+    const FALLBACK_IMG = 'https://images.pexels.com/photos/358319/pexels-photo-358319.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop';
+
     const enriched = deals.map(d => ({
         ...d,
-        imageUrl: `https://source.unsplash.com/400x250/?${encodeURIComponent(d.image || d.city)},travel,city`,
-        hot: d.price < 250,
+        imageUrl: DEST_IMAGES[(d.image || '').toLowerCase()] || DEST_IMAGES[(d.city || '').toLowerCase()] || FALLBACK_IMG,
+        hot: d.price < 300,
         tripType: 'one-way'
     }));
 
+    // IATA → city name mapping for display
+    const IATA_TO_CITY = {
+        'EBB': 'Kampala', 'NBO': 'Nairobi', 'DAR': 'Dar es Salaam',
+        'JNB': 'Johannesburg', 'CPT': 'Cape Town', 'LOS': 'Lagos',
+        'ACC': 'Accra', 'CAI': 'Cairo', 'ADD': 'Addis Ababa',
+        'LHR': 'London', 'CDG': 'Paris', 'FRA': 'Frankfurt',
+        'AMS': 'Amsterdam', 'FCO': 'Rome', 'MAD': 'Madrid',
+        'JFK': 'New York', 'LAX': 'Los Angeles', 'ORD': 'Chicago',
+        'YYZ': 'Toronto', 'DXB': 'Dubai', 'AUH': 'Abu Dhabi',
+        'DEL': 'New Delhi', 'BOM': 'Mumbai', 'SIN': 'Singapore',
+        'SYD': 'Sydney', 'NRT': 'Tokyo', 'PEK': 'Beijing',
+        'IST': 'Istanbul', 'GRU': 'São Paulo', 'BKK': 'Bangkok',
+    };
+
     const result = {
         origin: iata,
-        city: city || iata,
+        city: city || IATA_TO_CITY[iata] || iata,
         country,
         deals: enriched
     };
