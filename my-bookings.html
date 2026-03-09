@@ -196,10 +196,10 @@
             } catch (e) { }
         }
 
-        // ALWAYS auto-load local bookings on page open (even if not signed in)
+        // ALWAYS auto-load local bookings on page open
         try {
             const localOnLoad = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
-            if (localOnLoad.length > 0 && !userStr) {
+            if (localOnLoad.length > 0) {
                 allBookings = localOnLoad;
                 setTimeout(() => renderBookings(), 100);
             }
@@ -224,16 +224,22 @@
 
         async function lookup() {
             const email = emailInput.value.trim();
-            // If no email provided, we skip API but still try to show local browser bookings!
+            // Try to always show local browser bookings as baseline
+            let localBookings = [];
+            try {
+                localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
+            } catch (e) { }
+
             if (!email) {
-                try {
-                    allBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
-                    if (allBookings.length > 0) { renderBookings(); return; }
-                } catch (e) { }
-                // If completely empty:
+                if (localBookings.length > 0) {
+                    allBookings = localBookings;
+                    renderBookings();
+                    return;
+                }
                 emptyEl.style.display = 'block'; listEl.innerHTML = '';
                 return;
             }
+
             loadingEl.style.display = 'block';
             emptyEl.style.display = 'none';
             listEl.innerHTML = '';
@@ -246,17 +252,9 @@
                 });
                 const data = await resp.json();
 
-                // Get local bookings fallback
-                let localBookings = [];
-                try {
-                    localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
-                    // filter to matched email
-                    if (email) { localBookings = localBookings.filter(b => (b.contact && b.contact.email || '').toLowerCase() === email.toLowerCase()); }
-                } catch (e) { }
-
                 loadingEl.style.display = 'none';
 
-                // Merge and deduplicate
+                // Merge and deduplicate (Local bookings + API base)
                 let merged = (data.ok ? (data.bookings || []) : []).concat(localBookings);
                 const unique = [];
                 const ids = new Set();
@@ -272,18 +270,12 @@
             } catch (err) {
                 loadingEl.style.display = 'none';
 
-                // Try just local
-                try {
-                    let localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
-                    if (email) { localBookings = localBookings.filter(b => (b.contact && b.contact.email || '').toLowerCase() === email.toLowerCase()); }
-                    allBookings = localBookings;
-                    if (allBookings.length > 0) {
-                        renderBookings();
-                        return;
-                    }
-                } catch (e) { }
-
-                emptyEl.style.display = 'block';
+                allBookings = localBookings;
+                if (allBookings.length > 0) {
+                    renderBookings();
+                } else {
+                    emptyEl.style.display = 'block';
+                }
             }
         }
 
