@@ -215,7 +215,16 @@
 
         async function lookup() {
             const email = emailInput.value.trim();
-            if (!email) return;
+            // If no email provided, we skip API but still try to show local browser bookings!
+            if (!email) {
+                try {
+                    allBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
+                    if (allBookings.length > 0) { renderBookings(); return; }
+                } catch(e) {}
+                // If completely empty:
+                emptyEl.style.display = 'block'; listEl.innerHTML = '';
+                return;
+            }
             loadingEl.style.display = 'block';
             emptyEl.style.display = 'none';
             listEl.innerHTML = '';
