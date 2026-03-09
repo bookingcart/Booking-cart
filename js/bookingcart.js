@@ -1149,13 +1149,24 @@
       const s = state.search || {};
       const flight = (state.flights || []).find(f => f.id === state.selectedFlightId) || (state.flights || [])[0];
       const totals = computeTotals(state);
+
+      // The passengers form stores data under 'travelers' and 'contact'
+      // Also fall back to Google sign-in email if contact.email is missing
+      let contactObj = state.contact || {};
+      if (!contactObj.email) {
+        try {
+          const gu = JSON.parse(localStorage.getItem('bookingcart_user') || '{}');
+          if (gu.email) contactObj = { email: gu.email, phone: contactObj.phone || '' };
+        } catch (e) { }
+      }
+
       const booking = {
         ref: state.bookingRef,
         route: (s.from || "") + " → " + (s.to || ""),
         dates: (s.depart || "") + (s.return ? " → " + s.return : ""),
         flight: flight ? { airline: flight.airline.name, time: flight.departTime + " → " + flight.arriveTime } : null,
-        contact: state.contact || {},
-        passengers: state.passengers || [],
+        contact: contactObj,
+        passengers: state.travelers || state.passengers || [],
         total: totals.total,
         extras: state.extras || {}
       };
@@ -1207,10 +1218,12 @@
 
       if (elDuration) {
         const directText = "Direct";
-        elDuration.innerHTML = flight.duration + "<br><span class=\"font-semibold opacity-70\">" + directText + "</span>";
+        const dur = flight.durationMin ? durationLabel(flight.durationMin) : (flight.departTime + " → " + flight.arriveTime);
+        elDuration.innerHTML = dur + "<br><span class=\"font-semibold opacity-70\">" + directText + "</span>";
       }
 
-      const passCount = state.passengers && state.passengers.length ? state.passengers.length : 1;
+      const travelers = state.travelers || state.passengers || [];
+      const passCount = travelers.length || 1;
       const ranSeat = flight.id ? flight.id.slice(-2).replace(/[^0-9]/g, '4') : '42';
       const ranGate = flight.id ? flight.id.slice(0, 2).toUpperCase() : 'B';
 
