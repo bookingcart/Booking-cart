@@ -1186,21 +1186,36 @@
     if (totalEl) setText(totalEl, money(totals.total));
 
     const flight = (state.flights || []).find((f) => f.id === state.selectedFlightId) || (state.flights || [])[0];
-    const flightEl = root.querySelector("[data-confirm-flight]");
+    const flightEl = root.querySelector("[data-confirm-airline]");
     if (flightEl && flight) {
       const s = state.search || {};
-      setText(
-        flightEl,
-        (s.from || "") +
-        " → " +
-        (s.to || "") +
-        " • " +
-        flight.airline.name +
-        " • " +
-        flight.departTime +
-        " → " +
-        flight.arriveTime
-      );
+
+      const elAirline = root.querySelector("[data-confirm-airline]");
+      const elOriginCity = root.querySelector("[data-confirm-origin-city]");
+      const elOriginTime = root.querySelector("[data-confirm-origin-time]");
+      const elDestCity = root.querySelector("[data-confirm-dest-city]");
+      const elDestTime = root.querySelector("[data-confirm-dest-time]");
+      const elDuration = root.querySelector("[data-confirm-duration]");
+      const elSeats = root.querySelector("[data-confirm-seats]");
+      const elPlatform = root.querySelector("[data-confirm-platform]");
+
+      if (elAirline) setText(elAirline, flight.airline.name);
+      if (elOriginCity) setText(elOriginCity, s.from || "Origin");
+      if (elOriginTime) setText(elOriginTime, (s.depart || "") + (s.depart && flight.departTime ? " • " : "") + (flight.departTime || ""));
+      if (elDestCity) setText(elDestCity, s.to || "Destination");
+      if (elDestTime) setText(elDestTime, (s.return || s.depart || "") + ((s.return || s.depart) && flight.arriveTime ? " • " : "") + (flight.arriveTime || ""));
+
+      if (elDuration) {
+        const directText = "Direct";
+        elDuration.innerHTML = flight.duration + "<br><span class=\"font-semibold opacity-70\">" + directText + "</span>";
+      }
+
+      const passCount = state.passengers && state.passengers.length ? state.passengers.length : 1;
+      const ranSeat = flight.id ? flight.id.slice(-2).replace(/[^0-9]/g, '4') : '42';
+      const ranGate = flight.id ? flight.id.slice(0, 2).toUpperCase() : 'B';
+
+      if (elSeats) setText(elSeats, passCount > 1 ? passCount + " Seats" : ranSeat + "A");
+      if (elPlatform) setText(elPlatform, ranGate + "12");
     }
 
     const downloadBtn = root.querySelector("[data-download]");
