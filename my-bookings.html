@@ -196,6 +196,15 @@
             } catch (e) { }
         }
 
+        // ALWAYS auto-load local bookings on page open (even if not signed in)
+        try {
+            const localOnLoad = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
+            if (localOnLoad.length > 0 && !userStr) {
+                allBookings = localOnLoad;
+                setTimeout(() => renderBookings(), 100);
+            }
+        } catch (e) { }
+
         // Events
         lookupBtn.addEventListener('click', lookup);
         emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); });
@@ -220,7 +229,7 @@
                 try {
                     allBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
                     if (allBookings.length > 0) { renderBookings(); return; }
-                } catch(e) {}
+                } catch (e) { }
                 // If completely empty:
                 emptyEl.style.display = 'block'; listEl.innerHTML = '';
                 return;
