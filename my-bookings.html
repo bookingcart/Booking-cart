@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BookingCart â€” My Bookings</title>
+    <title>BookingCart — My Bookings</title>
     <meta name="description" content="View and manage your flight bookings." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -233,7 +233,7 @@
                 try {
                     localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
                     // filter to matched email
-                    localBookings = localBookings.filter(b => (b.contact && b.contact.email || '').toLowerCase() === email.toLowerCase());
+                    if (email) { localBookings = localBookings.filter(b => (b.contact && b.contact.email || '').toLowerCase() === email.toLowerCase()); }
                 } catch (e) { }
 
                 loadingEl.style.display = 'none';
@@ -257,7 +257,7 @@
                 // Try just local
                 try {
                     let localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
-                    localBookings = localBookings.filter(b => (b.contact && b.contact.email || '').toLowerCase() === email.toLowerCase());
+                    if (email) { localBookings = localBookings.filter(b => (b.contact && b.contact.email || '').toLowerCase() === email.toLowerCase()); }
                     allBookings = localBookings;
                     if (allBookings.length > 0) {
                         renderBookings();
@@ -290,21 +290,21 @@
                     cancelled: { label: 'Cancelled', color: 'text-red-500 bg-red-50 border-red-200' }
                 };
                 const st = statusMap[b.status] || statusMap.new;
-                const route = b.route || 'â€”';
-                const parts = route.split(' â†’ ');
-                const from = parts[0] || 'â€”';
-                const to = parts[1] || 'â€”';
+                const route = b.route || '—';
+                const parts = route.split(' → ');
+                const from = parts[0] || '—';
+                const to = parts[1] || '—';
                 const flight = b.flight || {};
-                const times = (flight.time || '').split(' â†’ ');
+                const times = (flight.time || '').split(' → ');
                 const departTime = times[0] || '';
                 const arriveTime = times[1] || '';
                 const dates = b.dates || '';
-                const dateParts = dates.split(' â†’ ');
+                const dateParts = dates.split(' → ');
                 const departDate = dateParts[0] || '';
                 const returnDate = dateParts[1] || '';
-                const total = b.total ? ('$' + Number(b.total).toLocaleString(undefined, { minimumFractionDigits: 2 })) : 'â€”';
+                const total = b.total ? ('$' + Number(b.total).toLocaleString(undefined, { minimumFractionDigits: 2 })) : '—';
                 const paxCount = (b.passengers && b.passengers.length) || 1;
-                const paxName = (b.passengers && b.passengers[0]) ? (b.passengers[0].first + ' ' + b.passengers[0].last).toUpperCase() : (b.contact && b.contact.email ? b.contact.email.split('@')[0].toUpperCase() : 'PASSENGER');
+                const paxName = (b.passengers && b.passengers[0]) ? ((b.passengers[0].firstName || '') + ' ' + (b.passengers[0].lastName || '')).trim().toUpperCase() : (b.contact && b.contact.email ? b.contact.email.split('@')[0].toUpperCase() : 'PASSENGER');
 
                 return `
         <div class="booking-card bg-white rounded-2xl border border-slate-200 overflow-hidden">
@@ -313,9 +313,9 @@
             <div class="flex items-center gap-4 text-xs text-slate-500 font-medium">
               <span class="flex items-center gap-1.5">
                 <i class="ph ph-airplane-tilt text-base"></i>
-                Booking No. <span class="font-bold text-slate-700">${b.ref || 'â€”'}</span>
+                Booking No. <span class="font-bold text-slate-700">${b.ref || '—'}</span>
               </span>
-              <span>Booking Date: ${b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'â€”'}</span>
+              <span>Booking Date: ${b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}</span>
             </div>
             <span class="px-3 py-1 rounded-full text-xs font-bold border ${st.color}">${st.label}</span>
           </div>
@@ -325,13 +325,13 @@
             <div class="flex items-start gap-6">
               <!-- Route Header -->
               <div class="flex-1">
-                <h3 class="text-lg font-extrabold text-slate-900 mb-4">${from} â†’ ${to}</h3>
+                <h3 class="text-lg font-extrabold text-slate-900 mb-4">${from} → ${to}</h3>
 
                 <!-- Timeline Row -->
                 <div class="flex items-center gap-4">
                   <!-- Depart -->
                   <div class="text-center">
-                    <div class="text-xl font-extrabold text-slate-900">${departTime || 'â€”'}</div>
+                    <div class="text-xl font-extrabold text-slate-900">${departTime || '—'}</div>
                     <div class="text-xs text-slate-400 font-medium mt-0.5">${departDate}</div>
                   </div>
 
@@ -345,7 +345,7 @@
 
                   <!-- Arrive -->
                   <div class="text-center">
-                    <div class="text-xl font-extrabold text-slate-900">${arriveTime || 'â€”'}</div>
+                    <div class="text-xl font-extrabold text-slate-900">${arriveTime || '—'}</div>
                     <div class="text-xs text-slate-400 font-medium mt-0.5">${returnDate || departDate}</div>
                   </div>
 
@@ -356,7 +356,7 @@
                         <i class="ph ph-airplane text-sm text-slate-500"></i>
                       </div>
                       <div>
-                        <div class="text-sm font-bold text-slate-700">${flight.airline || 'â€”'}</div>
+                        <div class="text-sm font-bold text-slate-700">${flight.airline || '—'}</div>
                       </div>
                     </div>
                   </div>
