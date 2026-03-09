@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
     // Try Vercel KV first, fall back to in-memory for local dev
     let kv;
     try {
-        kv = require("@vercel/kv");
+        kv = require("@vercel/kv").kv;
     } catch (e) {
         // Fallback – will not persist but lets local dev work
         kv = null;
