@@ -53,7 +53,8 @@
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div class="container mx-auto px-6 h-16 flex items-center justify-between">
-            <a href="index.html" class="text-xl font-extrabold text-slate-900 tracking-tight"><img src="images/logo.png" alt="BookingCart" class="h-10 rounded-xl" /></a>
+            <a href="index.html" class="text-xl font-extrabold text-slate-900 tracking-tight"><img src="images/logo.png"
+                    alt="BookingCart" class="h-10 rounded-xl" /></a>
             <nav class="flex items-center gap-6 text-sm font-semibold text-slate-500">
                 <a href="index.html" class="hover:text-green-600 transition-colors flex items-center gap-1.5">
                     <i class="ph ph-airplane-tilt"></i> Flights
@@ -226,11 +227,44 @@
                     body: JSON.stringify({ action: 'lookup', email })
                 });
                 const data = await resp.json();
+
+                // Get local bookings fallback
+                let localBookings = [];
+                try {
+                    localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
+                    // filter to matched email
+                    localBookings = localBookings.filter(b => (b.contact && b.contact.email || '').toLowerCase() === email.toLowerCase());
+                } catch (e) { }
+
                 loadingEl.style.display = 'none';
-                allBookings = data.ok ? (data.bookings || []) : [];
+
+                // Merge and deduplicate
+                let merged = (data.ok ? (data.bookings || []) : []).concat(localBookings);
+                const unique = [];
+                const ids = new Set();
+                for (let b of merged) {
+                    if (!ids.has(b.ref)) {
+                        ids.add(b.ref);
+                        unique.push(b);
+                    }
+                }
+
+                allBookings = unique;
                 renderBookings();
             } catch (err) {
                 loadingEl.style.display = 'none';
+
+                // Try just local
+                try {
+                    let localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
+                    localBookings = localBookings.filter(b => (b.contact && b.contact.email || '').toLowerCase() === email.toLowerCase());
+                    allBookings = localBookings;
+                    if (allBookings.length > 0) {
+                        renderBookings();
+                        return;
+                    }
+                } catch (e) { }
+
                 emptyEl.style.display = 'block';
             }
         }

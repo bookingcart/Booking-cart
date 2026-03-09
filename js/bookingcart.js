@@ -1159,16 +1159,26 @@
         total: totals.total,
         extras: state.extras || {}
       };
+      // Save locally as a reliable fallback for Vercel without KV configured
+      try {
+        const localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
+        booking.createdAt = new Date().toISOString();
+        booking.status = "new";
+        localBookings.unshift(booking);
+        localStorage.setItem('bc_saved_bookings', JSON.stringify(localBookings));
+      } catch (e) { }
+
       fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "save", booking })
       }).then(r => r.json()).then(d => {
-        if (d.ok) {
-          writeState({ _bookingSaved: true });
-          console.log("✅ Booking saved to server:", state.bookingRef);
-        }
-      }).catch(err => console.error("Booking save error:", err));
+        writeState({ _bookingSaved: true });
+        if (d.ok) console.log("✅ Booking saved to server:", state.bookingRef);
+      }).catch(err => {
+        writeState({ _bookingSaved: true });
+        console.error("Booking save to server failed, but saved locally:", err);
+      });
     }
 
     const totals = computeTotals(state);
