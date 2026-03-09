@@ -387,14 +387,43 @@
                 </div>
               </div>
 
-              <!-- Price -->
-              <div class="text-right pl-6 border-l border-slate-100">
+              <!-- Price & Actions -->
+              <div class="text-right pl-6 border-l border-slate-100 flex flex-col justify-between items-end">
                 <div class="text-xl font-extrabold text-green-600">${total}</div>
+                ${b.status !== 'cancelled' ? `<button onclick="downloadTicket('${b.ref}')" class="mt-6 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-bold rounded-xl transition-all flex items-center gap-2 shadow-sm whitespace-nowrap"><i class="ph-bold ph-download"></i> Download Ticket</button>` : ''}
               </div>
             </div>
           </div>
         </div>`;
             }).join('');
+        }
+
+        function downloadTicket(ref) {
+            const b = allBookings.find(x => x.ref === ref);
+            if (!b) return;
+            const lines = [];
+            lines.push("Booking Reference: " + (b.ref || ""));
+            lines.push("Route: " + (b.route || ""));
+            lines.push("Dates: " + (b.dates || ""));
+            if (b.flight && b.flight.airline) {
+                lines.push("Flight: " + b.flight.airline + " " + (b.flight.time || ""));
+            }
+            if (b.total) {
+                lines.push("Total Paid: $" + Number(b.total).toLocaleString(undefined, { minimumFractionDigits: 2 }));
+            }
+            const paxName = (b.passengers && b.passengers[0]) ? ((b.passengers[0].firstName || '') + ' ' + (b.passengers[0].lastName || '')).trim().toUpperCase() : (b.contact && b.contact.email ? b.contact.email.split('@')[0].toUpperCase() : 'PASSENGER');
+            lines.push("Passenger: " + paxName);
+            if (b.contact && b.contact.email) lines.push("Contact: " + b.contact.email);
+
+            const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "ticket-" + (b.ref || "booking") + ".txt";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
