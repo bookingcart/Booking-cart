@@ -12,7 +12,7 @@ const defLast = storedUser ? storedUser.family_name || storedUser.name.split(' '
 const defEmail = storedUser ? storedUser.email : "alex.johnson@email.com";
 const defAvatar = storedUser ? storedUser.picture : `https://ui-avatars.com/api/?name=${encodeURIComponent(defaultName)}&background=dcfce7&color=15803d&size=200`;
 
-const state = {
+let state = {
   profile: {
     firstName: defFirst,
     lastName: defLast,
@@ -107,9 +107,50 @@ const AIRLINES = [
 ];
 
 /* ══════════════════════════════════════════════════
+   DB SYNC
+══════════════════════════════════════════════════ */
+async function saveStateToDB() {
+  if (!state.profile.email) return;
+  try {
+    // 1. Save to local storage cache immediately
+    localStorage.setItem('bc_account_settings', JSON.stringify(state));
+
+    // 2. Persist to MongoDB
+    await fetch("/api/user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: state.profile.email, state }),
+    });
+  } catch (e) { console.error("Could not sync settings to DB:", e); }
+}
+
+async function loadStateFromDB() {
+  let userEmail = defEmail;
+  if (!userEmail) return;
+  try {
+    // Try local storage first for speed
+    const local = localStorage.getItem('bc_account_settings');
+    if (local) {
+      state = JSON.parse(local);
+      return;
+    }
+
+    const resp = await fetch("/api/user?email=" + encodeURIComponent(userEmail));
+    const data = await resp.json();
+    if (data && data.state) {
+      // Merge DB state nicely
+      state = { ...state, ...data.state };
+      localStorage.setItem('bc_account_settings', JSON.stringify(state));
+    }
+  } catch (e) { console.error("Could not load settings from DB:", e); }
+}
+
+/* ══════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════ */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadStateFromDB();
+
   loadProfile();
   renderCards();
   renderLoginActivity();
@@ -264,6 +305,7 @@ function saveProfile(e) {
   state.profile.language = document.getElementById("language").value;
 
   updateHeaderInfo();
+  saveStateToDB();
   showToast("Profile updated successfully!");
 }
 
@@ -346,6 +388,7 @@ function changePassword(e) {
     if (s) s.style.background = "#e2e8f0";
   });
   document.getElementById("strength-label").textContent = "Enter a password";
+  saveStateToDB();
   showToast("Password changed successfully!");
 }
 
@@ -356,10 +399,12 @@ function toggle2FA(enabled) {
   if (enabled) {
     status.innerHTML = 'Status: <span class="text-green-600">Enabled</span>';
     setup.classList.remove("hidden");
+    saveStateToDB();
     showToast("Two-Factor Authentication enabled!");
   } else {
     status.innerHTML = 'Status: <span class="text-red-500">Disabled</span>';
     setup.classList.add("hidden");
+    saveStateToDB();
     showToast("2FA disabled. Your account is less secure.", "error");
   }
 }
@@ -389,12 +434,14 @@ function renderLoginActivity() {
 function removeDevice(device) {
   state.loginActivity = state.loginActivity.filter((a) => a.device !== device);
   renderLoginActivity();
+  saveStateToDB();
   showToast(`Session for "${device}" revoked`);
 }
 
 function logoutAll() {
   state.loginActivity = state.loginActivity.filter((a) => a.current);
   renderLoginActivity();
+  saveStateToDB();
   showToast("Logged out from all other devices");
 }
 
@@ -473,6 +520,7 @@ function renderCards() {
 function setDefault(id) {
   state.cards.forEach((c) => (c.isDefault = c.id === id));
   renderCards();
+  saveStateToDB();
   showToast("Default payment method updated!");
 }
 
@@ -487,6 +535,7 @@ function removeCard(id) {
   }
   state.cards = state.cards.filter((c) => c.id !== id);
   renderCards();
+  saveStateToDB();
   showToast("Card removed successfully");
 }
 
@@ -538,6 +587,7 @@ function addCard() {
     "card-name-input",
   ].forEach((id) => setVal(id, ""));
   renderCards();
+  saveStateToDB();
   showToast(`${brand} card ending in ${last4} added!`);
 }
 
@@ -584,6 +634,7 @@ function toggleAirline(name, el) {
     state.preferences.airlines.push(name);
     el.classList.add("selected");
   }
+  saveStateToDB();
 }
 
 function loadPreferences() {
@@ -631,6 +682,7 @@ function savePreferences() {
     'input[name="seat-pref"]:checked',
   );
   if (selectedSeat) state.preferences.seat = selectedSeat.value;
+  saveStateToDB();
   showToast("Travel preferences saved!");
 }
 
@@ -700,6 +752,7 @@ function renderNotifGroup(containerId, items, group) {
 
 function toggleNotif(group, key, val) {
   state.notifications[group][key] = val;
+  saveStateToDB();
 }
 
 function saveNotifications() {
