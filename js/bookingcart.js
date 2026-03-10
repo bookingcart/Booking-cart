@@ -560,7 +560,7 @@
         return;
       }
 
-      writeState({ search: payload });
+      writeState({ search: payload, bookingRef: null, _bookingSaved: null });
       window.location.href = "results.html";
     });
   }

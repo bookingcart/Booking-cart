@@ -133,6 +133,18 @@ module.exports = async (req, res) => {
             }
         }
 
+        // ── Delete booking ──
+        if (action === "delete") {
+            if (!id) return res.status(400).json({ ok: false, error: "Missing id" });
+
+            if (collection) {
+                await collection.deleteOne({ ref: id });
+            } else {
+                global.__bookings = global.__bookings.filter(b => b.ref !== id);
+            }
+            return res.json({ ok: true });
+        }
+
         return res.status(400).json({ ok: false, error: "Unknown action" });
 
     } catch (err) {
