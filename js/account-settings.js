@@ -306,6 +306,19 @@ function saveProfile(e) {
 
   updateHeaderInfo();
   saveStateToDB();
+
+  // Sync core changes back to bookingcart_user so they reflect across all pages immediately
+  try {
+    const gUserStr = localStorage.getItem('bookingcart_user');
+    if (gUserStr) {
+      const gUser = JSON.parse(gUserStr);
+      gUser.name = `${firstName} ${lastName}`.trim();
+      gUser.email = email;
+      localStorage.setItem('bookingcart_user', JSON.stringify(gUser));
+      if (window.applyAuthUI) window.applyAuthUI(); // Update the header immediately
+    }
+  } catch (e) { }
+
   showToast("Profile updated successfully!");
 }
 
@@ -472,12 +485,32 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-function confirmDelete() {
+async function confirmDelete() {
   closeDeleteModal();
-  showToast(
-    "Account deletion requested. You will receive a confirmation email.",
-    "error",
-  );
+
+  const email = state.profile.email;
+  if (email) {
+    try {
+      await fetch("/api/user", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+    } catch (e) {
+      console.error("Failed to delete from DB", e);
+    }
+  }
+
+  // Clear local session data
+  localStorage.removeItem("bookingcart_user");
+  localStorage.removeItem("bc_account_settings");
+
+  showToast("Account deleted successfully. Logging out...");
+
+  // Redirect to home page after a short delay
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 1500);
 }
 
 /* ══════════════════════════════════════════════════

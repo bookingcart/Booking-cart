@@ -91,6 +91,19 @@ module.exports = async (req, res) => {
             return res.json({ ok: true });
         }
 
+        // ── DELETE: Delete User Profile ──
+        if (req.method === "DELETE") {
+            const email = req.body?.email || req.query?.email;
+            if (!email) return res.status(400).json({ ok: false, error: "Missing email" });
+
+            if (collection) {
+                await collection.deleteOne({ "profile.email": { $regex: new RegExp("^" + email + "$", "i") } });
+            } else {
+                delete global.__users[email];
+            }
+            return res.json({ ok: true });
+        }
+
         return res.status(405).json({ ok: false, error: "Method not allowed" });
 
     } catch (err) {
