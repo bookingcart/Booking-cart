@@ -968,7 +968,7 @@
 
     function travelerCard(i) {
       const wrap = document.createElement("div");
-      wrap.className = "bg-white rounded-2xl border border-slate-200 shadow-sm p-6";
+      wrap.className = "traveler-card bg-white rounded-2xl border border-slate-200 shadow-sm p-6";
       wrap.innerHTML =
         '<div class="font-medium text-lg text-slate-900 mb-2">Traveler ' + (i + 1) + '</div>' +
         '<div class="text-xs text-slate-500 font-medium mb-6">Enter details exactly as they appear on the travel document.</div>' +
@@ -990,7 +990,7 @@
     form.addEventListener("submit", (e) => {
       e.preventDefault();
 
-      const travelerEls = Array.from(list.querySelectorAll(".card"));
+      const travelerEls = Array.from(list.querySelectorAll(".traveler-card"));
       const travelers = travelerEls.map((c) => {
         const f = c.querySelector("input[name='firstName']");
         const l = c.querySelector("input[name='lastName']");

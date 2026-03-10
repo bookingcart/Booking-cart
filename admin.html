@@ -272,12 +272,14 @@
                 };
                 const badge = statusColors[b.status] || 'bg-slate-100 text-slate-700';
                 const email = (b.contact && b.contact.email) || 'â€”';
+                const paxCount = (b.passengers && b.passengers.length) || 1;
+                const clientContent = `<div>${email}</div><div class="text-xs text-slate-400 mt-0.5">${paxCount} passenger${paxCount > 1 ? 's' : ''}</div>`;
                 const total = b.total ? ('$' + b.total) : 'â€”';
 
                 return `
           <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
             <td class="px-6 py-4 font-bold text-slate-900">${b.ref || 'â€”'}</td>
-            <td class="px-6 py-4 text-slate-600">${email}</td>
+            <td class="px-6 py-4 text-slate-600">${clientContent}</td>
             <td class="px-6 py-4 font-medium text-slate-700">${b.route || 'â€”'}</td>
             <td class="px-6 py-4 text-slate-600">${b.dates || 'â€”'}</td>
             <td class="px-6 py-4 font-bold text-green-600">${total}</td>
