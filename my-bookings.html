@@ -274,18 +274,27 @@
 
                 loadingEl.style.display = 'none';
 
-                // Merge and deduplicate (Local bookings + API base)
-                let merged = (data.ok ? (data.bookings || []) : []).concat(localBookings);
-                const unique = [];
-                const ids = new Set();
-                for (let b of merged) {
-                    if (!ids.has(b.ref)) {
-                        ids.add(b.ref);
-                        unique.push(b);
+                const apiBookings = data.ok ? (data.bookings || []) : [];
+
+                // Merge: API is authoritative (has latest ticket/status).
+                // For bookings only in local storage (not yet synced to API), keep them too.
+                const merged = [...apiBookings];
+                const apiRefs = new Set(apiBookings.map(b => b.ref));
+                for (const lb of localBookings) {
+                    if (!apiRefs.has(lb.ref)) {
+                        merged.push(lb);
                     }
                 }
 
-                allBookings = unique;
+                allBookings = merged;
+
+                // Sync fresh API data BACK into localStorage so next load is up-to-date
+                try {
+                    const localOnlyBookings = localBookings.filter(lb => !apiRefs.has(lb.ref));
+                    const updated = [...apiBookings, ...localOnlyBookings];
+                    localStorage.setItem('bc_saved_bookings', JSON.stringify(updated));
+                } catch (e) { }
+
                 renderBookings();
             } catch (err) {
                 loadingEl.style.display = 'none';
