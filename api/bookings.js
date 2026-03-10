@@ -59,19 +59,40 @@ module.exports = async (req, res) => {
         if (action === "save") {
             if (!booking) return res.status(400).json({ ok: false, error: "Missing booking" });
 
-            booking.createdAt = new Date().toISOString();
-            booking.status = "new";
-
             if (collection) {
-                // MongoDB: Upsert by ref or just insert
+                // Use $setOnInsert so that status/createdAt are only set on NEW bookings.
+                // Re-saves (e.g. page reload) will update passenger/flight data but never
+                // overwrite an existing status or ticket.
+                const now = new Date().toISOString();
+                const safeUpdate = {
+                    $setOnInsert: {
+                        status: "new",
+                        createdAt: now
+                    },
+                    $set: {
+                        ref: booking.ref,
+                        route: booking.route,
+                        dates: booking.dates,
+                        flight: booking.flight,
+                        passengers: booking.passengers,
+                        contact: booking.contact,
+                        extras: booking.extras,
+                        total: booking.total
+                    }
+                };
                 await collection.updateOne(
                     { ref: booking.ref },
-                    { $set: booking },
+                    safeUpdate,
                     { upsert: true }
                 );
             } else {
-                // Local fallback
-                global.__bookings.unshift(booking);
+                // Local fallback — only insert if not already present
+                const exists = global.__bookings.find(b => b.ref === booking.ref);
+                if (!exists) {
+                    booking.createdAt = new Date().toISOString();
+                    booking.status = "new";
+                    global.__bookings.unshift(booking);
+                }
             }
 
             return res.json({ ok: true, id: booking.ref });
