@@ -484,133 +484,295 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-                // Colors & Fonts
-                const primaryColor = [20, 83, 45]; // #14532d (Tailwind primary)
-                const secondaryColor = [22, 163, 74]; // #16a34a
-                const slate800 = [30, 41, 59];
-                const slate500 = [100, 116, 139];
-                const slate200 = [226, 232, 240];
+                // Colors
+                const GREEN = [34, 197, 94];
+                const DKGREEN = [21, 128, 61];
+                const WHITE = [255, 255, 255];
+                const BLACK = [15, 23, 42];
+                const GREY = [100, 116, 139];
+                const BORDER = [203, 213, 225];
+                const W = 210;
 
                 // Data Extraction
-                const routeParts = (b.route || '').split(' → ');
-                const origin = routeParts[0] || 'Origin';
-                const dest = routeParts[1] || 'Destination';
-                const dateParts = (b.dates || '').split(' → ');
+                const routeParts = (b.route || '').split(' \u2192 ');
+                const origin = routeParts[0] || 'EBB';
+                const dest = routeParts[1] || 'ADD';
+                const dateParts = (b.dates || '').split(' \u2192 ');
                 const depDate = dateParts[0] || 'TBD';
                 const arrDate = dateParts[1] || depDate;
-
-                const timeParts = (b.flight && b.flight.time) ? b.flight.time.split(' → ') : [];
-                const depTime = timeParts[0] || '08:00 AM';
-                const arrTime = timeParts[1] || '12:00 PM';
-
-                const airline = (b.flight && b.flight.airline) ? b.flight.airline : 'Global Air';
+                const timeParts = (b.flight && b.flight.time) ? b.flight.time.split(' \u2192 ') : [];
+                const depTime = timeParts[0] || '07:00 AM';
+                const arrTime = timeParts[1] || '12:00 AM';
+                const airline = (b.flight && b.flight.airline) ? b.flight.airline.toUpperCase() : 'GLOBAL AIRLINES';
                 const pnr = b.ref || 'ABC123';
                 const ticketNum = 'TKT-' + Math.floor(100000000 + Math.random() * 900000000);
+                const paxName = (b.passengers && b.passengers[0])
+                    ? ((b.passengers[0].firstName || '') + ' ' + (b.passengers[0].lastName || '')).trim().toUpperCase()
+                    : (b.contact && b.contact.email ? b.contact.email.split('@')[0].toUpperCase() : 'PASSENGER');
 
-                const paxName = (b.passengers && b.passengers[0]) ? ((b.passengers[0].firstName || '') + ' ' + (b.passengers[0].lastName || '')).trim().toUpperCase() : (b.contact && b.contact.email ? b.contact.email.split('@')[0].toUpperCase() : 'GUEST');
+                let depDayName = 'DEPARTURE', depDateFmt = depDate, arrDateFmt = arrDate;
+                try {
+                    const d = new Date(depDate);
+                    const da = new Date(arrDate);
+                    const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+                    depDayName = days[d.getDay()];
+                    depDateFmt = d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+                    arrDateFmt = da.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+                } catch (e) { }
 
-                // Header Background
-                doc.setFillColor(...primaryColor);
-                doc.rect(0, 0, 210, 40, 'F');
+                // Dashed line helper
+                function drawDash(x1, y1, x2, y2, d = 3, g = 2) {
+                    const dx = x2 - x1, dy = y2 - y1, dist = Math.sqrt(dx * dx + dy * dy);
+                    const s = Math.floor(dist / (d + g)), ux = dx / dist, uy = dy / dist;
+                    for (let i = 0; i <= s; i++) {
+                        const sx = x1 + ux * i * (d + g), sy = y1 + uy * i * (d + g);
+                        doc.line(sx, sy, sx + ux * d, sy + uy * d);
+                    }
+                }
 
-                doc.setTextColor(255, 255, 255);
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(28);
-                doc.text("E-TICKET", 20, 26);
-
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(12);
-                doc.text("Booking Reference: " + pnr, 130, 26);
-
-                // Passenger Box
-                doc.setFillColor(248, 250, 252);
-                doc.setDrawColor(...slate200);
-                doc.roundedRect(20, 50, 170, 30, 3, 3, 'FD');
-
-                doc.setTextColor(...slate500);
-                doc.setFontSize(10);
-                doc.text("PASSENGER NAME", 25, 60);
-                doc.text("TICKET NUMBER", 100, 60);
-                doc.text("ISSUED ON", 150, 60);
-
-                doc.setTextColor(...slate800);
-                doc.setFont("helvetica", "bold");
+                // ── HEADER ────────────────────────────────────────
+                doc.setFillColor(...DKGREEN);
+                doc.rect(0, 0, W, 28, 'F');
+                // Logo box
+                doc.setFillColor(...WHITE);
+                doc.roundedRect(8, 5, 52, 18, 3, 3, 'F');
+                doc.setTextColor(...DKGREEN);
+                doc.setFont('helvetica', 'bold');
                 doc.setFontSize(14);
-                doc.text(paxName, 25, 70);
-                doc.setFontSize(12);
-                doc.text(ticketNum, 100, 70);
-                doc.text(new Date().toISOString().split('T')[0], 150, 70);
-
-                // Flight Box
-                doc.setFillColor(255, 255, 255);
-                doc.roundedRect(20, 90, 170, 70, 3, 3, 'FD');
-
-                doc.setTextColor(...slate800);
-                doc.setFontSize(14);
-                doc.text("FLIGHT ITINERARY", 25, 102);
-
-                doc.setDrawColor(...slate200);
-                doc.line(20, 108, 190, 108);
-
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(10);
-                doc.setTextColor(...slate500);
-                doc.text("DEPARTURE", 25, 120);
-                doc.text("ARRIVAL", 100, 120);
-                doc.text("FLIGHT", 150, 120);
-
-                doc.setTextColor(...slate800);
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(20);
-                doc.text(origin, 25, 132);
-                doc.text(dest, 100, 132);
-
-                doc.setFontSize(12);
-                doc.text(airline, 150, 130);
-                doc.setFont("helvetica", "normal");
-                doc.text("Class: Economy", 150, 138);
-
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(12);
-                doc.setTextColor(...slate500);
-                doc.text(`${depDate} at ${depTime}`, 25, 142);
-                doc.text(`${arrDate} at ${arrTime}`, 100, 142);
-
-                // Baggage
-                doc.setFillColor(248, 250, 252);
-                doc.roundedRect(20, 170, 170, 25, 3, 3, 'FD');
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "bold");
-                doc.setTextColor(...slate800);
-                doc.text("BAGGAGE ALLOWANCE: 1x 23kg Checked, 1x 7kg Cabin", 25, 184);
-
-                // Bottom Terms
-                doc.setFont("helvetica", "normal");
+                doc.text('BookingCart', 12, 17);
+                // Right tagline
+                doc.setTextColor(...WHITE);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.text('FLY ANY WHERE', W - 10, 11, { align: 'right' });
+                doc.setFont('helvetica', 'bold');
                 doc.setFontSize(8);
-                doc.setTextColor(...slate500);
-                const terms = "This is an electronically generated ticket. Please present this document along with a valid photo ID at the check-in counter. Ensure you arrive at the airport at least 2 hours before the scheduled departure time.";
-                doc.text(terms, 20, 210, { maxWidth: 170 });
+                doc.text('AFFORDABLE FLIGHTS, PREMIUM SERVICE.', W - 10, 18, { align: 'right' });
 
-                // Generate QR code invisibly to get base64
+                // ── PASSENGER ROW ─────────────────────────────────
+                let y = 38;
+                doc.setTextColor(...GREY);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.text('PREPARED FOR', 10, y);
+                doc.text('TRIP TO ' + dest, 80, y);
+                y += 6;
+                doc.setTextColor(...BLACK);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text(paxName, 10, y);
+                doc.setFontSize(11);
+                doc.text(depDateFmt, 80, y);
+                doc.setDrawColor(...GREY);
+                drawDash(115, y - 2, 128, y - 2);
+                doc.setTextColor(...GREEN);
+                doc.setFontSize(10);
+                doc.text('\u2192', 130, y - 1);
+                doc.setTextColor(...BLACK);
+                doc.text(arrDateFmt, 137, y);
+
+                // ── SEGMENT CARD FUNCTION ─────────────────────────
+                function drawSegment(cardY, fromCode, toCode, dTime, aTime, dDateStr, aDateStr, dayName, segAirline) {
+                    const cardH = 82, GW = 50;
+                    // White bg
+                    doc.setFillColor(255, 255, 255);
+                    doc.setDrawColor(...BORDER);
+                    doc.setLineWidth(0.3);
+                    doc.roundedRect(10, cardY, W - 20, cardH, 3, 3, 'FD');
+                    // Green sidebar (right)
+                    doc.setFillColor(...GREEN);
+                    doc.rect(W - 10 - GW, cardY + 0.3, GW - 0.3, cardH - 0.6, 'F');
+                    // Re-draw border outline on top
+                    doc.setDrawColor(...BORDER);
+                    doc.setFillColor(0, 0, 0, 0);
+                    doc.roundedRect(10, cardY, W - 20, cardH, 3, 3, 'S');
+
+                    // Title: DEPARTURE + dashed → date
+                    doc.setTextColor(...BLACK);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.text('\u2708', 15, cardY + 9);
+                    doc.setFontSize(10);
+                    doc.text('DEPARTURE', 22, cardY + 9);
+                    doc.setDrawColor(...GREY);
+                    drawDash(50, cardY + 7, 72, cardY + 7);
+                    doc.setTextColor(...GREEN);
+                    doc.setFontSize(9);
+                    doc.text('\u2192', 73, cardY + 8);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.text(dayName, 80, cardY + 6.5);
+                    doc.setFontSize(9);
+                    doc.text(dDateStr, 80, cardY + 12);
+                    // Subtitle
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(5.5);
+                    doc.setTextColor(...GREY);
+                    doc.text('Please verify flight times prior to departure', 22, cardY + 13);
+
+                    doc.setDrawColor(...BORDER);
+                    doc.line(10, cardY + 16, W - 10 - GW, cardY + 16);
+
+                    // From airport
+                    const c1 = 16, c2 = 48, c3 = 88;
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(18);
+                    doc.setTextColor(...BLACK);
+                    doc.text(fromCode, c1, cardY + 28);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(5.5);
+                    doc.setTextColor(...GREY);
+                    doc.text(fromCode + ' INTL AIRPORT', c1, cardY + 33);
+                    doc.setFontSize(6.5);
+                    doc.text('Arrival', c1, cardY + 38);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(12);
+                    doc.setTextColor(...BLACK);
+                    doc.text(aTime, c1, cardY + 44);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6.5);
+                    doc.setTextColor(...GREY);
+                    doc.text('Terminal', c1, cardY + 49);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(...BLACK);
+                    doc.text('NOT AVAILABLE', c1, cardY + 54);
+
+                    // To airport
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(18);
+                    doc.setTextColor(...BLACK);
+                    doc.text(toCode, c2, cardY + 28);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(5.5);
+                    doc.setTextColor(...GREY);
+                    doc.text(toCode + ' INTL AIRPORT', c2, cardY + 33);
+                    doc.setFontSize(6.5);
+                    doc.text('Departure', c2, cardY + 38);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(12);
+                    doc.setTextColor(...BLACK);
+                    doc.text(dTime, c2, cardY + 44);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6.5);
+                    doc.setTextColor(...GREY);
+                    doc.text('Terminal', c2, cardY + 49);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(...BLACK);
+                    doc.text('TERMINAL 2', c2, cardY + 54);
+
+                    // Duration / Cabin / Status
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(...GREY);
+                    doc.text('DURATION', c3, cardY + 22);
+                    doc.setFontSize(9.5);
+                    doc.setTextColor(...BLACK);
+                    doc.text('2hr(s) 10min(s)', c3, cardY + 28);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(...GREY);
+                    doc.text('CARBIN', c3, cardY + 38);
+                    doc.setFontSize(9.5);
+                    doc.setTextColor(...BLACK);
+                    doc.text('Economy', c3, cardY + 44);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(...GREY);
+                    doc.text('STATUS', c3, cardY + 54);
+                    doc.setFontSize(9.5);
+                    doc.setTextColor(...BLACK);
+                    doc.text('Confirmed', c3, cardY + 60);
+
+                    // Green sidebar content
+                    const gx = W - 10 - GW + 5;
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(...WHITE);
+                    doc.text('\u2708 ' + segAirline, gx, cardY + 11);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(5.5);
+                    doc.setTextColor([200, 240, 200]);
+                    doc.text('AIR CRAFT :', gx, cardY + 20);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(...WHITE);
+                    doc.text('BOEING 737-800 JET', gx, cardY + 25);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6);
+                    doc.setTextColor([200, 240, 200]);
+                    doc.text('DISTANCE : 754 MILES', gx, cardY + 33);
+                    doc.text('MEALS :', gx, cardY + 40);
+                    doc.text('SNACK :', gx, cardY + 46);
+
+                    // Bottom footer row
+                    doc.setDrawColor(...BORDER);
+                    doc.line(10, cardY + cardH - 16, W - 10 - GW, cardY + cardH - 16);
+                    const by = cardY + cardH - 4;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6);
+                    doc.setTextColor(...GREY);
+                    doc.text('PASSENGERS NAME :', 15, by - 7);
+                    doc.text('SEATS :', 85, by - 7);
+                    doc.text('ETICKET RECIEPTS (PNR) :', 130, by - 7);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(...BLACK);
+                    doc.text(paxName, 15, by);
+                    doc.text('CHECK-IN REQUIRED', 85, by);
+                    doc.text(pnr, 130, by);
+                }
+
+                // Draw departure segment
+                drawSegment(53, origin, dest, depTime, arrTime, depDateFmt, arrDateFmt, depDayName, airline);
+
+                // Draw return segment if round-trip
+                const hasReturn = dateParts[1] && dateParts[1] !== dateParts[0];
+                if (hasReturn) {
+                    let retDay = 'RETURN';
+                    try {
+                        const dr = new Date(arrDate);
+                        const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+                        retDay = days[dr.getDay()];
+                    } catch (e) { }
+                    drawSegment(148, dest, origin, arrTime, depTime, arrDateFmt, depDateFmt, retDay, airline);
+                }
+
+                // ── AIRLINE POLICY ───────────────────────────────
+                const policyY = hasReturn ? 244 : 148;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(...BLACK);
+                doc.text('Airline Ticket Policy', 10, policyY);
+                doc.setDrawColor(...BORDER);
+                doc.line(10, policyY + 2, 200, policyY + 2);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(6.2);
+                doc.setTextColor(...GREY);
+                const pol1 = 'All airline tickets issued are subject to the fare rules, conditions, and policies of the respective airline. Once a booking is confirmed and ticketed, the passenger is responsible for complying with the airline\'s terms and conditions, including baggage allowance, check-in requirements, travel documentation, and visa regulations.';
+                const pol2 = '\nTickets may be non-refundable, non-transferable, or subject to change penalties depending on the fare class purchased. Any modifications, cancellations, or refund requests will be processed according to the airline\'s fare rules and may include additional airline fees, service charges, or fare differences. Passengers are advised to verify all travel details including passenger names, travel dates, and destinations immediately upon receipt of the ticket. The airline will not be responsible for errors not reported within 24 hours of ticket issuance.';
+                const pol3 = '\nTravelers must arrive at the airport in accordance with airline check-in deadlines and carry valid travel documents such as passports, visas, and health certificates where required. Flight schedules, aircraft types, and services are subject to change by the airline without prior notice. The airline remains the operating carrier and is solely responsible for the transportation service provided. By accepting this receipt and ticket confirmation, the passenger acknowledges and agrees to the airline\'s terms and conditions of carriage.';
+                doc.text(pol1 + pol2 + pol3, 10, policyY + 7, { maxWidth: 190 });
+
+                // ── QR CODE + SAVE ───────────────────────────────
                 const qrContainer = document.createElement("div");
                 new QRCode(qrContainer, {
-                    text: `PNR:${pnr}|TKT:${ticketNum}|PAX:${paxName}`,
-                    width: 128,
-                    height: 128
+                    text: 'PNR:' + pnr + '|TKT:' + ticketNum + '|PAX:' + paxName,
+                    width: 80,
+                    height: 80
                 });
 
-                // Wait for QRCode to render to canvas
                 setTimeout(async () => {
                     const canvas = qrContainer.querySelector('canvas');
                     if (canvas) {
                         const qrDataUrl = canvas.toDataURL("image/png");
-                        doc.addImage(qrDataUrl, 'PNG', 150, 220, 40, 40);
+                        const qrY = hasReturn ? 254 : 155;
+                        doc.addImage(qrDataUrl, 'PNG', 170, qrY, 28, 28);
                     }
 
-                    // Convert PDF to Base64 String
                     const pdfBase64 = doc.output('datauristring');
 
-                    // Post to API
                     const ticketData = {
                         ticketNumber: ticketNum,
                         airline: airline,
@@ -622,22 +784,17 @@
                     const resp = await fetch('/api/bookings', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'upload_ticket',
-                            id: pnr,
-                            ticket: ticketData,
-                            pin: adminPin
-                        })
+                        body: JSON.stringify({ action: 'upload_ticket', id: pnr, ticket: ticketData, pin: adminPin })
                     });
 
                     const data = await resp.json();
                     if (data.ok) {
-                        alert('✅ Ticket successfully auto-generated and issued!\n\nEmail dispatched.');
+                        alert('\u2705 Ticket successfully auto-generated and issued!\n\nEmail dispatched.');
                         await loadBookings();
                     } else {
                         alert('Error saving ticket: ' + (data.error || 'Unknown'));
                     }
-                }, 100);
+                }, 150);
 
             } catch (err) {
                 console.error(err);
