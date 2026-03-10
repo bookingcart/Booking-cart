@@ -38,8 +38,24 @@ module.exports = async (req, res) => {
     try {
         const { collection } = await connectToDatabase();
 
-        // ── GET: Load User Profile ──
+        // ── GET: Load User Profile or Count ──
         if (req.method === "GET") {
+            const action = req.query.action;
+
+            // Admin: user count
+            if (action === 'count') {
+                const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
+                if (req.query.pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: "Invalid PIN" });
+
+                let count = 0;
+                if (collection) {
+                    count = await collection.countDocuments({});
+                } else {
+                    count = Object.keys(global.__users).length;
+                }
+                return res.json({ ok: true, count });
+            }
+
             const email = req.query.email;
             if (!email) return res.status(400).json({ ok: false, error: "Missing email" });
 

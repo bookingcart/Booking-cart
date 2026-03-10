@@ -1336,6 +1336,20 @@
 
       // Update UI elements
       updateAuthUI();
+      if (window.applyAuthUI) window.applyAuthUI();
+
+      // Persist user to MongoDB so admin can track total users
+      try {
+        fetch('/api/user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: payload.email,
+            state: { name: payload.name, email: payload.email, picture: payload.picture, signedUpAt: new Date().toISOString() }
+          })
+        }).catch(e => console.warn('User save failed:', e));
+      } catch (e) { }
+
       toast('Welcome back!', `Signed in as ${payload.name}`);
 
     } catch (err) {

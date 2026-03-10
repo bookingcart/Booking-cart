@@ -29,6 +29,7 @@
             box-shadow: none !important;
         }
     </style>
+    <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 
 <body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
@@ -56,9 +57,18 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div class="container mx-auto px-6 h-20 flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight"><img src="images/logo.png" alt="BookingCart" class="h-10 rounded-xl" /></a>
+                <a href="index.html" class="text-2xl font-extrabold text-slate-900 tracking-tight"><img
+                        src="images/logo.png" alt="BookingCart" class="h-10 rounded-xl" /></a>
                 <span
                     class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full uppercase tracking-wider">Admin</span>
+            </div>
+
+            <div id="g_id_onload"
+                data-client_id="344110356663-foa7unsastgg0hp57qdaaj5qvmkgd8lg.apps.googleusercontent.com"
+                data-context="use" data-ux_mode="popup" data-callback="handleGoogleSignIn" data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="outline" data-text="signin_with"
+                data-size="large" data-logo_alignment="left">
             </div>
             <button id="refresh-btn"
                 class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-xl transition-all text-sm">
@@ -69,7 +79,7 @@
 
     <main class="flex-grow container mx-auto px-6 py-8">
         <!-- Stats -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="stats">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8" id="stats">
             <div class="bg-white rounded-2xl border border-slate-200 p-5">
                 <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Bookings</div>
                 <div class="text-2xl font-extrabold text-slate-900" id="stat-total">0</div>
@@ -85,6 +95,11 @@
             <div class="bg-white rounded-2xl border border-slate-200 p-5">
                 <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Revenue</div>
                 <div class="text-2xl font-extrabold text-slate-900" id="stat-revenue">$0</div>
+            </div>
+            <div class="bg-white rounded-2xl border border-blue-200 p-5">
+                <div class="text-xs font-bold text-blue-500 uppercase tracking-wider mb-1"><i class="ph ph-users"></i>
+                    Total Users</div>
+                <div class="text-2xl font-extrabold text-blue-600" id="stat-users">0</div>
             </div>
         </div>
 
@@ -211,6 +226,17 @@
         function renderAll() {
             renderStats();
             renderTable();
+            loadUserCount();
+        }
+
+        async function loadUserCount() {
+            try {
+                const resp = await fetch('/api/user?action=count&pin=' + encodeURIComponent(adminPin));
+                const data = await resp.json();
+                if (data.ok) {
+                    document.getElementById('stat-users').textContent = data.count || 0;
+                }
+            } catch (e) { console.error('Failed to load user count:', e); }
         }
 
         function renderStats() {
@@ -285,6 +311,7 @@
             }
         }
     </script>
+    <script src="js/auth.js"></script>
 </body>
 
 </html>
