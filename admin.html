@@ -344,17 +344,19 @@
                     cancelled: 'bg-red-100 text-red-700'
                 };
                 const badge = statusColors[b.status] || 'bg-slate-100 text-slate-700';
-                const email = (b.contact && b.contact.email) || 'â€”';
+                const email = (b.contact && b.contact.email) || '—';
                 const paxCount = (b.passengers && b.passengers.length) || 1;
                 const clientContent = `<div>${email}</div><div class="text-xs text-slate-400 mt-0.5">${paxCount} passenger${paxCount > 1 ? 's' : ''}</div>`;
-                const total = b.total ? ('$' + b.total) : 'â€”';
+                const airline = (b.flight && b.flight.airline) ? b.flight.airline : '—';
+                const routeContent = `<div>${b.route || '—'}</div><div class="text-xs font-bold text-indigo-600 mt-0.5"><i class="ph-fill ph-airplane-tilt"></i> ${airline}</div>`;
+                const total = b.total ? ('$' + b.total) : '—';
 
                 return `
           <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-            <td class="px-6 py-4 font-bold text-slate-900">${b.ref || 'â€”'}</td>
+            <td class="px-6 py-4 font-bold text-slate-900">${b.ref || '—'}</td>
             <td class="px-6 py-4 text-slate-600">${clientContent}</td>
-            <td class="px-6 py-4 font-medium text-slate-700">${b.route || 'â€”'}</td>
-            <td class="px-6 py-4 text-slate-600">${b.dates || 'â€”'}</td>
+            <td class="px-6 py-4 font-medium text-slate-700">${routeContent}</td>
+            <td class="px-6 py-4 text-slate-600">${b.dates || '—'}</td>
             <td class="px-6 py-4 font-bold text-green-600">${total}</td>
             <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge} capitalize">${b.status}</span></td>
             <td class="px-6 py-4 text-right">
