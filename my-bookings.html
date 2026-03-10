@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -438,29 +439,112 @@
         function downloadTicket(ref) {
             const b = allBookings.find(x => x.ref === ref);
             if (!b) return;
-            const lines = [];
-            lines.push("Booking Reference: " + (b.ref || ""));
-            lines.push("Route: " + (b.route || ""));
-            lines.push("Dates: " + (b.dates || ""));
-            if (b.flight && b.flight.airline) {
-                lines.push("Flight: " + b.flight.airline + " " + (b.flight.time || ""));
-            }
-            if (b.total) {
-                lines.push("Total Paid: $" + Number(b.total).toLocaleString(undefined, { minimumFractionDigits: 2 }));
-            }
-            const paxName = (b.passengers && b.passengers[0]) ? ((b.passengers[0].firstName || '') + ' ' + (b.passengers[0].lastName || '')).trim().toUpperCase() : (b.contact && b.contact.email ? b.contact.email.split('@')[0].toUpperCase() : 'PASSENGER');
-            lines.push("Passenger: " + paxName);
-            if (b.contact && b.contact.email) lines.push("Contact: " + b.contact.email);
 
-            const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "ticket-" + (b.ref || "booking") + ".txt";
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+            const slate800 = [30, 41, 59];
+            const slate500 = [100, 116, 139];
+            const slate200 = [226, 232, 240];
+            const green = [22, 163, 74];
+            const primary = [20, 83, 45];
+
+            const paxName = (b.passengers && b.passengers[0]) ? ((b.passengers[0].firstName || '') + ' ' + (b.passengers[0].lastName || '')).trim().toUpperCase() : (b.contact && b.contact.email ? b.contact.email.split('@')[0].toUpperCase() : 'PASSENGER');
+            const routeParts = (b.route || '').split(' → ');
+            const airline = (b.flight && b.flight.airline) ? b.flight.airline : '';
+            const total = b.total ? '$' + Number(b.total).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—';
+            const issueDate = new Date().toISOString().split('T')[0];
+
+            // Header strip
+            doc.setFillColor(...primary);
+            doc.rect(0, 0, 210, 36, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(22);
+            doc.text('BOOKING INVOICE', 20, 22);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text('BookingCart Travel', 152, 22);
+
+            // Invoice details box
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(...slate200);
+            doc.roundedRect(20, 44, 170, 28, 3, 3, 'FD');
+            doc.setTextColor(...slate500);
+            doc.setFontSize(9);
+            doc.text('BOOKING REF', 25, 54);
+            doc.text('INVOICE DATE', 80, 54);
+            doc.text('STATUS', 140, 54);
+            doc.setTextColor(...slate800);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.text(b.ref || '—', 25, 64);
+            doc.setFontSize(11);
+            doc.text(issueDate, 80, 64);
+            doc.setTextColor(...green);
+            doc.text('PAID', 140, 64);
+
+            // Passenger & Flight details
+            doc.setTextColor(...slate800);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.text('BILLED TO', 20, 84);
+            doc.setDrawColor(...slate200);
+            doc.line(20, 87, 190, 87);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.text(paxName, 20, 96);
+            if (b.contact && b.contact.email) {
+                doc.setTextColor(...slate500);
+                doc.setFontSize(10);
+                doc.text(b.contact.email, 20, 104);
+            }
+
+            // Line items table
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(20, 118, 170, 10, 2, 2, 'FD');
+            doc.setTextColor(...slate500);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.text('DESCRIPTION', 25, 126);
+            doc.text('DETAILS', 100, 126);
+            doc.text('AMOUNT', 170, 126, { align: 'right' });
+
+            // Row 1 — Flight
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...slate800);
+            doc.setFontSize(11);
+            doc.text('Flight Ticket', 25, 140);
+            doc.setTextColor(...slate500);
+            doc.setFontSize(10);
+            doc.text((b.route || '—') + ' · ' + (airline || ''), 25, 148);
+            doc.text((b.dates || ''), 25, 155);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...slate800);
+            doc.setFontSize(11);
+            doc.text(total, 170, 140, { align: 'right' });
+
+            doc.setDrawColor(...slate200);
+            doc.line(20, 162, 190, 162);
+
+            // Total row
+            doc.setFillColor(...primary);
+            doc.roundedRect(120, 168, 70, 20, 3, 3, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.text('TOTAL PAID', 125, 180);
+            doc.setFontSize(14);
+            doc.text(total, 188, 180, { align: 'right' });
+
+            // Footer
+            doc.setTextColor(...slate500);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text('Thank you for booking with BookingCart. This invoice serves as confirmation of your payment.', 20, 220, { maxWidth: 170 });
+            doc.text('For support, please contact support@bookingcart.com', 20, 228);
+
+            doc.save('Invoice-' + (b.ref || 'booking') + '.pdf');
         }
 
         async function deleteBooking(ref) {
