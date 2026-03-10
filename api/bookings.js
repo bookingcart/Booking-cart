@@ -145,6 +145,49 @@ module.exports = async (req, res) => {
             return res.json({ ok: true });
         }
 
+        // ── Upload ticket (Admin) ──
+        if (action === "upload_ticket") {
+            const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
+            if (pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: "Invalid PIN" });
+            const { ticket } = req.body;
+            if (!id || !ticket) return res.status(400).json({ ok: false, error: "Missing id or ticket data" });
+
+            if (collection) {
+                const result = await collection.findOneAndUpdate(
+                    { ref: id },
+                    { $set: { status: "issued", ticket: ticket } },
+                    { returnDocument: 'after' }
+                );
+                if (!result.value && !result) return res.status(404).json({ ok: false, error: "Booking not found" });
+                return res.json({ ok: true, booking: result.value || result });
+            } else {
+                const idx = global.__bookings.findIndex(b => b.ref === id);
+                if (idx === -1) return res.status(404).json({ ok: false, error: "Booking not found" });
+                global.__bookings[idx].status = "issued";
+                global.__bookings[idx].ticket = ticket;
+                return res.json({ ok: true, booking: global.__bookings[idx] });
+            }
+        }
+
+        // ── Track ticket download (Client) ──
+        if (action === "track_download") {
+            if (!id) return res.status(400).json({ ok: false, error: "Missing id" });
+
+            if (collection) {
+                // Increment downloadCount, or set to 1 if it doesn't exist
+                await collection.updateOne(
+                    { ref: id },
+                    { $inc: { downloadCount: 1 } }
+                );
+            } else {
+                const idx = global.__bookings.findIndex(b => b.ref === id);
+                if (idx !== -1) {
+                    global.__bookings[idx].downloadCount = (global.__bookings[idx].downloadCount || 0) + 1;
+                }
+            }
+            return res.json({ ok: true });
+        }
+
         return res.status(400).json({ ok: false, error: "Unknown action" });
 
     } catch (err) {

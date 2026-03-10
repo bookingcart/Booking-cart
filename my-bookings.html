@@ -296,8 +296,9 @@
 
             listEl.innerHTML = filtered.map(b => {
                 const statusMap = {
-                    new: { label: 'Awaiting Confirmation', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
-                    confirmed: { label: 'Confirmed', color: 'text-green-600 bg-green-50 border-green-200' },
+                    new: { label: 'Processing', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
+                    confirmed: { label: 'Pending Upload', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+                    issued: { label: 'Ticket Issued', color: 'text-green-600 bg-green-50 border-green-200' },
                     cancelled: { label: 'Cancelled', color: 'text-red-500 bg-red-50 border-red-200' }
                 };
                 const st = statusMap[b.status] || statusMap.new;
@@ -384,7 +385,8 @@
               <div class="text-right pl-6 border-l border-slate-100 flex flex-col justify-between items-end">
                 <div class="text-xl font-extrabold text-green-600">${total}</div>
                 <div class="flex flex-col gap-2 mt-6">
-                  ${b.status !== 'cancelled' ? `<button onclick="downloadTicket('${b.ref}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"><i class="ph-bold ph-download"></i> Download Ticket</button>` : ''}
+                  ${(b.status === 'issued' && b.ticket && b.ticket.fileData) ? `<button onclick="downloadRealTicket('${b.ref}')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap shadow-green-600/20"><i class="ph-bold ph-download"></i> Download E-Ticket</button>` : (b.status !== 'cancelled' ? `<div class="px-4 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2"><i class="ph-bold ph-circle-notch animate-spin"></i> Ticket Processing...</div>` : '')}
+                  ${b.status !== 'cancelled' ? `<button onclick="downloadTicket('${b.ref}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"><i class="ph-bold ph-receipt"></i> Download Invoice</button>` : ''}
                   <button onclick="deleteBooking('${b.ref}')" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"><i class="ph-bold ph-trash"></i> Delete Booking</button>
                 </div>
               </div>
@@ -392,6 +394,26 @@
           </div>
         </div>`;
             }).join('');
+        }
+
+        async function downloadRealTicket(ref) {
+            const b = allBookings.find(x => x.ref === ref);
+            if (!b || !b.ticket || !b.ticket.fileData) return;
+
+            // Track download
+            fetch('/api/bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'track_download', id: ref })
+            }).catch(e => console.error(e));
+
+            // Trigger download of Base64
+            const a = document.createElement("a");
+            a.href = b.ticket.fileData;
+            a.download = b.ticket.fileName || `ticket-${ref}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         }
 
         function downloadTicket(ref) {
