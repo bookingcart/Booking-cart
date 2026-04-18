@@ -10,6 +10,8 @@
 'use strict';
 require('dotenv').config();
 const fetch = require('node-fetch');
+const { getCorsHeaders } = require('../lib/cors');
+const { getCache, getCollections, isMongoConfigured, setCache } = require('../lib/mongo');
 
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || '';
 const DUFFEL_BASE_URL = 'https://api.duffel.com';
@@ -108,18 +110,6 @@ const COUNTRY_TO_IATA = {
     'Turkey': 'IST', 'Brazil': 'GRU',
 };
 
-// In-memory cache: { [key]: { data, expires } }
-if (!global.__dealsCache) global.__dealsCache = {};
-
-function getCached(key) {
-    const entry = global.__dealsCache[key];
-    if (entry && Date.now() < entry.expires) return entry.data;
-    return null;
-}
-function setCache(key, data) {
-    global.__dealsCache[key] = { data, expires: Date.now() + CACHE_TTL_MS };
-}
-
 // Get departure dates for next month
 function getNextDates(offsetDays = 30) {
     const d = new Date();
@@ -197,9 +187,8 @@ function mockDeal(origin, routeInfo, index) {
 }
 
 module.exports = async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    const ch = getCorsHeaders(req);
+    Object.entries(ch).forEach(([k, v]) => res.setHeader(k, v));
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     // Get client IP
@@ -216,8 +205,19 @@ module.exports = async (req, res) => {
 
     // Check cache first
     const cacheKey = `deals_${overrideIata || ip}`;
-    const cached = getCached(cacheKey);
-    if (cached) return res.json({ ok: true, ...cached, cached: true });
+    let searchCacheCollection = null;
+    if (isMongoConfigured()) {
+        try {
+            const collections = await getCollections();
+            searchCacheCollection = collections.searchCache;
+            const cached = await getCache(searchCacheCollection, cacheKey);
+            if (cached) {
+                return res.json({ ok: true, ...cached.payload, cached: true });
+            }
+        } catch (e) {
+            // Cache should not block live results.
+        }
+    }
 
     // Step 1: Geolocate IP (server-side fallback if client didn't detect)
     let city = clientCity, country = clientCountry, iata = overrideIata || '';
@@ -309,6 +309,15 @@ module.exports = async (req, res) => {
         deals: enriched
     };
 
-    setCache(cacheKey, result);
+    if (searchCacheCollection) {
+        try {
+            await setCache(searchCacheCollection, cacheKey, result, CACHE_TTL_MS, {
+                origin: iata,
+                source: 'flight-deals'
+            });
+        } catch (e) {
+            // Ignore cache write failures and return live data.
+        }
+    }
     return res.json({ ok: true, ...result, cached: false });
 };

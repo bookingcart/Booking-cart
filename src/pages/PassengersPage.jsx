@@ -1,0 +1,173 @@
+import { useEffect } from 'react';
+import { useLegacyScripts } from '../hooks/useLegacyScripts.js';
+import { FlightFooter } from '../components/FlightFooter.jsx';
+
+const SCRIPTS = ['/js/loading-ui.js','/js/auth.js','/js/bookingcart.js'];
+
+export default function PassengersPage() {
+  useEffect(() => { document.title = 'BookingCart — Passengers'; }, []);
+  useLegacyScripts(SCRIPTS, 'passengers');
+  return (
+    <>
+      
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+          <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+            <div className="flex items-center gap-12">
+              <a href="/" className="text-2xl font-extrabold text-slate-900 tracking-tight"><img src="images/logo.png" alt="BookingCart" className="h-10 rounded-xl" /></a>
+              <div className="hidden lg:flex items-center gap-4">
+                <a href="/details"
+                  className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
+                  <i className="ph-bold ph-arrow-left"></i> Back to details
+                </a>
+              </div>
+            </div>
+      
+                  
+            <div className="flex items-center gap-3">
+              
+              <div id="g_id_onload"
+                   data-client_id=""
+                   data-context="use"
+                   data-ux_mode="popup"
+                   data-callback="handleGoogleSignIn"
+                   data-auto_prompt="false">
+              </div>
+              
+              <div className="g_id_signin"
+                   data-type="standard"
+                   data-shape="pill"
+                   data-theme="outline"
+                   data-text="signin_with"
+                   data-size="large"
+                   data-logo_alignment="left">
+              </div>
+              
+              <button type="button" data-header-profile-btn
+                className="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm hover:border-green-500 transition-all focus:ring-2 focus:ring-green-500 outline-none">
+                <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User Profile" className="w-full h-full object-cover" />
+              </button>
+            </div>
+          </div>
+        </header>
+      
+        
+        <main className="flex-grow container mx-auto px-6 py-8" data-step="passengers">
+      
+          
+          <div className="flex items-center gap-4 mb-8 overflow-x-auto no-scrollbar steps text-sm font-medium">
+            <a className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 text-green-700 border border-green-100 whitespace-nowrap"
+              data-step-id="search" href="/">
+              <span className="w-5 h-5 rounded-full bg-green-200 flex items-center justify-center text-xs font-bold">1</span>
+              Search
+            </a>
+            <a className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 text-green-700 border border-green-100 whitespace-nowrap"
+              data-step-id="results" href="/results">
+              <span className="w-5 h-5 rounded-full bg-green-200 flex items-center justify-center text-xs font-bold">2</span>
+              Results
+            </a>
+            <a className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 text-green-700 border border-green-100 whitespace-nowrap"
+              data-step-id="details" href="/details">
+              <span className="w-5 h-5 rounded-full bg-green-200 flex items-center justify-center text-xs font-bold">3</span>
+              Details
+            </a>
+            <a className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 text-white border border-slate-900 whitespace-nowrap"
+              data-step-id="passengers" href="/passengers">
+              <span className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">4</span>
+              Passengers
+            </a>
+            <a className="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-slate-500 border border-slate-200 whitespace-nowrap"
+              data-step-id="extras" href="#">
+              <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold">5</span>
+              Extras
+            </a>
+          </div>
+      
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8" data-passenger-page>
+      
+            
+            <section className="lg:col-span-8 space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h1 className="text-2xl font-bold text-slate-900">Passenger Information</h1>
+              </div>
+              <p className="text-slate-500 font-medium">Add traveler details and contact info for ticket delivery.</p>
+      
+              <form data-passenger-form className="space-y-6">
+      
+                
+                <div className="space-y-6" data-travelers>
+                  
+                </div>
+      
+                
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                  <h2 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2"><i
+                      className="ph-duotone ph-envelope-simple text-green-600 text-xl"></i> Contact Information</h2>
+                  <hr className="border-slate-100 my-4" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email
+                        Address</label>
+                      <input
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none"
+                        name="email" type="email" placeholder="you@example.com" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Phone Number
+                        (Optional)</label>
+                      <input
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none"
+                        name="phone" placeholder="+1 555 000 000" />
+                    </div>
+                  </div>
+                </div>
+      
+                <div className="flex justify-end pt-4">
+                  <button
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-green-600/20 transition-all flex items-center gap-2"
+                    type="submit">
+                    Continue to Extras <i className="ph-bold ph-arrow-right"></i>
+                  </button>
+                </div>
+              </form>
+      
+            </section>
+      
+            
+            <aside className="lg:col-span-4 space-y-6">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6 sticky top-24">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="font-bold text-lg text-slate-900">Traveler Tips</h2>
+                  <a href="/" className="text-xs font-bold text-green-600 hover:underline">Change Pax</a>
+                </div>
+      
+                <div className="bg-green-50 rounded-xl p-4 mb-4">
+                  <div className="flex gap-3">
+                    <i className="ph-fill ph-info text-green-600 text-xl flex-shrink-0"></i>
+                    <div>
+                      <div className="font-bold text-green-900 text-sm mb-1">Legal Names</div>
+                      <div className="text-xs text-green-700 leading-relaxed">Please use the traveler's legal name as it appears on
+                        their government ID.</div>
+                    </div>
+                  </div>
+                </div>
+      
+                <hr className="border-slate-100 my-4" />
+      
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                    <i className="ph-fill ph-lock-key text-emerald-500 text-lg"></i> Data is stored locally (demo)
+                  </div>
+                  <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                    <i className="ph-fill ph-shield-check text-emerald-500 text-lg"></i> Secure checkout styling
+                  </div>
+                </div>
+      
+              </div>
+            </aside>
+      
+          </div>
+        </main>
+      <FlightFooter />
+    </>
+  );
+}

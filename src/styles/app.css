@@ -1,0 +1,237 @@
+@import 'tailwindcss';
+
+@source '../../**/*.{html,jsx}';
+@source '../../public/js/**/*.js';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --color-primary: #14532d;
+  --color-secondary: #16a34a;
+  --color-muted: #dcfce7;
+  --color-subtle: #15803d;
+
+  --radius-3xl: 24px;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Auto-complete dropdown styles */
+.suggest__list {
+  @apply absolute top-full left-0 w-full bg-white rounded-xl shadow-xl mt-2 p-2 z-50 hidden;
+}
+.suggest__list[data-open='true'] {
+  @apply block;
+}
+.suggest__item {
+  @apply px-4 py-2 rounded-lg cursor-pointer flex justify-between items-center text-sm hover:bg-green-50 hover:text-green-600 transition-colors;
+}
+
+/* Dropdown panel for passengers */
+.dropdown__panel {
+  @apply absolute top-full right-0 w-80 bg-white rounded-2xl shadow-2xl p-4 mt-2 z-50 hidden border border-slate-100;
+}
+.dropdown__panel[data-open='true'] {
+  @apply block;
+}
+
+/* Dynamic Tab Styling based on aria-selected */
+.tab[aria-selected='true'] {
+  @apply text-green-600 bg-green-50/50;
+}
+.tab[aria-selected='false'] {
+  @apply text-slate-500 hover:text-slate-900 hover:bg-white/50;
+}
+
+/* Hero search: undo global .field padding from css/bookingcart.css */
+form[data-search-form] .field {
+  padding: 0 !important;
+  justify-content: flex-start;
+}
+
+/* Home / flight UI */
+input,
+select,
+textarea,
+button {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.cal-popup {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: 380px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  padding: 24px;
+  margin-top: 8px;
+  animation: calFadeIn 0.2s ease;
+}
+
+@keyframes calFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cal-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.cal-nav {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cal-nav:hover {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.15s;
+  min-height: 52px;
+}
+
+.cal-cell:hover:not(.cal-cell--empty):not(.cal-cell--disabled) {
+  background: #f0fdf4;
+}
+
+.cal-cell--stripe {
+  background: #f8fafc;
+  border-radius: 0;
+}
+
+.cal-cell--stripe:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.cal-cell--stripe:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.cal-cell--today .cal-day {
+  color: #16a34a;
+}
+
+.cal-cell--selected {
+  background: #16a34a !important;
+  border-radius: 12px !important;
+}
+
+.cal-cell--selected .cal-day {
+  color: #fff !important;
+  font-weight: 800;
+}
+
+.cal-cell--selected .cal-price {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.cal-cell--disabled {
+  opacity: 0.3;
+  cursor: default;
+  pointer-events: none;
+}
+
+.cal-day {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1;
+}
+
+.cal-price {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #16a34a;
+  margin-top: 2px;
+}
+
+.cal-cell--empty {
+  cursor: default;
+}
+
+details.filter-chip > summary {
+  list-style: none;
+}
+
+details.filter-chip > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.filter-chip[open] > summary .filter-chip-caret {
+  transform: rotate(180deg);
+}
