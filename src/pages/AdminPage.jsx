@@ -22,8 +22,8 @@ export default function AdminPage() {
                       <i className="ph-fill ph-lock-key text-green-600 text-2xl"></i>
                   </div>
                   <h2 className="text-xl font-extrabold text-slate-900 mb-1">Admin Access</h2>
-                  <p className="text-sm text-slate-500 mb-6">Enter your admin PIN to continue.</p>
-                  <input id="pin-input" type="password" maxLength="10" placeholder="Enter PIN"
+                  <p className="text-sm text-slate-500 mb-6">Enter admin code 1234 to continue.</p>
+                  <input id="pin-input" type="password" maxLength="10" placeholder="1234"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-center text-lg font-bold tracking-widest mb-4" />
                   <button id="pin-btn"
                       className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all">
