@@ -17,7 +17,20 @@ const duffelAirportsHandler = require('./api/duffel-airports');
 const flightDealsHandler = require('./api/flight-deals');
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
-const stripe = STRIPE_SECRET_KEY ? Stripe(STRIPE_SECRET_KEY) : null;
+function getStripeConfigError() {
+  if (!STRIPE_SECRET_KEY) {
+    return 'Stripe is not configured (missing STRIPE_SECRET_KEY)';
+  }
+
+  if (STRIPE_SECRET_KEY.startsWith('rk_')) {
+    return 'Stripe is misconfigured: STRIPE_SECRET_KEY is a restricted key (rk_*). Use a secret key (sk_test_* or sk_live_*) for checkout sessions.';
+  }
+
+  return null;
+}
+
+const stripeConfigError = getStripeConfigError();
+const stripe = stripeConfigError ? null : Stripe(STRIPE_SECRET_KEY);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -103,7 +116,7 @@ function resolveCheckoutOrigin(req) {
 
 app.post('/api/stripe/create-checkout-session', apiLimiter, async (req, res) => {
   if (!stripe) {
-    return res.status(503).json({ ok: false, error: 'Stripe is not configured (missing STRIPE_SECRET_KEY)' });
+    return res.status(503).json({ ok: false, error: stripeConfigError });
   }
 
   try {
@@ -158,7 +171,7 @@ app.post('/api/stripe/create-checkout-session', apiLimiter, async (req, res) => 
 
 app.get('/api/stripe/session', apiLimiter, async (req, res) => {
   if (!stripe) {
-    return res.status(503).json({ ok: false, error: 'Stripe is not configured (missing STRIPE_SECRET_KEY)' });
+    return res.status(503).json({ ok: false, error: stripeConfigError });
   }
 
   try {
@@ -513,4 +526,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`BookingCart server running on http://localhost:${PORT}`);
   console.log(`Duffel API Key configured: ${!!process.env.DUFFEL_API_KEY}`);
+  if (stripeConfigError) {
+    console.error(stripeConfigError);
+  }
 });
