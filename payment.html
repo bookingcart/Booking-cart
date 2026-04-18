@@ -32,7 +32,6 @@
   </script>
 
   <!-- Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 
 <body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
@@ -54,7 +53,7 @@
       <div class="flex items-center gap-3">
         <!-- Google Sign-In Real Button wrapper -->
         <div id="g_id_onload"
-             data-client_id="344110356663-foa7unsastgg0hp57qdaaj5qvmkgd8lg.apps.googleusercontent.com"
+             data-client_id=""
              data-context="use"
              data-ux_mode="popup"
              data-callback="handleGoogleSignIn"
@@ -69,8 +68,9 @@
              data-size="large"
              data-logo_alignment="left">
         </div>
-        <!-- Profile Account Button -->
-        <button class="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm hover:border-green-500 transition-all focus:ring-2 focus:ring-green-500 outline-none">
+        <!-- Profile (only when signed in; toggled in js/auth.js) -->
+        <button type="button" data-header-profile-btn
+          class="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm hover:border-green-500 transition-all focus:ring-2 focus:ring-green-500 outline-none">
           <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User Profile" class="w-full h-full object-cover" />
         </button>
       </div>
@@ -124,62 +124,27 @@
         <p class="text-slate-500 font-medium">Choose a secure payment method to pay <span
             class="font-bold text-slate-900" data-pay-total-inline>â€”</span>.</p>
 
-        <!-- Digital Wallets -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h2 class="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2"><i
-              class="ph-duotone ph-wallet text-green-600 text-xl"></i> Digital Wallet</h2>
-          <div class="flex flex-wrap gap-4">
-            <button
-              class="flex items-center gap-3 bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-slate-900/10"
-              data-wallet>
-              <i class="ph-fill ph-apple-logo text-xl"></i> Pay
-            </button>
-            <button
-              class="flex items-center gap-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-900 px-6 py-3 rounded-xl font-bold transition-all"
-              data-wallet>
-              <i class="ph-fill ph-google-logo text-xl"></i> Pay
-            </button>
-          </div>
-        </div>
-
-        <!-- Credit Card Form -->
         <form data-payment-form class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h2 class="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2"><i
-              class="ph-duotone ph-credit-card text-green-600 text-xl"></i> Credit Card</h2>
-          <hr class="border-slate-100 my-4">
+          <h2 class="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+            <i class="ph-duotone ph-shield-check text-green-600 text-xl"></i> Stripe Checkout
+          </h2>
+          <p class="text-sm text-slate-500 leading-6">
+            BookingCart will redirect you to Stripe's secure hosted checkout page to complete payment.
+            Card details are never entered on this site.
+          </p>
 
-          <div class="space-y-6">
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cardholder
-                Name</label>
-              <input
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none"
-                name="cardName" placeholder="Name on card" required />
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Security</div>
+              <div class="mt-2 text-sm font-semibold text-slate-900">PCI handled by Stripe</div>
             </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Card Number</label>
-              <div class="relative">
-                <input
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none pl-12"
-                  name="cardNumber" inputmode="numeric" placeholder="0000 0000 0000 0000" required />
-                <i class="ph-fill ph-credit-card absolute left-4 top-3.5 text-slate-400 text-xl"></i>
-              </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Booking Ref</div>
+              <div class="mt-2 text-sm font-semibold text-slate-900" data-stripe-booking-ref>—</div>
             </div>
-
-            <div class="grid grid-cols-2 gap-6">
-              <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Expiry Date</label>
-                <input
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none"
-                  name="expiry" placeholder="MM / YY" required />
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">CVC</label>
-                <input
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none"
-                  name="cvc" inputmode="numeric" placeholder="123" required />
-              </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Amount</div>
+              <div class="mt-2 text-sm font-semibold text-slate-900" data-stripe-amount>—</div>
             </div>
           </div>
 
@@ -187,9 +152,12 @@
             <button
               class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-green-600/20 transition-all flex items-center gap-2"
               type="submit">
-              Pay & Confirm <span data-pay-total-btn></span> <i class="ph-bold ph-lock-key"></i>
+              Continue to Stripe Checkout <span data-pay-total-btn></span> <i class="ph-bold ph-lock-key"></i>
             </button>
           </div>
+          <p class="text-xs text-slate-400 mt-3">
+            You can cancel from Stripe and return here without losing your trip details.
+          </p>
         </form>
 
       </section>
@@ -300,8 +268,8 @@
     </div>
   </footer>
 
-  <script src="js/bookingcart.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/bookingcart.js"></script>
 </body>
 
 </html>

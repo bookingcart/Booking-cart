@@ -36,8 +36,21 @@
     }
   </script>
 
+  <style>
+    details.filter-chip>summary {
+      list-style: none;
+    }
+
+    details.filter-chip>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.filter-chip[open]>summary .filter-chip-caret {
+      transform: rotate(180deg);
+    }
+  </style>
+
   <!-- Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 
 <body class="bg-slate-50 text-slate-900 antialiased font-sans flex flex-col min-h-screen">
@@ -64,7 +77,7 @@
       <div class="flex items-center gap-3">
         <!-- Google Sign-In Real Button wrapper -->
         <div id="g_id_onload"
-             data-client_id="344110356663-foa7unsastgg0hp57qdaaj5qvmkgd8lg.apps.googleusercontent.com"
+             data-client_id=""
              data-context="use"
              data-ux_mode="popup"
              data-callback="handleGoogleSignIn"
@@ -79,8 +92,9 @@
              data-size="large"
              data-logo_alignment="left">
         </div>
-        <!-- Profile Account Button -->
-        <button class="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm hover:border-green-500 transition-all focus:ring-2 focus:ring-green-500 outline-none">
+        <!-- Profile (only when signed in; toggled in js/auth.js) -->
+        <button type="button" data-header-profile-btn
+          class="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm hover:border-green-500 transition-all focus:ring-2 focus:ring-green-500 outline-none">
           <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User Profile" class="w-full h-full object-cover" />
         </button>
       </div>
@@ -118,75 +132,102 @@
       </a>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <!-- Compact filter chips (controls keep name= for js/bookingcart.js) -->
+    <div class="mb-5 border-b border-slate-200 pb-3" data-results-filters>
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1 sm:flex-wrap sm:overflow-visible">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide shrink-0 pr-1">Filter</span>
 
-      <!-- Sidebar Filters -->
-      <aside class="lg:col-span-3 space-y-6">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sticky top-24">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="font-medium text-lg text-slate-900">Filters</h2>
-            <a href="index.html" class="text-xs font-medium text-green-600 hover:underline">Reset</a>
-          </div>
-
-          <!-- Price -->
-          <div class="mb-6">
-            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Max Price</label>
-            <input type="range" name="maxPrice" min="150" max="2000" value="1200"
-              class="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-green-600">
-            <div class="flex justify-between text-xs font-semibold text-slate-500 mt-2">
-              <span>$150</span>
-              <span>$2000+</span>
+          <details class="relative filter-chip shrink-0">
+            <summary
+              class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 select-none">
+              <span class="text-slate-500">Price</span>
+              <span data-chip-price class="max-w-[5.5rem] truncate font-semibold text-slate-800">—</span>
+              <i class="ph ph-caret-down filter-chip-caret text-xs text-slate-400 transition-transform"></i>
+            </summary>
+            <div
+              class="absolute left-0 top-[calc(100%+8px)] z-40 w-[min(100vw-2rem,18rem)] rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+              <label class="mb-2 block text-xs font-medium text-slate-500">Max price</label>
+              <input type="range" name="maxPrice" min="150" max="2000" value="1200"
+                class="mb-2 w-full h-2 cursor-pointer appearance-none rounded-lg bg-slate-100 accent-green-600">
+              <div class="flex justify-between text-xs font-medium text-slate-500">
+                <span>$150</span>
+                <span data-price-max-label>$2000+</span>
+              </div>
             </div>
-          </div>
+          </details>
 
-          <hr class="border-slate-100 mb-6">
-
-          <!-- Stops -->
-          <div class="mb-6">
-            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Stops</label>
-            <div class="space-y-2">
+          <details class="relative filter-chip shrink-0">
+            <summary
+              class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 select-none">
+              <span class="text-slate-500">Stops</span>
+              <span data-chip-stops class="max-w-[6rem] truncate font-semibold text-slate-800">Any</span>
+              <i class="ph ph-caret-down filter-chip-caret text-xs text-slate-400 transition-transform"></i>
+            </summary>
+            <div
+              class="absolute left-0 top-[calc(100%+8px)] z-40 w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+              <label class="mb-1.5 block text-xs font-medium text-slate-500">Stops</label>
               <select name="stops"
-                class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-2.5 focus:ring-green-500 focus:border-green-500 font-semibold">
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-sm font-semibold text-slate-800 focus:border-green-500 focus:ring-2 focus:ring-green-500">
                 <option value="any">Any number of stops</option>
                 <option value="0">Non-stop only</option>
                 <option value="1">1 stop max</option>
               </select>
             </div>
-          </div>
+          </details>
 
-          <!-- Airlines -->
-          <div class="mb-6">
-            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Airline</label>
-            <select name="airline"
-              class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-2.5 focus:ring-blue-500 focus:border-blue-500 font-semibold">
-              <option value="any">Any airline</option>
-            </select>
-          </div>
+          <details class="relative filter-chip shrink-0">
+            <summary
+              class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 select-none">
+              <span class="text-slate-500">Airline</span>
+              <span data-chip-airline class="max-w-[6.5rem] truncate font-semibold text-slate-800">Any</span>
+              <i class="ph ph-caret-down filter-chip-caret text-xs text-slate-400 transition-transform"></i>
+            </summary>
+            <div
+              class="absolute left-0 top-[calc(100%+8px)] z-40 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+              <label class="mb-1.5 block text-xs font-medium text-slate-500">Airline</label>
+              <select name="airline"
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-sm font-semibold text-slate-800 focus:border-green-500 focus:ring-2 focus:ring-green-500">
+                <option value="any">Any airline</option>
+              </select>
+            </div>
+          </details>
 
-          <!-- Time -->
-          <div class="mb-6">
-            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Departure Time</label>
-            <select name="departTime"
-              class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-2.5 focus:ring-blue-500 focus:border-blue-500 font-semibold">
-              <option value="any">Any time</option>
-              <option value="morning">Morning (05:00 - 12:00)</option>
-              <option value="afternoon">Afternoon (12:00 - 18:00)</option>
-              <option value="evening">Evening (18:00 +)</option>
-            </select>
-          </div>
-
+          <details class="relative filter-chip shrink-0">
+            <summary
+              class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 select-none">
+              <span class="text-slate-500">Time</span>
+              <span data-chip-time class="max-w-[5.5rem] truncate font-semibold text-slate-800">Any</span>
+              <i class="ph ph-caret-down filter-chip-caret text-xs text-slate-400 transition-transform"></i>
+            </summary>
+            <div
+              class="absolute right-0 left-auto sm:left-0 sm:right-auto top-[calc(100%+8px)] z-40 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+              <label class="mb-1.5 block text-xs font-medium text-slate-500">Departure time</label>
+              <select name="departTime"
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-sm font-semibold text-slate-800 focus:border-green-500 focus:ring-2 focus:ring-green-500">
+                <option value="any">Any time</option>
+                <option value="morning">Morning (05:00 - 12:00)</option>
+                <option value="afternoon">Afternoon (12:00 - 18:00)</option>
+                <option value="evening">Evening (18:00 +)</option>
+              </select>
+            </div>
+          </details>
         </div>
-      </aside>
+        <a href="index.html"
+          class="shrink-0 text-xs font-medium text-green-600 hover:text-green-700 sm:ml-2">Reset search</a>
+      </div>
+    </div>
 
-      <!-- Results List -->
-      <section class="lg:col-span-9">
-        <div class="flex items-center justify-between mb-6">
+    <!-- Results: full width -->
+    <section class="w-full min-w-0">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <h2 class="font-medium text-xl text-slate-900">Best departing flights</h2>
 
-          <div class="flex items-center gap-2">
-            <label class="text-sm font-semibold text-slate-500">Sort by:</label>
-            <select name="sort"
-              class="bg-white border border-slate-200 text-slate-700 text-sm rounded-xl p-2 focus:ring-green-500 font-medium">
+          <div class="flex items-center gap-2 shrink-0">
+            <label class="text-sm font-semibold text-slate-500 whitespace-nowrap" for="results-sort">Sort by:</label>
+            <select id="results-sort" name="sort"
+              class="bg-white border border-slate-200 text-slate-700 text-sm rounded-xl py-2 pl-3 pr-8 focus:ring-2 focus:ring-green-500 focus:border-green-500 font-medium min-w-[12rem]">
               <option value="price">Price (Low to High)</option>
               <option value="duration">Duration (Fastest)</option>
               <option value="depart">Departure (Earliest)</option>
@@ -205,9 +246,8 @@
             <div class="h-12 bg-slate-100 rounded w-full"></div>
           </div>
         </div>
-      </section>
+    </section>
 
-    </div>
   </main>
 
   <!-- Footer -->
@@ -286,8 +326,8 @@
     </div>
   </footer>
 
-  <script src="js/bookingcart.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/bookingcart.js"></script>
 </body>
 
 </html>

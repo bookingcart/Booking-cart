@@ -47,7 +47,6 @@
             height: 2px;
         }
     </style>
-    <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 
 <body class="bg-slate-100 text-slate-900 antialiased font-sans">
@@ -172,7 +171,15 @@
 
     </div>
 
+    <script src="js/auth.js"></script>
     <script>
+        function bookingsAuthHeaders() {
+            const t = localStorage.getItem('bookingcart_google_id_token') || '';
+            const h = { 'Content-Type': 'application/json' };
+            if (t) h.Authorization = 'Bearer ' + t;
+            return h;
+        }
+
         let allBookings = [];
         let currentTab = 'all';
         let legacyMigrationDone = false;
@@ -197,7 +204,11 @@
                 }
                 // Auto-lookup by email
                 emailInput.value = user.email || '';
-                if (user.email) setTimeout(() => lookup(), 300);
+                if (user.email) {
+                    setTimeout(() => {
+                        if (localStorage.getItem('bookingcart_google_id_token')) lookup();
+                    }, 600);
+                }
             } catch (e) { }
         }
 
@@ -253,12 +264,28 @@
         });
 
         async function lookup() {
-            const email = emailInput.value.trim();
+            let email = emailInput.value.trim();
+            const token = localStorage.getItem('bookingcart_google_id_token') || '';
 
             await migrateLegacyBookings();
 
             if (!email) {
+                try {
+                    const u = JSON.parse(localStorage.getItem('bookingcart_user') || 'null');
+                    if (u && u.email) {
+                        email = u.email;
+                        emailInput.value = email;
+                    }
+                } catch (e) { }
+            }
+
+            if (!email) {
                 emptyEl.style.display = 'block'; listEl.innerHTML = '';
+                return;
+            }
+
+            if (!token) {
+                alert('Please sign in with Google to view bookings linked to your email.');
                 return;
             }
 
@@ -269,7 +296,7 @@
             try {
                 const resp = await fetch('/api/bookings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: bookingsAuthHeaders(),
                     body: JSON.stringify({ action: 'lookup', email })
                 });
                 const data = await resp.json();
@@ -394,7 +421,7 @@
                 <div class="flex flex-col gap-2 mt-6">
                   ${(b.status === 'issued' && b.ticket && b.ticket.fileData) ? `<button onclick="downloadRealTicket('${b.ref}')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap shadow-green-600/20"><i class="ph-bold ph-download"></i> Download E-Ticket</button>` : (b.status !== 'cancelled' ? `<div class="px-4 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2"><i class="ph-bold ph-circle-notch animate-spin"></i> Ticket Processing...</div>` : '')}
                   ${b.status !== 'cancelled' ? `<button onclick="downloadTicket('${b.ref}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"><i class="ph-bold ph-receipt"></i> Download Invoice</button>` : ''}
-                  <button onclick="deleteBooking('${b.ref}')" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"><i class="ph-bold ph-trash"></i> Delete Booking</button>
+                  <button onclick="cancelBooking('${b.ref}')" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"><i class="ph-bold ph-x-circle"></i> Cancel Booking</button>
                 </div>
               </div>
             </div>
@@ -534,21 +561,29 @@
             doc.save('Invoice-' + (b.ref || 'booking') + '.pdf');
         }
 
-        async function deleteBooking(ref) {
-            if (!confirm('Are you sure you want to completely delete this booking?')) return;
+        async function cancelBooking(ref) {
+            if (!confirm('Cancel this booking? You can still view it under the Cancelled tab.')) return;
+            const token = localStorage.getItem('bookingcart_google_id_token') || '';
+            if (!token) {
+                alert('Please sign in with Google to cancel a booking.');
+                return;
+            }
             try {
-                await fetch('/api/bookings', {
+                const r = await fetch('/api/bookings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'delete', id: ref })
+                    headers: bookingsAuthHeaders(),
+                    body: JSON.stringify({ action: 'cancel_own', id: ref })
                 });
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok || !d.ok) {
+                    alert((d && d.error) || 'Could not cancel booking.');
+                }
             } catch (e) { }
             lookup();
         }
 
 
     </script>
-    <script src="js/auth.js"></script>
 </body>
 
 </html>

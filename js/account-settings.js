@@ -4,6 +4,16 @@
 
 "use strict";
 
+function userApiHeaders() {
+  if (window.bookingcartAuth && typeof window.bookingcartAuth.authHeaders === "function") {
+    return window.bookingcartAuth.authHeaders();
+  }
+  const t = localStorage.getItem("bookingcart_google_id_token") || "";
+  const h = { "Content-Type": "application/json" };
+  if (t) h.Authorization = "Bearer " + t;
+  return h;
+}
+
 /* ── State ── */
 const storedUser = JSON.parse(localStorage.getItem('bookingcart_user') || 'null');
 const defaultName = storedUser ? storedUser.name : "Alex Johnson";
@@ -114,7 +124,7 @@ async function saveStateToDB() {
   try {
     await fetch("/api/user", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: userApiHeaders(),
       body: JSON.stringify({ email: state.profile.email, state }),
     });
   } catch (e) { console.error("Could not sync settings to DB:", e); }
@@ -124,7 +134,9 @@ async function loadStateFromDB() {
   let userEmail = defEmail;
   if (!userEmail) return;
   try {
-    const resp = await fetch("/api/user?email=" + encodeURIComponent(userEmail));
+    const resp = await fetch("/api/user?email=" + encodeURIComponent(userEmail), {
+      headers: userApiHeaders(),
+    });
     const data = await resp.json();
     if (data && data.state) {
       state = { ...state, ...data.state };
@@ -480,7 +492,7 @@ async function confirmDelete() {
     try {
       await fetch("/api/user", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: userApiHeaders(),
         body: JSON.stringify({ email })
       });
     } catch (e) {
@@ -490,6 +502,7 @@ async function confirmDelete() {
 
   // Clear local session data
   localStorage.removeItem("bookingcart_user");
+  localStorage.removeItem("bookingcart_google_id_token");
 
   showToast("Account deleted successfully. Logging out...");
 

@@ -36,7 +36,7 @@ try {
   lines.forEach(line => {
     if (line.startsWith('AMADEUS_API_KEY=')) {
       const key = line.split('=')[1];
-      if (key.includes('your_') || key.includes('Exuu9GRr')) {
+      if (key.includes('your_') || key.includes('placeholder') || key.length < 8) {
         console.log('❌ API Key: Needs to be replaced with real credentials');
       } else {
         console.log('✅ API Key: Appears to be configured');
@@ -44,7 +44,7 @@ try {
     }
     if (line.startsWith('AMADEUS_API_SECRET=')) {
       const secret = line.split('=')[1];
-      if (secret.includes('your_') || secret.includes('dtrZYn62eBIJnpFZ')) {
+      if (secret.includes('your_') || secret.includes('placeholder') || secret.length < 8) {
         console.log('❌ API Secret: Needs to be replaced with real credentials');
       } else {
         console.log('✅ API Secret: Appears to be configured');

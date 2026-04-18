@@ -10,6 +10,7 @@
 'use strict';
 require('dotenv').config();
 const fetch = require('node-fetch');
+const { getCorsHeaders } = require('../lib/cors');
 const { getCache, getCollections, isMongoConfigured, setCache } = require('../lib/mongo');
 
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || '';
@@ -186,9 +187,8 @@ function mockDeal(origin, routeInfo, index) {
 }
 
 module.exports = async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    const ch = getCorsHeaders(req);
+    Object.entries(ch).forEach(([k, v]) => res.setHeader(k, v));
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     // Get client IP

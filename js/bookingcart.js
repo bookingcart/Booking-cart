@@ -270,6 +270,7 @@
     const infantsEl = root.querySelector("[data-count='infants']");
 
     const trigger = document.querySelector("[data-passengers-trigger]");
+    const triggerSummary = trigger && trigger.querySelector("[data-passengers-summary]");
     const hidden = document.querySelector("input[name='passengers']");
 
     function readCounts() {
@@ -287,8 +288,10 @@
       if (childrenEl) setText(childrenEl, String(c.children));
       if (infantsEl) setText(infantsEl, String(c.infants));
 
-      const label = c.adults + c.children + c.infants === 1 ? "1 passenger" : c.adults + c.children + c.infants + " passengers";
-      if (trigger) setText(trigger, label);
+      const total = c.adults + c.children + c.infants;
+      const label = total === 1 ? "1 traveler" : total + " travelers";
+      if (triggerSummary) setText(triggerSummary, label);
+      else if (trigger) setText(trigger, label);
       if (hidden) hidden.value = JSON.stringify(c);
     }
 
@@ -625,6 +628,53 @@
     const root = document.querySelector("[data-results]");
     if (!root) return;
 
+    const filtersRoot = document.querySelector("[data-results-filters]");
+    if (filtersRoot) {
+      filtersRoot.querySelectorAll("details.filter-chip").forEach((det) => {
+        det.addEventListener("toggle", function () {
+          if (!this.open) return;
+          filtersRoot.querySelectorAll("details.filter-chip").forEach((o) => {
+            if (o !== this) o.removeAttribute("open");
+          });
+        });
+      });
+    }
+
+    function syncFilterChips() {
+      const p = document.querySelector("input[name='maxPrice']");
+      const s = document.querySelector("select[name='stops']");
+      const a = document.querySelector("select[name='airline']");
+      const d = document.querySelector("select[name='departTime']");
+      const chipP = document.querySelector("[data-chip-price]");
+      const chipS = document.querySelector("[data-chip-stops]");
+      const chipA = document.querySelector("[data-chip-airline]");
+      const chipD = document.querySelector("[data-chip-time]");
+      const maxLbl = document.querySelector("[data-price-max-label]");
+      if (p && maxLbl) {
+        const mx = Number(p.max || 2000);
+        maxLbl.textContent = money(mx) + "+";
+      }
+      if (chipP && p) {
+        const v = Number(p.value || 0);
+        const mx = Number(p.max || 2000);
+        chipP.textContent = v >= mx - 1 ? "No max" : "≤ " + money(v);
+      }
+      if (chipS && s) {
+        const map = { any: "Any", "0": "Nonstop", "1": "≤1 stop" };
+        chipS.textContent = map[s.value] != null ? map[s.value] : "Any";
+      }
+      if (chipA && a && a.selectedOptions[0]) {
+        chipA.textContent = a.value === "any" ? "Any" : a.selectedOptions[0].text;
+      }
+      if (chipD && d) {
+        if (d.value === "any") chipD.textContent = "Any";
+        else if (d.value === "morning") chipD.textContent = "Morning";
+        else if (d.value === "afternoon") chipD.textContent = "Afternoon";
+        else if (d.value === "evening") chipD.textContent = "Evening";
+        else chipD.textContent = d.selectedOptions[0] ? d.selectedOptions[0].text : "Any";
+      }
+    }
+
     const state = readState();
     const search = state.search || {};
 
@@ -786,7 +836,10 @@
         });
       }
 
-      const update = () => render(apply(flights));
+      const update = () => {
+        syncFilterChips();
+        render(apply(flights));
+      };
       const inputs = Array.from(document.querySelectorAll("input[name='maxPrice'], select[name='stops'], select[name='airline'], select[name='departTime'], select[name='sort']"));
       inputs.forEach((i) => i.addEventListener("input", update));
       update();
@@ -1102,38 +1155,78 @@
     const root = document.querySelector("[data-payment]");
     if (!root) return;
 
+    const query = getQuery();
+    if (query.canceled === "1") {
+      toast("Checkout canceled", "Your Stripe payment was canceled. You can try again whenever you're ready.");
+    }
+
+    const currentState = readState();
+    if (!currentState.bookingRef) {
+      writeState({ bookingRef: "BC" + Math.random().toString(36).slice(2, 8).toUpperCase() });
+    }
+
     const totals = computeTotals(readState());
     const totalEl = document.querySelector("[data-pay-total]");
     if (totalEl) setText(totalEl, money(totals.total));
+    const totalInlineEl = document.querySelector("[data-pay-total-inline]");
+    if (totalInlineEl) setText(totalInlineEl, money(totals.total));
+    const totalBtnEl = document.querySelector("[data-pay-total-btn]");
+    if (totalBtnEl) setText(totalBtnEl, money(totals.total));
+
+    const bookingRefEl = root.querySelector("[data-stripe-booking-ref]");
+    if (bookingRefEl) setText(bookingRefEl, readState().bookingRef || "—");
+    const amountEl = root.querySelector("[data-stripe-amount]");
+    if (amountEl) setText(amountEl, money(totals.total));
 
     const form = root.querySelector("form[data-payment-form]");
     if (!form) return;
 
-    form.addEventListener("submit", (e) => {
+    const submitBtn = form.querySelector("button[type='submit']");
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const state = readState();
+      const bookingRef = state.bookingRef || "BC" + Math.random().toString(36).slice(2, 8).toUpperCase();
+      const contactEmail = (state.contact && state.contact.email) || "";
 
-      const name = (form.querySelector("input[name='cardName']") || {}).value || "";
-      const num = (form.querySelector("input[name='cardNumber']") || {}).value || "";
-      const exp = (form.querySelector("input[name='expiry']") || {}).value || "";
-      const cvc = (form.querySelector("input[name='cvc']") || {}).value || "";
+      writeState({ bookingRef, _bookingSaved: null, _stripeSessionId: null, payment: null });
 
-      if (!name.trim() || !num.trim() || !exp.trim() || !cvc.trim()) {
-        toast("Payment details", "Fill in your payment details to continue.");
-        return;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ph-bold ph-circle-notch animate-spin"></i> Redirecting...';
       }
 
-      const bookingRef = "BC" + Math.random().toString(36).slice(2, 8).toUpperCase();
-      writeState({ bookingRef });
-      window.location.href = "confirmation.html";
-    });
+      try {
+        const resp = await fetch("/api/stripe/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amountCents: Math.round(totals.total * 100),
+            currency: "usd",
+            description: "BookingCart flight booking " + bookingRef,
+            bookingRef,
+            customerEmail: contactEmail,
+            successPath: "/confirmation.html",
+            cancelPath: "/payment.html"
+          })
+        });
 
-    const walletBtns = Array.from(root.querySelectorAll("[data-wallet]"));
-    walletBtns.forEach((b) =>
-      b.addEventListener("click", (e) => {
-        e.preventDefault();
-        toast("Wallet checkout", "Wallet payments are a UI demo in this version.");
-      })
-    );
+        const data = await resp.json().catch(() => null);
+        if (!resp.ok || !data || !data.ok || !data.url) {
+          throw new Error((data && data.error) || "Unable to create Stripe checkout session");
+        }
+
+        window.location.href = data.url;
+      } catch (err) {
+        console.error("Stripe checkout error:", err);
+        toast("Stripe checkout unavailable", err.message || "Unable to start checkout.");
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Continue to Stripe Checkout <span data-pay-total-btn></span> <i class="ph-bold ph-lock-key"></i>';
+          const totalBtnInner = submitBtn.querySelector("[data-pay-total-btn]");
+          if (totalBtnInner) setText(totalBtnInner, money(totals.total));
+        }
+      }
+    });
   }
 
   function initConfirmation() {
@@ -1141,45 +1234,106 @@
     if (!root) return;
 
     const state = readState();
+    const query = getQuery();
+    const sessionId = String(query.session_id || "").trim();
     const refEl = root.querySelector("[data-booking-ref]");
     if (refEl) setText(refEl, state.bookingRef || "—");
+    const statusEl = root.querySelector("[data-payment-status]");
+    const headlineEl = document.querySelector('main[data-step="confirmation"] h1');
+    const subtitleEl = document.querySelector('main[data-step="confirmation"] p');
 
-    // ── Save booking to server (once) ──
-    if (state.bookingRef && !state._bookingSaved) {
-      const s = state.search || {};
-      const flight = (state.flights || []).find(f => f.id === state.selectedFlightId) || (state.flights || [])[0];
-      const totals = computeTotals(state);
+    if (!sessionId) {
+      if (statusEl) statusEl.textContent = "Waiting for Stripe payment confirmation";
+      if (headlineEl) headlineEl.textContent = "Complete payment to confirm your booking";
+      if (subtitleEl) subtitleEl.textContent = "Your booking will be saved after Stripe confirms the payment.";
+    }
 
-      // The passengers form stores data under 'travelers' and 'contact'
-      // Also fall back to Google sign-in email if contact.email is missing
-      let contactObj = state.contact || {};
-      if (!contactObj.email) {
-        try {
-          const gu = JSON.parse(localStorage.getItem('bookingcart_user') || '{}');
-          if (gu.email) contactObj = { email: gu.email, phone: contactObj.phone || '' };
-        } catch (e) { }
+    if (sessionId) {
+      (async () => {
+      try {
+        const resp = await fetch("/api/stripe/session?session_id=" + encodeURIComponent(sessionId));
+        const data = await resp.json().catch(() => null);
+        if (!resp.ok || !data || !data.ok || !data.session) {
+          throw new Error((data && data.error) || "Unable to verify Stripe payment");
+        }
+
+        const stripeSession = data.session;
+        const paid = stripeSession.payment_status === "paid" || stripeSession.status === "complete";
+        if (!paid) {
+          if (statusEl) statusEl.textContent = "Stripe payment not completed";
+          if (headlineEl) headlineEl.textContent = "Payment not completed";
+          if (subtitleEl) subtitleEl.textContent = "Your payment was not confirmed by Stripe.";
+          return;
+        }
+
+        if (statusEl) statusEl.textContent = "Stripe payment confirmed";
+        if (headlineEl) headlineEl.textContent = "Thank you for booking with us!";
+        if (subtitleEl) subtitleEl.textContent = "Your trip has been confirmed and your ticket is ready.";
+
+        const recoveredBookingRef = stripeSession.client_reference_id || stripeSession.metadata?.bookingRef || state.bookingRef || "";
+        const nextState = writeState({
+          bookingRef: recoveredBookingRef || state.bookingRef || "",
+          payment: {
+            provider: "stripe",
+            sessionId: stripeSession.id,
+            status: stripeSession.payment_status || stripeSession.status,
+            amountTotal: stripeSession.amount_total,
+            currency: stripeSession.currency
+          }
+        });
+
+        if (nextState.bookingRef && !nextState._bookingSaved) {
+          const s = nextState.search || {};
+          const flight = (nextState.flights || []).find(f => f.id === nextState.selectedFlightId) || (nextState.flights || [])[0];
+          const totals = computeTotals(nextState);
+
+          let contactObj = nextState.contact || {};
+          if (!contactObj.email) {
+            try {
+              const gu = JSON.parse(localStorage.getItem('bookingcart_user') || '{}');
+              if (gu.email) contactObj = { email: gu.email, phone: contactObj.phone || '' };
+            } catch (e) { }
+          }
+
+          const booking = {
+            ref: nextState.bookingRef,
+            route: (s.from || "") + " → " + (s.to || ""),
+            dates: (s.depart || "") + (s.return ? " → " + s.return : ""),
+            flight: flight ? { airline: flight.airline.name, time: flight.departTime + " → " + flight.arriveTime } : null,
+            contact: contactObj,
+            passengers: nextState.travelers || nextState.passengers || [],
+            total: totals.total,
+            extras: nextState.extras || {},
+            status: "confirmed",
+            payment: {
+              provider: "stripe",
+              sessionId: stripeSession.id,
+              status: stripeSession.payment_status || stripeSession.status,
+              amountTotal: stripeSession.amount_total,
+              currency: stripeSession.currency
+            }
+          };
+
+          const saveResp = await fetch("/api/bookings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "save", booking })
+          });
+          const saveData = await saveResp.json().catch(() => null);
+          if (!saveResp.ok || !saveData || !saveData.ok) {
+            throw new Error((saveData && saveData.error) || "Booking save failed");
+          }
+
+          writeState({ _bookingSaved: true, _stripeSessionId: stripeSession.id });
+          console.log("✅ Booking saved to server:", nextState.bookingRef);
+        }
+      } catch (err) {
+        console.error("Stripe confirmation error:", err);
+        if (statusEl) statusEl.textContent = "Unable to verify payment";
+        if (headlineEl) headlineEl.textContent = "Payment verification failed";
+        if (subtitleEl) subtitleEl.textContent = "Please retry from the payment page or contact support.";
       }
-
-      const booking = {
-        ref: state.bookingRef,
-        route: (s.from || "") + " → " + (s.to || ""),
-        dates: (s.depart || "") + (s.return ? " → " + s.return : ""),
-        flight: flight ? { airline: flight.airline.name, time: flight.departTime + " → " + flight.arriveTime } : null,
-        contact: contactObj,
-        passengers: state.travelers || state.passengers || [],
-        total: totals.total,
-        extras: state.extras || {}
-      };
-      fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save", booking })
-      }).then(r => r.json()).then(d => {
-        writeState({ _bookingSaved: true });
-        if (d.ok) console.log("✅ Booking saved to server:", state.bookingRef);
-      }).catch(err => {
-        console.error("Booking save to server failed:", err);
-      });
+      })();
     }
 
     const totals = computeTotals(state);
@@ -1279,7 +1433,11 @@
     const signout = menu.querySelector("[data-signout]");
     if (signout) {
       signout.addEventListener("click", () => {
-        localStorage.removeItem("bc_user");
+        try {
+          localStorage.removeItem("bookingcart_user");
+          localStorage.removeItem("bookingcart_google_id_token");
+          localStorage.removeItem("bc_user");
+        } catch (e) {}
         window.location.reload();
       });
     }
@@ -1308,79 +1466,11 @@
 
   // Legacy functions removed — initResults now handles all flight fetching and display
 
-  // Google Auth Integration
-  window.handleGoogleSignIn = function (response) {
-    try {
-      // Decode the JWT token payload from the Google credential
-      const base64Url = response.credential.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-
-      const payload = JSON.parse(jsonPayload);
-      console.log("Google Sign-In Success:", payload.name);
-
-      // Save user to session
-      localStorage.setItem('bookingcart_user', JSON.stringify(payload));
-
-      // Update UI elements
-      updateAuthUI();
-      if (window.applyAuthUI) window.applyAuthUI();
-
-      // Persist user to MongoDB so admin can track total users
-      try {
-        fetch('/api/user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: payload.email,
-            state: { name: payload.name, email: payload.email, picture: payload.picture, signedUpAt: new Date().toISOString() }
-          })
-        }).catch(e => console.warn('User save failed:', e));
-      } catch (e) { }
-
-      toast('Welcome back!', `Signed in as ${payload.name}`);
-
-    } catch (err) {
-      console.error("Error decoding Google JWT:", err);
-      toast('Authentication Error', 'Failed to decode auth token');
-    }
-  };
+  // Google Sign-In: implemented in js/auth.js (window.handleGoogleSignIn)
 
   function updateAuthUI() {
-    const userStr = localStorage.getItem('bookingcart_user');
-    const profileDropdown = document.querySelector('[data-profile-dropdown]');
-
-    if (!userStr) {
-      // Not signed in — hide the profile dropdown entirely
-      if (profileDropdown) profileDropdown.style.display = 'none';
-      return;
-    }
-
-    try {
-      const user = JSON.parse(userStr);
-
-      // Show profile dropdown for signed-in users
-      if (profileDropdown) profileDropdown.style.display = '';
-
-      // Hide Google sign-in button
-      const gSignIn = document.querySelector('.g_id_signin');
-      if (gSignIn) gSignIn.style.display = 'none';
-
-      // Update profile avatar
-      const profileTrigger = document.querySelector('[data-profile-trigger]');
-      if (profileTrigger) {
-        profileTrigger.innerHTML = `<img src="${user.picture}" alt="${user.name}" title="${user.name}" class="w-full h-full object-cover" />`;
-      }
-
-      // Update "My Account" label in dropdown
-      const accountLink = document.querySelector('[data-profile-menu] a:first-child');
-      if (accountLink) {
-        accountLink.innerHTML = `<i class="ph ph-user-circle text-xl text-slate-400"></i> ${user.name}`;
-      }
-    } catch (e) {
-      console.error('Failed to parse user data:', e);
+    if (typeof window.applyAuthUI === "function") {
+      window.applyAuthUI();
     }
   }
 
