@@ -5,6 +5,8 @@ const { getCorsHeaders } = require('../lib/cors');
 
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || '';
 const DUFFEL_BASE_URL = 'https://api.duffel.com';
+const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const searchCache = global.__duffelSearchCache || (global.__duffelSearchCache = new Map());
 
 function applyCors(req, res) {
   const h = getCorsHeaders(req);
@@ -75,6 +77,22 @@ module.exports = async (req, res) => {
       First: 'first'
     };
     const cabin = cabinMap[travelClass] || 'economy';
+    const cacheKey = JSON.stringify({
+      originLocationCode,
+      destinationLocationCode,
+      departureDate,
+      returnDate: returnDate || '',
+      adults: Number(adults) || 0,
+      children: Number(children) || 0,
+      infants: Number(infants) || 0,
+      travelClass: cabin,
+      max: Math.min(Math.max(Number(max) || 30, 1), 50)
+    });
+
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < SEARCH_CACHE_TTL_MS) {
+      return res.json(cached.payload);
+    }
 
     const createResponse = await fetch(`${DUFFEL_BASE_URL}/air/offer_requests`, {
       method: 'POST',
@@ -132,13 +150,19 @@ module.exports = async (req, res) => {
 
     const offersData = await offersResponse.json();
     const flights = transformDuffelData(offersData);
-
-    return res.json({
+    const payload = {
       ok: true,
       flights,
       total: flights.length,
       meta: { count: flights.length, source: 'duffel' }
+    };
+
+    searchCache.set(cacheKey, {
+      ts: Date.now(),
+      payload
     });
+
+    return res.json(payload);
   } catch (err) {
     console.error('Duffel search error:', err);
     return res.status(500).json({
@@ -237,8 +261,7 @@ function transformDuffelData(data) {
               durationMin: Math.round(sDurMs / (1000 * 60)),
               baggage: s.passengers?.[0]?.baggages || []
             };
-          }),
-          _duffelOffer: offer
+          })
         };
       } catch (e) {
         console.error('Error transforming Duffel offer:', e);

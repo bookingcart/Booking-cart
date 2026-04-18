@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const fs = require('fs');
 const fetch = require('node-fetch');
 const Stripe = require('stripe');
 const { pickAllowOrigin } = require('./lib/cors');
@@ -16,10 +17,15 @@ const duffelAirportsHandler = require('./api/duffel-airports');
 const flightDealsHandler = require('./api/flight-deals');
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
-const stripe = STRIPE_SECRET_KEY ? Stripe(STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' }) : null;
+const stripe = STRIPE_SECRET_KEY ? Stripe(STRIPE_SECRET_KEY) : null;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const API_ONLY = process.env.API_ONLY === '1';
+const SERVE_STATIC =
+  process.env.SERVE_STATIC === '1' || process.env.NODE_ENV === 'production';
+const DIST_DIR = path.join(__dirname, 'dist');
 
 const EVENTBRITE_TOKEN = process.env.EVENTBRITE_TOKEN || '';
 const TICKETMASTER_API_KEY = process.env.TICKETMASTER_API_KEY || process.env.TICKETMASTER_CONSUMER_KEY || '';
@@ -36,7 +42,10 @@ app.use(
     credentials: true
   })
 );
-app.use(express.static('.'));
+if (!API_ONLY && SERVE_STATIC && fs.existsSync(DIST_DIR)) {
+  app.use(express.static(DIST_DIR));
+}
+
 app.use(express.json({ limit: '512kb' }));
 
 const apiLimiter = rateLimit({
@@ -76,6 +85,22 @@ function getRequestOrigin(req) {
   return `${proto}://${host}`;
 }
 
+function resolveCheckoutOrigin(req) {
+  const fromHeader = String(req.headers.origin || '').trim();
+  if (fromHeader) return fromHeader;
+  const hostBased = getRequestOrigin(req);
+  if (hostBased) return hostBased;
+  const ref = String(req.get('referer') || '').trim();
+  if (ref) {
+    try {
+      return new URL(ref).origin;
+    } catch {
+      /* ignore */
+    }
+  }
+  return '';
+}
+
 app.post('/api/stripe/create-checkout-session', apiLimiter, async (req, res) => {
   if (!stripe) {
     return res.status(503).json({ ok: false, error: 'Stripe is not configured (missing STRIPE_SECRET_KEY)' });
@@ -87,18 +112,23 @@ app.post('/api/stripe/create-checkout-session', apiLimiter, async (req, res) => 
     const currency = String(payload.currency || 'usd').toLowerCase();
     const description = String(payload.description || 'BookingCart booking').slice(0, 120);
     const bookingRef = String(payload.bookingRef || '').trim();
-    const successPath = String(payload.successPath || '/confirmation.html');
-    const cancelPath = String(payload.cancelPath || '/payment.html');
+    const successPath = String(payload.successPath || '/confirmation');
+    const cancelPath = String(payload.cancelPath || '/payment');
     const customerEmail = String(payload.customerEmail || '').trim().toLowerCase();
 
     if (!Number.isFinite(amountCents) || amountCents < 50) {
       return res.status(400).json({ ok: false, error: 'Invalid amountCents' });
     }
 
-    const origin = req.headers.origin || getRequestOrigin(req);
+    const origin = resolveCheckoutOrigin(req);
     if (!origin) {
       return res.status(500).json({ ok: false, error: 'Unable to determine site origin' });
     }
+
+    const successUrlPath = successPath.startsWith('/') ? successPath : `/${successPath}`;
+    const cancelUrlPath = cancelPath.startsWith('/') ? cancelPath : `/${cancelPath}`;
+    const successSep = successUrlPath.includes('?') ? '&' : '?';
+    const cancelSep = cancelUrlPath.includes('?') ? '&' : '?';
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -115,8 +145,8 @@ app.post('/api/stripe/create-checkout-session', apiLimiter, async (req, res) => 
       customer_email: customerEmail || undefined,
       client_reference_id: bookingRef || undefined,
       metadata: bookingRef ? { bookingRef } : undefined,
-      success_url: `${origin}${successPath}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}${cancelPath}?canceled=1`
+      success_url: `${origin}${successUrlPath}${successSep}session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}${cancelUrlPath}${cancelSep}canceled=1`
     });
 
     return res.json({ ok: true, id: session.id, url: session.url });
@@ -467,9 +497,13 @@ app.get('/api/amadeus-airports', searchLimiter, async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+if (!API_ONLY && SERVE_STATIC && fs.existsSync(DIST_DIR)) {
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  });
+}
 
 app.use((err, req, res, next) => {
   console.error(err);
