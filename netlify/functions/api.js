@@ -63,10 +63,28 @@ function json(statusCode, body, extraHeaders = {}) {
 }
 
 function getOrigin(headers) {
-  const proto = headers["x-forwarded-proto"] || "https";
-  const host = headers["x-forwarded-host"] || headers.host;
+  const h = headers || {};
+  const proto = (h["x-forwarded-proto"] || "https").split(",")[0].trim();
+  const host = (h["x-forwarded-host"] || h.host || "").split(",")[0].trim();
   if (!host) return "";
   return `${proto}://${host}`;
+}
+
+function resolveCheckoutOrigin(event) {
+  const h = event.headers || {};
+  const direct = String(h.origin || h.Origin || "").trim();
+  if (direct) return direct;
+  const hostBased = getOrigin(h);
+  if (hostBased) return hostBased;
+  const ref = String(h.referer || h.Referer || "").trim();
+  if (ref) {
+    try {
+      return new URL(ref).origin;
+    } catch {
+      /* ignore */
+    }
+  }
+  return "";
 }
 
 function normalizeRoute(path) {
@@ -576,8 +594,8 @@ async function handleStripeCreateSession(event) {
     description = "BookingCart booking",
     bookingRef = "",
     customerEmail = "",
-    successPath = "/confirmation.html",
-    cancelPath = "/payment.html"
+    successPath = "/confirmation",
+    cancelPath = "/payment"
   } = payload;
 
   const unitAmount = Math.round(Number(amountCents));
@@ -585,10 +603,17 @@ async function handleStripeCreateSession(event) {
     return json(400, { ok: false, error: "Invalid amountCents" });
   }
 
-  const origin = event.headers?.origin || getOrigin(event.headers || {});
+  const origin = resolveCheckoutOrigin(event);
   if (!origin) {
     return json(500, { ok: false, error: "Unable to determine site origin" });
   }
+
+  const sp = String(successPath || "/confirmation");
+  const cp = String(cancelPath || "/payment");
+  const successUrlPath = sp.startsWith("/") ? sp : `/${sp}`;
+  const cancelUrlPath = cp.startsWith("/") ? cp : `/${cp}`;
+  const successSep = successUrlPath.includes("?") ? "&" : "?";
+  const cancelSep = cancelUrlPath.includes("?") ? "&" : "?";
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -605,8 +630,8 @@ async function handleStripeCreateSession(event) {
     customer_email: String(customerEmail || "").trim() || undefined,
     client_reference_id: bookingRef ? String(bookingRef).slice(0, 64) : undefined,
     metadata: bookingRef ? { bookingRef: String(bookingRef).slice(0, 64) } : undefined,
-    success_url: `${origin}${successPath}?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}${cancelPath}?canceled=1`
+    success_url: `${origin}${successUrlPath}${successSep}session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}${cancelUrlPath}${cancelSep}canceled=1`
   });
 
   return json(200, { ok: true, id: session.id, url: session.url });
