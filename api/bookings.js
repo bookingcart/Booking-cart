@@ -23,13 +23,26 @@ async function connectToDatabase() {
     return { collection: cachedDb.collection('bookings') };
   }
 
-  const client = new MongoClient(uri);
-  await client.connect();
-  const db = client.db('bookingcart');
+  const client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 2000,
+    connectTimeoutMS: 2000
+  });
 
-  cachedClient = client;
-  cachedDb = db;
-  return { collection: db.collection('bookings') };
+  try {
+    await client.connect();
+    const db = client.db('bookingcart');
+
+    cachedClient = client;
+    cachedDb = db;
+    return { collection: db.collection('bookings') };
+  } catch (err) {
+    console.warn('MongoDB bookings connection failed, using fallback store:', err.message);
+    if (process.env.NODE_ENV === 'production') {
+      throw err;
+    }
+    if (!global.__bookings) global.__bookings = [];
+    return { collection: null };
+  }
 }
 
 function applyCors(req, res) {

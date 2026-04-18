@@ -842,21 +842,31 @@
       };
       const inputs = Array.from(document.querySelectorAll("input[name='maxPrice'], select[name='stops'], select[name='airline'], select[name='departTime'], select[name='sort']"));
       inputs.forEach((i) => i.addEventListener("input", update));
+      if (window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === "function") {
+        window.bookingcartLoading.setBusy(listEl, false);
+      }
       update();
     }
 
     // Show skeletons and fetch
     if (listEl) {
-      listEl.innerHTML = "";
-      for (let i = 0; i < 4; i++) {
-        const sk = document.createElement("div");
-        sk.className = "skeleton";
-        listEl.appendChild(sk);
+      if (window.bookingcartLoading && typeof window.bookingcartLoading.renderSkeletons === "function") {
+        window.bookingcartLoading.renderSkeletons(listEl, "flight", 4);
+      } else {
+        listEl.innerHTML = "";
+        for (let i = 0; i < 4; i++) {
+          const sk = document.createElement("div");
+          sk.className = "skeleton";
+          listEl.appendChild(sk);
+        }
       }
     }
 
     if (!search.from || !search.to || !search.depart) {
       if (listEl) {
+        if (window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === "function") {
+          window.bookingcartLoading.setBusy(listEl, false);
+        }
         listEl.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm"><div class="text-red-500">No search data found. Please go back and search again.</div></div>';
       }
       return;
@@ -868,6 +878,9 @@
 
         if (!flights || flights.length === 0) {
           if (listEl) {
+            if (window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === "function") {
+              window.bookingcartLoading.setBusy(listEl, false);
+            }
             listEl.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm"><div class="text-lg font-medium text-slate-900 mb-2">No flights found</div><div class="text-slate-500">No flights available for this route and dates. Try different airports or dates.</div></div>';
           }
           return;
@@ -877,6 +890,9 @@
       } catch (e) {
         console.error("API error:", e);
         if (listEl) {
+          if (window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === "function") {
+            window.bookingcartLoading.setBusy(listEl, false);
+          }
           listEl.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm"><div class="text-red-500">Error loading flights. Please try again.</div></div>';
         }
       }
@@ -1243,12 +1259,18 @@
     const subtitleEl = document.querySelector('main[data-step="confirmation"] p');
 
     if (!sessionId) {
+      if (statusEl && window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === "function") {
+        window.bookingcartLoading.setBusy(statusEl, false);
+      }
       if (statusEl) statusEl.textContent = "Waiting for Stripe payment confirmation";
       if (headlineEl) headlineEl.textContent = "Complete payment to confirm your booking";
       if (subtitleEl) subtitleEl.textContent = "Your booking will be saved after Stripe confirms the payment.";
     }
 
     if (sessionId) {
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="bc-skeleton bc-skeleton-line" style="display:inline-block;width:180px;height:14px;border-radius:999px"></span>';
+      }
       (async () => {
       try {
         const resp = await fetch("/api/stripe/session?session_id=" + encodeURIComponent(sessionId));
@@ -1260,12 +1282,18 @@
         const stripeSession = data.session;
         const paid = stripeSession.payment_status === "paid" || stripeSession.status === "complete";
         if (!paid) {
+          if (statusEl && window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === "function") {
+            window.bookingcartLoading.setBusy(statusEl, false);
+          }
           if (statusEl) statusEl.textContent = "Stripe payment not completed";
           if (headlineEl) headlineEl.textContent = "Payment not completed";
           if (subtitleEl) subtitleEl.textContent = "Your payment was not confirmed by Stripe.";
           return;
         }
 
+        if (statusEl && window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === "function") {
+          window.bookingcartLoading.setBusy(statusEl, false);
+        }
         if (statusEl) statusEl.textContent = "Stripe payment confirmed";
         if (headlineEl) headlineEl.textContent = "Thank you for booking with us!";
         if (subtitleEl) subtitleEl.textContent = "Your trip has been confirmed and your ticket is ready.";
@@ -1329,6 +1357,9 @@
         }
       } catch (err) {
         console.error("Stripe confirmation error:", err);
+        if (statusEl && window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === "function") {
+          window.bookingcartLoading.setBusy(statusEl, false);
+        }
         if (statusEl) statusEl.textContent = "Unable to verify payment";
         if (headlineEl) headlineEl.textContent = "Payment verification failed";
         if (subtitleEl) subtitleEl.textContent = "Please retry from the payment page or contact support.";

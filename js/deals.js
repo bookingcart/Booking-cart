@@ -152,6 +152,10 @@
 
     // ── Skeleton ──────────────────────────────────────────────────────────
     function renderSkeletons(container) {
+        if (window.bookingcartLoading && typeof window.bookingcartLoading.renderSkeletons === 'function') {
+            window.bookingcartLoading.renderSkeletons(container, 'deal', 6);
+            return;
+        }
         container.innerHTML = Array(6).fill(0).map(() => `
       <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm animate-pulse">
         <div class="h-44 bg-gradient-to-br from-slate-200 to-slate-100"></div>
@@ -284,6 +288,9 @@
     function renderDeals() {
         const grid = document.getElementById('deals-grid');
         if (!grid) return;
+        if (window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === 'function') {
+            window.bookingcartLoading.setBusy(grid, false);
+        }
         let deals = personalizeDeals(currentDeals);
         deals = filterDeals(deals, currentFilters);
         deals = sortDeals(deals, currentSort);

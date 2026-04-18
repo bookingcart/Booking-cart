@@ -37,7 +37,7 @@
     if (status.loading) {
       el.style.background = '#f8fafc';
       el.style.borderColor = 'var(--border)';
-      el.innerHTML = `<div class="muted" style="font-size:13px">Checking Eventbrite API status…</div>`;
+      el.innerHTML = `<div class="bc-skeleton bc-skeleton-line" style="height:14px;width:220px;border-radius:999px"></div>`;
       return;
     }
     if (status.ok) {
@@ -60,16 +60,23 @@
     if (resultsSection) {
       resultsSection.style.display = 'none';
     }
+    if (window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === 'function') {
+      window.bookingcartLoading.setBusy(el, !!data.loading, 'Loading events');
+    }
     
     if (data.loading) {
       if (resultsSection) {
         resultsSection.style.display = 'block';
       }
-      el.innerHTML = `
-        <div class="skeleton" style="height:180px;margin-bottom:16px;border-radius:12px"></div>
-        <div class="skeleton" style="height:180px;margin-bottom:16px;border-radius:12px"></div>
-        <div class="skeleton" style="height:180px;border-radius:12px"></div>
-      `;
+      if (window.bookingcartLoading && typeof window.bookingcartLoading.renderSkeletons === 'function') {
+        window.bookingcartLoading.renderSkeletons(el, 'event', 3);
+      } else {
+        el.innerHTML = `
+          <div class="skeleton" style="height:180px;margin-bottom:16px;border-radius:12px"></div>
+          <div class="skeleton" style="height:180px;margin-bottom:16px;border-radius:12px"></div>
+          <div class="skeleton" style="height:180px;border-radius:12px"></div>
+        `;
+      }
       return;
     }
     
@@ -134,6 +141,9 @@
 
     if (resultsSection) {
       resultsSection.style.display = 'block';
+    }
+    if (window.bookingcartLoading && typeof window.bookingcartLoading.setBusy === 'function') {
+      window.bookingcartLoading.setBusy(el, false);
     }
     el.innerHTML = eventsHtml;
   }

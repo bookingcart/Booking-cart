@@ -13,6 +13,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/loading-ui.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -266,6 +267,7 @@
         async function lookup() {
             let email = emailInput.value.trim();
             const token = localStorage.getItem('bookingcart_google_id_token') || '';
+            const loadingUi = window.bookingcartLoading;
 
             await migrateLegacyBookings();
 
@@ -289,9 +291,18 @@
                 return;
             }
 
-            loadingEl.style.display = 'block';
+            loadingEl.style.display = 'none';
             emptyEl.style.display = 'none';
-            listEl.innerHTML = '';
+            if (loadingUi && typeof loadingUi.renderSkeletons === 'function') {
+                loadingUi.renderSkeletons(listEl, 'booking', 3);
+            } else {
+                listEl.innerHTML = '';
+                for (let i = 0; i < 3; i++) {
+                    const sk = document.createElement('div');
+                    sk.className = 'skeleton';
+                    listEl.appendChild(sk);
+                }
+            }
 
             try {
                 const resp = await fetch('/api/bookings', {
@@ -302,11 +313,17 @@
                 const data = await resp.json();
 
                 loadingEl.style.display = 'none';
+                if (loadingUi && typeof loadingUi.setBusy === 'function') {
+                    loadingUi.setBusy(listEl, false);
+                }
                 allBookings = data.ok ? (data.bookings || []) : [];
 
                 renderBookings();
             } catch (err) {
                 loadingEl.style.display = 'none';
+                if (loadingUi && typeof loadingUi.setBusy === 'function') {
+                    loadingUi.setBusy(listEl, false);
+                }
 
                 allBookings = [];
                 emptyEl.style.display = 'block';
@@ -315,6 +332,7 @@
         }
 
         function renderBookings() {
+            const loadingUi = window.bookingcartLoading;
             const filtered = currentTab === 'all'
                 ? allBookings
                 : allBookings.filter(b => b.status === currentTab);
@@ -324,9 +342,15 @@
             if (!filtered.length) {
                 listEl.innerHTML = '';
                 emptyEl.style.display = 'block';
+                if (loadingUi && typeof loadingUi.setBusy === 'function') {
+                    loadingUi.setBusy(listEl, false);
+                }
                 return;
             }
             emptyEl.style.display = 'none';
+            if (loadingUi && typeof loadingUi.setBusy === 'function') {
+                loadingUi.setBusy(listEl, false);
+            }
 
             listEl.innerHTML = filtered.map(b => {
                 const statusMap = {

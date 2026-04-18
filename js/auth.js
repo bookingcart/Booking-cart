@@ -2,6 +2,20 @@
 (function () {
   const STORAGE_USER = 'bookingcart_user';
   const STORAGE_TOKEN = 'bookingcart_google_id_token';
+  const STORAGE_REDIRECT = 'bookingcart_post_auth_redirect';
+
+  function isLoopbackIpHost(hostname) {
+    return hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname === '::1';
+  }
+
+  if (typeof window !== 'undefined' && isLoopbackIpHost(window.location.hostname) && window.location.hostname !== 'localhost') {
+    try {
+      const canonical = new URL(window.location.href);
+      canonical.hostname = 'localhost';
+      window.location.replace(canonical.toString());
+      return;
+    } catch (e) {}
+  }
 
   function getGoogleIdToken() {
     try {
@@ -18,12 +32,68 @@
     return h;
   }
 
+  function safeRedirectTarget(rawTarget) {
+    const target = String(rawTarget || '').trim();
+    if (!target) return '';
+
+    try {
+      const url = new URL(target, window.location.href);
+      if (url.origin !== window.location.origin) return '';
+      return url.pathname + url.search + url.hash;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function getPostAuthRedirect() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromQuery =
+        params.get('redirect') ||
+        params.get('returnTo') ||
+        params.get('next') ||
+        '';
+      const fromSession = sessionStorage.getItem(STORAGE_REDIRECT) || '';
+      return safeRedirectTarget(fromQuery) || safeRedirectTarget(fromSession);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function clearPostAuthRedirect() {
+    try {
+      sessionStorage.removeItem(STORAGE_REDIRECT);
+    } catch (e) {}
+  }
+
+  function navigateAfterSignIn() {
+    const target = getPostAuthRedirect();
+    clearPostAuthRedirect();
+
+    window.setTimeout(function () {
+      if (target) {
+        window.location.replace(target);
+        return;
+      }
+      window.location.reload();
+    }, 150);
+  }
+
   window.bookingcartAuth = {
     getGoogleIdToken,
-    authHeaders
+    authHeaders,
+    setPostAuthRedirect: function (target) {
+      try {
+        const safeTarget = safeRedirectTarget(target);
+        if (safeTarget) {
+          sessionStorage.setItem(STORAGE_REDIRECT, safeTarget);
+        }
+      } catch (e) {}
+    },
+    clearPostAuthRedirect
   };
 
-  window.handleGoogleSignIn = function (response) {
+  window.handleGoogleSignIn = async function (response) {
     try {
       if (!response || !response.credential) return;
       const base64Url = response.credential.split('.')[1];
@@ -49,7 +119,7 @@
       }
 
       try {
-        fetch('/api/user', {
+        await fetch('/api/user', {
           method: 'POST',
           headers: authHeaders(),
           body: JSON.stringify({
@@ -63,6 +133,8 @@
           })
         }).catch(function () {});
       } catch (e) {}
+
+      navigateAfterSignIn();
     } catch (err) {
       console.error('Google Sign-In error:', err);
       if (typeof window.toast === 'function') {
@@ -160,13 +232,24 @@
 
   async function bootGoogle() {
     const gOnload = document.getElementById('g_id_onload');
+    let googleClientId = '';
     try {
       const r = await fetch('/api/config');
       const j = await r.json();
-      if (gOnload && j && j.googleClientId) {
-        gOnload.setAttribute('data-client_id', j.googleClientId);
+      if (j && j.googleClientId) {
+        googleClientId = String(j.googleClientId).trim();
+      }
+      if (gOnload && googleClientId) {
+        gOnload.setAttribute('data-client_id', googleClientId);
       }
     } catch (e) {}
+
+    if (!googleClientId) {
+      document.querySelectorAll('.g_id_signin').forEach(function (el) {
+        el.style.display = 'none';
+      });
+      return;
+    }
 
     if (!document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
       try {

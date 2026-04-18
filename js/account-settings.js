@@ -144,27 +144,78 @@ async function loadStateFromDB() {
   } catch (e) { console.error("Could not load settings from DB:", e); }
 }
 
+function showInitialLoading() {
+  if (document.getElementById("settings-loading-overlay")) return;
+  const overlay = document.createElement("div");
+  overlay.id = "settings-loading-overlay";
+  overlay.className = "fixed inset-0 z-50 bg-slate-50/95 backdrop-blur-sm overflow-y-auto";
+  overlay.innerHTML = `
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-8">
+        <div class="hidden lg:block">
+          <div class="bc-skeleton-card" style="padding:18px;">
+            <div class="bc-skeleton bc-skeleton-line" style="width:74%;height:18px;border-radius:999px"></div>
+            <div style="margin-top:18px;display:grid;gap:12px">
+              <div class="bc-skeleton bc-skeleton-line" style="width:92%;height:42px;border-radius:12px"></div>
+              <div class="bc-skeleton bc-skeleton-line" style="width:84%;height:42px;border-radius:12px"></div>
+              <div class="bc-skeleton bc-skeleton-line" style="width:88%;height:42px;border-radius:12px"></div>
+              <div class="bc-skeleton bc-skeleton-line" style="width:78%;height:42px;border-radius:12px"></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;gap:20px">
+          <div class="bc-skeleton-panel" style="padding:24px;">
+            <div class="bc-skeleton bc-skeleton-line" style="width:38%;height:24px;border-radius:999px"></div>
+            <div class="bc-skeleton bc-skeleton-line" style="margin-top:10px;width:52%;height:14px;border-radius:999px"></div>
+            <div style="margin-top:18px;display:grid;gap:12px">
+              <div class="bc-skeleton" style="height:96px;border-radius:16px"></div>
+              <div class="bc-skeleton" style="height:170px;border-radius:16px"></div>
+            </div>
+          </div>
+          <div class="bc-skeleton-panel" style="padding:24px;">
+            <div class="bc-skeleton bc-skeleton-line" style="width:30%;height:22px;border-radius:999px"></div>
+            <div style="margin-top:14px;display:grid;gap:12px">
+              <div class="bc-skeleton" style="height:140px;border-radius:16px"></div>
+              <div class="bc-skeleton" style="height:140px;border-radius:16px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function hideInitialLoading() {
+  const overlay = document.getElementById("settings-loading-overlay");
+  if (overlay) overlay.remove();
+}
+
 /* ══════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════ */
 document.addEventListener("DOMContentLoaded", async () => {
-  await loadStateFromDB();
+  showInitialLoading();
+  try {
+    await loadStateFromDB();
 
-  loadProfile();
-  renderCards();
-  renderLoginActivity();
-  renderNotifications();
-  renderAirlines();
-  renderRewards();
-  loadPreferences();
-  setTimeout(() => {
-    const fill = document.getElementById("progress-fill");
-    if (fill)
-      fill.style.width =
-        ((state.rewards.points / state.rewards.nextThreshold) * 100).toFixed(
-          1,
-        ) + "%";
-  }, 300);
+    loadProfile();
+    renderCards();
+    renderLoginActivity();
+    renderNotifications();
+    renderAirlines();
+    renderRewards();
+    loadPreferences();
+    setTimeout(() => {
+      const fill = document.getElementById("progress-fill");
+      if (fill)
+        fill.style.width =
+          ((state.rewards.points / state.rewards.nextThreshold) * 100).toFixed(
+            1,
+          ) + "%";
+    }, 300);
+  } finally {
+    hideInitialLoading();
+  }
 });
 
 /* ══════════════════════════════════════════════════

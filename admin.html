@@ -13,6 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/loading-ui.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -221,6 +222,32 @@
         let adminPin = '';
         let allBookings = [];
         let currentFilter = 'all';
+        const loadingUi = window.bookingcartLoading;
+
+        function setStatsLoading(isLoading) {
+            const ids = ['stat-total', 'stat-new', 'stat-confirmed', 'stat-issued', 'stat-downloads', 'stat-revenue', 'stat-users'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (isLoading) {
+                    el.innerHTML = '<span class="bc-skeleton bc-skeleton-line" style="display:inline-block;width:72px;height:18px;border-radius:999px"></span>';
+                }
+            });
+        }
+
+        function setTableLoading(isLoading) {
+            const body = document.getElementById('bookings-body');
+            const empty = document.getElementById('empty-state');
+            if (!body || !empty) return;
+            if (isLoading) {
+                empty.style.display = 'none';
+                if (loadingUi && typeof loadingUi.renderTableSkeletons === 'function') {
+                    loadingUi.renderTableSkeletons(body, 6, 7);
+                } else {
+                    body.innerHTML = '<tr><td colspan="7" class="px-6 py-10 text-center text-slate-400">Loading…</td></tr>';
+                }
+            }
+        }
 
         // â”€â”€ PIN Login â”€â”€
         const overlay = document.getElementById('login-overlay');
@@ -236,6 +263,8 @@
             if (!adminPin) return;
             pinError.style.display = 'none';
             try {
+                setStatsLoading(true);
+                setTableLoading(true);
                 const resp = await fetch('/api/bookings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -251,6 +280,7 @@
                 allBookings = data.bookings || [];
                 renderAll();
             } catch (err) {
+                setStatsLoading(false);
                 pinError.textContent = 'Error: ' + err.message;
                 pinError.style.display = 'block';
             }
@@ -261,6 +291,8 @@
 
         async function loadBookings() {
             try {
+                setStatsLoading(true);
+                setTableLoading(true);
                 const resp = await fetch('/api/bookings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -271,6 +303,7 @@
                     allBookings = data.bookings || [];
                     renderAll();
                 }
+                setStatsLoading(false);
             } catch (e) { console.error(e); }
         }
 
@@ -302,6 +335,9 @@
                 if (data.ok) {
                     document.getElementById('stat-users').textContent = data.count || 0;
                 }
+                if (loadingUi && typeof loadingUi.setBusy === 'function') {
+                    loadingUi.setBusy(document.getElementById('stat-users'), false);
+                }
             } catch (e) { console.error('Failed to load user count:', e); }
         }
 
@@ -318,6 +354,7 @@
                 .filter(b => b.status === 'confirmed' || b.status === 'issued')
                 .reduce((sum, b) => sum + (parseFloat(b.total) || 0), 0);
             document.getElementById('stat-revenue').textContent = '$' + Math.round(revenue).toLocaleString();
+            setStatsLoading(false);
         }
 
         function renderTable() {
@@ -331,9 +368,16 @@
             if (!filtered.length) {
                 body.innerHTML = '';
                 empty.style.display = 'block';
+                setStatsLoading(false);
+                if (loadingUi && typeof loadingUi.setBusy === 'function') {
+                    loadingUi.setBusy(body, false);
+                }
                 return;
             }
             empty.style.display = 'none';
+            if (loadingUi && typeof loadingUi.setBusy === 'function') {
+                loadingUi.setBusy(body, false);
+            }
 
             body.innerHTML = filtered.map(b => {
                 const statusColors = {
