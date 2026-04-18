@@ -1,32 +1,6 @@
-// api/user.js – Vercel Serverless Function to persist Account Settings in MongoDB Atlas
+// api/user.js – Account settings persistence backed by MongoDB
 
-const { MongoClient } = require('mongodb');
-
-let cachedClient = null;
-let cachedDb = null;
-
-async function connectToDatabase() {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) {
-        if (!global.__users) global.__users = {};
-        return { collection: null };
-    }
-
-    if (cachedDb) {
-        return { collection: cachedDb.collection('users') };
-    }
-
-    const client = new MongoClient(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
-
-    await client.connect();
-    const db = client.db('bookingcart');
-    cachedClient = client;
-    cachedDb = db;
-    return { collection: db.collection('users') };
-}
+const { getAdminPin, getCollections } = require('../lib/mongo');
 
 module.exports = async (req, res) => {
     // CORS Headers
@@ -36,7 +10,7 @@ module.exports = async (req, res) => {
     if (req.method === "OPTIONS") return res.status(200).end();
 
     try {
-        const { collection } = await connectToDatabase();
+        const { users: collection } = await getCollections();
 
         // ── GET: Load User Profile or Count ──
         if (req.method === "GET") {
@@ -44,27 +18,19 @@ module.exports = async (req, res) => {
 
             // Admin: user count
             if (action === 'count') {
-                const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
+                const ADMIN_PIN = getAdminPin();
                 if (req.query.pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: "Invalid PIN" });
 
-                let count = 0;
-                if (collection) {
-                    count = await collection.countDocuments({});
-                } else {
-                    count = Object.keys(global.__users).length;
-                }
+                const count = await collection.countDocuments({});
                 return res.json({ ok: true, count });
             }
 
             const email = req.query.email;
             if (!email) return res.status(400).json({ ok: false, error: "Missing email" });
 
-            if (collection) {
-                const user = await collection.findOne({ "profile.email": { $regex: new RegExp("^" + email + "$", "i") } });
-                return res.json({ ok: true, state: user ? user.state : null });
-            } else {
-                return res.json({ ok: true, state: global.__users[email] || null });
-            }
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const user = await collection.findOne({ "profile.email": normalizedEmail });
+            return res.json({ ok: true, state: user ? user.state : null });
         }
 
         // ── POST: Save User Profile ──
@@ -74,20 +40,16 @@ module.exports = async (req, res) => {
 
             // Inject the email securely at the root for easy lookup, plus the full account-settings 'state' object
             const doc = {
-                profile: { email: email.toLowerCase() },
+                profile: { email: String(email).trim().toLowerCase() },
                 state: state,
                 updatedAt: new Date().toISOString()
             };
 
-            if (collection) {
-                await collection.updateOne(
-                    { "profile.email": { $regex: new RegExp("^" + email + "$", "i") } },
-                    { $set: doc },
-                    { upsert: true }
-                );
-            } else {
-                global.__users[email] = state;
-            }
+            await collection.updateOne(
+                { "profile.email": doc.profile.email },
+                { $set: doc, $setOnInsert: { createdAt: new Date().toISOString() } },
+                { upsert: true }
+            );
             return res.json({ ok: true });
         }
 
@@ -96,11 +58,7 @@ module.exports = async (req, res) => {
             const email = req.body?.email || req.query?.email;
             if (!email) return res.status(400).json({ ok: false, error: "Missing email" });
 
-            if (collection) {
-                await collection.deleteOne({ "profile.email": { $regex: new RegExp("^" + email + "$", "i") } });
-            } else {
-                delete global.__users[email];
-            }
+            await collection.deleteOne({ "profile.email": String(email).trim().toLowerCase() });
             return res.json({ ok: true });
         }
 

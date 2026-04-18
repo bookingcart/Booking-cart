@@ -1,6 +1,9 @@
 const fetch = require("node-fetch");
 const Stripe = require("stripe");
 const crypto = require("crypto");
+const flightDealsHandler = require("../../api/flight-deals");
+const bookingsHandler = require("../../api/bookings");
+const userHandler = require("../../api/user");
 
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || "";
 const DUFFEL_BASE_URL = "https://api.duffel.com";
@@ -66,6 +69,71 @@ function safeJsonParse(s) {
   } catch {
     return null;
   }
+}
+
+function buildExpressLikeReq(event) {
+  const forwardedFor = String(event.headers?.["x-forwarded-for"] || "").split(",")[0].trim();
+  return {
+    method: event.httpMethod,
+    headers: event.headers || {},
+    query: event.queryStringParameters || {},
+    body: safeJsonParse(event.body || "{}") || {},
+    socket: {
+      remoteAddress: forwardedFor || event.headers?.["x-real-ip"] || ""
+    }
+  };
+}
+
+function buildExpressLikeRes() {
+  let statusCode = 200;
+  const headers = {};
+
+  const res = {
+    setHeader(name, value) {
+      headers[name] = value;
+    },
+    status(code) {
+      statusCode = code;
+      return res;
+    },
+    json(body) {
+      return {
+        statusCode,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders(),
+          ...headers
+        },
+        body: JSON.stringify(body)
+      };
+    },
+    end(body = "") {
+      return {
+        statusCode,
+        headers: {
+          ...corsHeaders(),
+          ...headers
+        },
+        body
+      };
+    }
+  };
+
+  return res;
+}
+
+async function invokeExpressHandler(handler, event) {
+  const req = buildExpressLikeReq(event);
+  const res = buildExpressLikeRes();
+  const result = await handler(req, res);
+  if (result && typeof result.statusCode === "number" && result.body !== undefined) {
+    return result;
+  }
+  return {
+    statusCode: 200,
+    headers: corsHeaders(),
+    body: ""
+  };
 }
 
 function requireTravelBuddy(event) {
@@ -860,6 +928,18 @@ exports.handler = async (event) => {
 
     if (route === "duffel-airports" && event.httpMethod === "GET") {
       return await handleDuffelAirports(event);
+    }
+
+    if (route === "flight-deals" && (event.httpMethod === "GET" || event.httpMethod === "POST")) {
+      return await invokeExpressHandler(flightDealsHandler, event);
+    }
+
+    if (route === "bookings" && event.httpMethod === "POST") {
+      return await invokeExpressHandler(bookingsHandler, event);
+    }
+
+    if (route === "user" && (event.httpMethod === "GET" || event.httpMethod === "POST" || event.httpMethod === "DELETE")) {
+      return await invokeExpressHandler(userHandler, event);
     }
 
     if (route === "stripe/create-checkout-session" && event.httpMethod === "POST") {

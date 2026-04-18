@@ -1,45 +1,9 @@
-// api/bookings.js – Vercel Serverless Function for booking CRUD using MongoDB Atlas
-//
-// Env vars required (set in Vercel dashboard):
-//   MONGODB_URI
-//
-// Endpoints (all via POST body "action"):
-//   { action: "save",   booking: {...} }
-//   { action: "list"  }                        // admin – all bookings
-//   { action: "lookup", email: "..." }          // client – by email
-//   { action: "status", id: "...", status: "..." } // admin – update status
+// api/bookings.js – booking CRUD backed by MongoDB
 
-const { MongoClient } = require('mongodb');
+const { getAdminPin, getCollections, writeAudit } = require('../lib/mongo');
 
-// Vercel serverless functions shouldn't create a new connection per invocation
-let cachedClient = null;
-let cachedDb = null;
-
-async function connectToDatabase() {
-    const uri = process.env.MONGODB_URI;
-
-    // Local fallback if no MONGODB_URI is provided
-    if (!uri) {
-        console.warn("MONGODB_URI is not defined. Falling back to in-memory local array.");
-        if (!global.__bookings) global.__bookings = [];
-        return { db: null, collection: null };
-    }
-
-    if (cachedDb) {
-        return { db: cachedDb, collection: cachedDb.collection('bookings') };
-    }
-
-    const client = new MongoClient(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
-
-    await client.connect();
-    const db = client.db('bookingcart'); // Replace 'bookingcart' with your preferred DB name if different
-
-    cachedClient = client;
-    cachedDb = db;
-    return { db, collection: db.collection('bookings') };
+function escapeRegExp(value) {
+    return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 module.exports = async (req, res) => {
@@ -53,21 +17,21 @@ module.exports = async (req, res) => {
     const { action, booking, email, id, status, pin } = req.body || {};
 
     try {
-        const { collection } = await connectToDatabase();
+        const { bookings: collection, audit } = await getCollections();
 
         // ── Save a new booking ──
         if (action === "save") {
             if (!booking) return res.status(400).json({ ok: false, error: "Missing booking" });
 
-            if (collection) {
-                // Use $setOnInsert so that status/createdAt are only set on NEW bookings.
-                // Re-saves (e.g. page reload) will update passenger/flight data but never
-                // overwrite an existing status or ticket.
-                const now = new Date().toISOString();
-                const safeUpdate = {
+            if (!booking.ref) return res.status(400).json({ ok: false, error: "Missing booking.ref" });
+
+            const now = new Date().toISOString();
+            await collection.updateOne(
+                { ref: booking.ref },
+                {
                     $setOnInsert: {
-                        status: "new",
-                        createdAt: now
+                        status: booking.status || "new",
+                        createdAt: booking.createdAt || now
                     },
                     $set: {
                         ref: booking.ref,
@@ -77,38 +41,22 @@ module.exports = async (req, res) => {
                         passengers: booking.passengers,
                         contact: booking.contact,
                         extras: booking.extras,
-                        total: booking.total
+                        total: booking.total,
+                        updatedAt: now
                     }
-                };
-                await collection.updateOne(
-                    { ref: booking.ref },
-                    safeUpdate,
-                    { upsert: true }
-                );
-            } else {
-                // Local fallback — only insert if not already present
-                const exists = global.__bookings.find(b => b.ref === booking.ref);
-                if (!exists) {
-                    booking.createdAt = new Date().toISOString();
-                    booking.status = "new";
-                    global.__bookings.unshift(booking);
-                }
-            }
+                },
+                { upsert: true }
+            );
 
             return res.json({ ok: true, id: booking.ref });
         }
 
         // ── List all bookings (admin) ──
         if (action === "list") {
-            const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
+            const ADMIN_PIN = getAdminPin();
             if (pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: "Invalid PIN" });
 
-            let all = [];
-            if (collection) {
-                all = await collection.find({}).sort({ createdAt: -1 }).toArray();
-            } else {
-                all = global.__bookings;
-            }
+            const all = await collection.find({}).sort({ createdAt: -1 }).toArray();
 
             return res.json({ ok: true, bookings: all });
         }
@@ -117,95 +65,80 @@ module.exports = async (req, res) => {
         if (action === "lookup") {
             if (!email) return res.status(400).json({ ok: false, error: "Missing email" });
 
-            let found = [];
-            if (collection) {
-                // Construct query to find by contact.email (case insensitive using regex)
-                found = await collection.find({
-                    "contact.email": { $regex: new RegExp("^" + email + "$", "i") }
-                }).sort({ createdAt: -1 }).toArray();
-            } else {
-                found = global.__bookings.filter(b =>
-                    (b.contact && b.contact.email || "").toLowerCase() === email.toLowerCase()
-                );
-            }
+            const found = await collection.find({
+                "contact.email": { $regex: new RegExp("^" + escapeRegExp(email) + "$", "i") }
+            }).sort({ createdAt: -1 }).toArray();
 
             return res.json({ ok: true, bookings: found });
         }
 
         // ── Update booking status (admin) ──
         if (action === "status") {
-            const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
+            const ADMIN_PIN = getAdminPin();
             if (pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: "Invalid PIN" });
             if (!id || !status) return res.status(400).json({ ok: false, error: "Missing id or status" });
 
-            if (collection) {
-                const result = await collection.findOneAndUpdate(
-                    { ref: id },
-                    { $set: { status: status } },
-                    { returnDocument: 'after' }
-                );
-                if (!result.value && !result) return res.status(404).json({ ok: false, error: "Booking not found" });
-                return res.json({ ok: true, booking: result.value || result });
-            } else {
-                const idx = global.__bookings.findIndex(b => b.ref === id);
-                if (idx === -1) return res.status(404).json({ ok: false, error: "Booking not found" });
-                global.__bookings[idx].status = status;
-                return res.json({ ok: true, booking: global.__bookings[idx] });
-            }
+            const result = await collection.findOneAndUpdate(
+                { ref: id },
+                { $set: { status: status, updatedAt: new Date().toISOString() } },
+                { returnDocument: 'after' }
+            );
+            const bookingDoc = result.value || result;
+            if (!bookingDoc) return res.status(404).json({ ok: false, error: "Booking not found" });
+
+            await writeAudit(audit, {
+                type: "booking.status",
+                bookingRef: id,
+                status
+            });
+
+            return res.json({ ok: true, booking: bookingDoc });
         }
 
         // ── Delete booking ──
         if (action === "delete") {
             if (!id) return res.status(400).json({ ok: false, error: "Missing id" });
 
-            if (collection) {
-                await collection.deleteOne({ ref: id });
-            } else {
-                global.__bookings = global.__bookings.filter(b => b.ref !== id);
-            }
+            await collection.deleteOne({ ref: id });
+            await writeAudit(audit, {
+                type: "booking.delete",
+                bookingRef: id
+            });
+
             return res.json({ ok: true });
         }
 
         // ── Upload ticket (Admin) ──
         if (action === "upload_ticket") {
-            const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
+            const ADMIN_PIN = getAdminPin();
             if (pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: "Invalid PIN" });
             const { ticket } = req.body;
             if (!id || !ticket) return res.status(400).json({ ok: false, error: "Missing id or ticket data" });
 
-            if (collection) {
-                const result = await collection.findOneAndUpdate(
-                    { ref: id },
-                    { $set: { status: "issued", ticket: ticket } },
-                    { returnDocument: 'after' }
-                );
-                if (!result.value && !result) return res.status(404).json({ ok: false, error: "Booking not found" });
-                return res.json({ ok: true, booking: result.value || result });
-            } else {
-                const idx = global.__bookings.findIndex(b => b.ref === id);
-                if (idx === -1) return res.status(404).json({ ok: false, error: "Booking not found" });
-                global.__bookings[idx].status = "issued";
-                global.__bookings[idx].ticket = ticket;
-                return res.json({ ok: true, booking: global.__bookings[idx] });
-            }
+            const result = await collection.findOneAndUpdate(
+                { ref: id },
+                { $set: { status: "issued", ticket: ticket, updatedAt: new Date().toISOString() } },
+                { returnDocument: 'after' }
+            );
+            const bookingDoc = result.value || result;
+            if (!bookingDoc) return res.status(404).json({ ok: false, error: "Booking not found" });
+
+            await writeAudit(audit, {
+                type: "booking.ticket.upload",
+                bookingRef: id
+            });
+
+            return res.json({ ok: true, booking: bookingDoc });
         }
 
         // ── Track ticket download (Client) ──
         if (action === "track_download") {
             if (!id) return res.status(400).json({ ok: false, error: "Missing id" });
 
-            if (collection) {
-                // Increment downloadCount, or set to 1 if it doesn't exist
-                await collection.updateOne(
-                    { ref: id },
-                    { $inc: { downloadCount: 1 } }
-                );
-            } else {
-                const idx = global.__bookings.findIndex(b => b.ref === id);
-                if (idx !== -1) {
-                    global.__bookings[idx].downloadCount = (global.__bookings[idx].downloadCount || 0) + 1;
-                }
-            }
+            await collection.updateOne(
+                { ref: id },
+                { $inc: { downloadCount: 1 }, $set: { updatedAt: new Date().toISOString() } }
+            );
             return res.json({ ok: true });
         }
 

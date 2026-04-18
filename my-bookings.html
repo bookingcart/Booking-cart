@@ -175,6 +175,7 @@
     <script>
         let allBookings = [];
         let currentTab = 'all';
+        let legacyMigrationDone = false;
 
         const emailInput = document.getElementById('lookup-email');
         const lookupBtn = document.getElementById('lookup-btn');
@@ -200,14 +201,39 @@
             } catch (e) { }
         }
 
-        // ALWAYS auto-load local bookings on page open
-        try {
-            const localOnLoad = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
-            if (localOnLoad.length > 0) {
-                allBookings = localOnLoad;
-                setTimeout(() => renderBookings(), 100);
+        async function migrateLegacyBookings() {
+            if (legacyMigrationDone) return;
+
+            let localBookings = [];
+            try {
+                localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
+            } catch (e) { }
+
+            if (!localBookings.length) return;
+
+            let allMigrated = true;
+
+            for (const booking of localBookings) {
+                try {
+                    const resp = await fetch('/api/bookings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'save', booking })
+                    });
+                    if (!resp.ok) allMigrated = false;
+                } catch (e) {
+                    allMigrated = false;
+                    console.warn('Legacy booking migration failed for ref:', booking && booking.ref, e);
+                }
             }
-        } catch (e) { }
+
+            if (allMigrated) {
+                try {
+                    localStorage.removeItem('bc_saved_bookings');
+                    legacyMigrationDone = true;
+                } catch (e) { }
+            }
+        }
 
         // Events
         lookupBtn.addEventListener('click', lookup);
@@ -228,18 +254,10 @@
 
         async function lookup() {
             const email = emailInput.value.trim();
-            // Try to always show local browser bookings as baseline
-            let localBookings = [];
-            try {
-                localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
-            } catch (e) { }
+
+            await migrateLegacyBookings();
 
             if (!email) {
-                if (localBookings.length > 0) {
-                    allBookings = localBookings;
-                    renderBookings();
-                    return;
-                }
                 emptyEl.style.display = 'block'; listEl.innerHTML = '';
                 return;
             }
@@ -257,38 +275,15 @@
                 const data = await resp.json();
 
                 loadingEl.style.display = 'none';
-
-                const apiBookings = data.ok ? (data.bookings || []) : [];
-
-                // Merge: API is authoritative (has latest ticket/status).
-                // For bookings only in local storage (not yet synced to API), keep them too.
-                const merged = [...apiBookings];
-                const apiRefs = new Set(apiBookings.map(b => b.ref));
-                for (const lb of localBookings) {
-                    if (!apiRefs.has(lb.ref)) {
-                        merged.push(lb);
-                    }
-                }
-
-                allBookings = merged;
-
-                // Sync fresh API data BACK into localStorage so next load is up-to-date
-                try {
-                    const localOnlyBookings = localBookings.filter(lb => !apiRefs.has(lb.ref));
-                    const updated = [...apiBookings, ...localOnlyBookings];
-                    localStorage.setItem('bc_saved_bookings', JSON.stringify(updated));
-                } catch (e) { }
+                allBookings = data.ok ? (data.bookings || []) : [];
 
                 renderBookings();
             } catch (err) {
                 loadingEl.style.display = 'none';
 
-                allBookings = localBookings;
-                if (allBookings.length > 0) {
-                    renderBookings();
-                } else {
-                    emptyEl.style.display = 'block';
-                }
+                allBookings = [];
+                emptyEl.style.display = 'block';
+                listEl.innerHTML = '';
             }
         }
 
@@ -547,11 +542,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'delete', id: ref })
                 });
-            } catch (e) { }
-            try {
-                let localBookings = JSON.parse(localStorage.getItem('bc_saved_bookings') || '[]');
-                localBookings = localBookings.filter(b => b.ref !== ref);
-                localStorage.setItem('bc_saved_bookings', JSON.stringify(localBookings));
             } catch (e) { }
             lookup();
         }

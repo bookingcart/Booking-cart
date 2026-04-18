@@ -112,10 +112,6 @@ const AIRLINES = [
 async function saveStateToDB() {
   if (!state.profile.email) return;
   try {
-    // 1. Save to local storage cache immediately
-    localStorage.setItem('bc_account_settings', JSON.stringify(state));
-
-    // 2. Persist to MongoDB
     await fetch("/api/user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -128,19 +124,10 @@ async function loadStateFromDB() {
   let userEmail = defEmail;
   if (!userEmail) return;
   try {
-    // Try local storage first for speed
-    const local = localStorage.getItem('bc_account_settings');
-    if (local) {
-      state = JSON.parse(local);
-      return;
-    }
-
     const resp = await fetch("/api/user?email=" + encodeURIComponent(userEmail));
     const data = await resp.json();
     if (data && data.state) {
-      // Merge DB state nicely
       state = { ...state, ...data.state };
-      localStorage.setItem('bc_account_settings', JSON.stringify(state));
     }
   } catch (e) { console.error("Could not load settings from DB:", e); }
 }
@@ -503,7 +490,6 @@ async function confirmDelete() {
 
   // Clear local session data
   localStorage.removeItem("bookingcart_user");
-  localStorage.removeItem("bc_account_settings");
 
   showToast("Account deleted successfully. Logging out...");
 
