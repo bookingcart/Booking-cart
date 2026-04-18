@@ -1,11 +1,67 @@
 import { useEffect } from 'react';
+import { Navigate, NavLink, useParams } from 'react-router-dom';
 import { useLegacyScripts } from '../hooks/useLegacyScripts.js';
+import { HeaderAuthCluster } from '../components/HeaderAuthCluster.jsx';
 
 const SCRIPTS = ['/js/loading-ui.js','/js/auth.js','/js/account-settings.js'];
 
+const ACCOUNT_SECTIONS = [
+  'profile',
+  'security',
+  'payments',
+  'preferences',
+  'notifications',
+  'rewards',
+];
+
+const SECTION_TITLE = {
+  profile: 'Profile',
+  security: 'Security',
+  payments: 'Payments',
+  preferences: 'Travel preferences',
+  notifications: 'Notifications',
+  rewards: 'Rewards',
+};
+
+function accountPath(slug) {
+  return slug === 'profile' ? '/account-settings' : `/account-settings/${slug}`;
+}
+
 export default function AccountSettingsPage() {
-  useEffect(() => { document.title = 'Account Settings | BookingCart'; }, []);
-  useLegacyScripts(SCRIPTS, 'account-settings');
+  const { section: sectionParam } = useParams();
+
+  const activeSection =
+    !sectionParam || sectionParam === 'profile'
+      ? 'profile'
+      : ACCOUNT_SECTIONS.includes(sectionParam)
+        ? sectionParam
+        : null;
+
+  useEffect(() => {
+    if (activeSection) {
+      document.title = `${SECTION_TITLE[activeSection]} · Account | BookingCart`;
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (!activeSection) return;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeSection]);
+
+  useLegacyScripts(SCRIPTS, 'account-settings', () => {
+    if (typeof window.bootAccountSettingsPage === 'function') {
+      void window.bootAccountSettingsPage();
+    }
+  });
+
+  if (sectionParam === 'profile' || activeSection === null) {
+    return <Navigate to="/account-settings" replace />;
+  }
+
+  const sectionClass = (id) =>
+    `settings-section${activeSection === id ? ' active' : ''}`;
+
+  const navCls = ({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`;
   return (
     <>
       
@@ -133,22 +189,6 @@ export default function AccountSettingsPage() {
           >
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
               <div className="flex items-center gap-4">
-                
-              <div id="g_id_onload"
-                   data-client_id=""
-                   data-context="use"
-                   data-ux_mode="popup"
-                   data-callback="handleGoogleSignIn"
-                   data-auto_prompt="false">
-              </div>
-              <div className="g_id_signin"
-                   data-type="standard"
-                   data-shape="pill"
-                   data-theme="outline"
-                   data-text="signin_with"
-                   data-size="large"
-                   data-logo_alignment="left">
-              </div>
               <button
                   id="mobile-sidebar-toggle"
                   onclick="toggleSidebar()"
@@ -158,7 +198,7 @@ export default function AccountSettingsPage() {
                 </button>
                 <a href="/"
                   ><img
-                    src="images/logo.png"
+                    src="/images/logo.png"
                     alt="BookingCart"
                     className="h-9 rounded-xl"
                     onerror="
@@ -178,7 +218,7 @@ export default function AccountSettingsPage() {
                 <a href="/" className="hover:text-green-600 transition-colors"
                   >Flights</a
                 >
-                <a href="stays.html" className="hover:text-green-600 transition-colors"
+                <a href="/stays" className="hover:text-green-600 transition-colors"
                   >Stays</a
                 >
                 <a
@@ -187,26 +227,7 @@ export default function AccountSettingsPage() {
                   >My Bookings</a
                 >
               </nav>
-              <div className="flex items-center gap-3">
-                <div id="header-avatar-wrap" className="flex items-center gap-3">
-                  <div className="text-right hidden sm:block">
-                    <div
-                      className="text-sm font-700 font-bold text-slate-800"
-                      id="header-name"
-                    >
-                      My Account
-                    </div>
-                    <div className="text-xs text-slate-400" id="header-email">
-                      account settings
-                    </div>
-                  </div>
-                  <img
-                    id="header-avatar"
-                    src="https://ui-avatars.com/api/?name=User&background=dcfce7&color=15803d&size=80"
-                    className="w-10 h-10 rounded-full border-2 border-green-500 object-cover"
-                  />
-                </div>
-              </div>
+              <HeaderAuthCluster className="shrink-0" />
             </div>
           </header>
       
@@ -234,54 +255,53 @@ export default function AccountSettingsPage() {
                     >
                       My Account
                     </div>
-                    <div className="text-xs text-slate-400 truncate" id="sidebar-email">
-                      Loading...
-                    </div>
+                    <div className="text-xs text-slate-400 truncate" id="sidebar-email"></div>
                   </div>
                 </div>
                 <nav className="space-y-1">
-                  <div
-                    className="sidebar-link active"
-                    data-section="profile"
-                    onclick="switchSection('profile')"
+                  <NavLink
+                    to={accountPath('profile')}
+                    end
+                    className={navCls}
+                    onClick={() => window.closeSidebar?.()}
                   >
                     <i className="ph ph-user-circle"></i> Profile
-                  </div>
-                  <div
-                    className="sidebar-link"
-                    data-section="security"
-                    onclick="switchSection('security')"
+                  </NavLink>
+                  <NavLink
+                    to={accountPath('security')}
+                    className={navCls}
+                    onClick={() => window.closeSidebar?.()}
                   >
                     <i className="ph ph-shield-check"></i> Security
-                  </div>
-                  <div
-                    className="sidebar-link"
-                    data-section="payments"
-                    onclick="switchSection('payments')"
+                  </NavLink>
+                  <NavLink
+                    to={accountPath('payments')}
+                    className={navCls}
+                    onClick={() => window.closeSidebar?.()}
                   >
                     <i className="ph ph-credit-card"></i> Payments
-                  </div>
-                  <div
-                    className="sidebar-link"
-                    data-section="preferences"
-                    onclick="switchSection('preferences')"
+                  </NavLink>
+                  <NavLink
+                    to={accountPath('preferences')}
+                    className={navCls}
+                    onClick={() => window.closeSidebar?.()}
                   >
                     <i className="ph ph-airplane"></i> Travel Preferences
-                  </div>
-                  <div
-                    className="sidebar-link"
-                    data-section="notifications"
-                    onclick="switchSection('notifications')"
+                  </NavLink>
+                  <NavLink
+                    to={accountPath('notifications')}
+                    className={navCls}
+                    onClick={() => window.closeSidebar?.()}
                   >
                     <i className="ph ph-bell"></i> Notifications
-                  </div>
-                  <div
-                    className="sidebar-link"
-                    data-section="rewards"
-                    onclick="switchSection('rewards')"
+                  </NavLink>
+                  <NavLink
+                    to={accountPath('rewards')}
+                    className={navCls}
+                    onClick={() => window.closeSidebar?.()}
                   >
                     <i className="ph ph-star"></i> Rewards
-                  </div>
+                  </NavLink>
                 </nav>
                 <div className="mt-3 pt-3 border-t border-slate-100">
                   <a href="/" className="sidebar-link text-slate-400"
@@ -294,7 +314,7 @@ export default function AccountSettingsPage() {
             
             <main className="flex-1 min-w-0">
               
-              <section id="section-profile" className="settings-section active">
+              <section id="section-profile" className={sectionClass('profile')}>
                 <div className="mb-6">
                   <h1 className="text-2xl font-extrabold text-slate-900">
                     Profile Information
@@ -495,7 +515,7 @@ export default function AccountSettingsPage() {
               </section>
       
               
-              <section id="section-security" className="settings-section">
+              <section id="section-security" className={sectionClass('security')}>
                 <div className="mb-6">
                   <h1 className="text-2xl font-extrabold text-slate-900">
                     Security Settings
@@ -676,7 +696,7 @@ export default function AccountSettingsPage() {
               </section>
       
               
-              <section id="section-payments" className="settings-section">
+              <section id="section-payments" className={sectionClass('payments')}>
                 <div className="mb-6">
                   <h1 className="text-2xl font-extrabold text-slate-900">
                     Payment Methods
@@ -730,7 +750,7 @@ export default function AccountSettingsPage() {
               </section>
       
               
-              <section id="section-preferences" className="settings-section">
+              <section id="section-preferences" className={sectionClass('preferences')}>
                 <div className="mb-6">
                   <h1 className="text-2xl font-extrabold text-slate-900">
                     Travel Preferences
@@ -846,7 +866,7 @@ export default function AccountSettingsPage() {
               </section>
       
               
-              <section id="section-notifications" className="settings-section">
+              <section id="section-notifications" className={sectionClass('notifications')}>
                 <div className="mb-6">
                   <h1 className="text-2xl font-extrabold text-slate-900">
                     Notification Settings
@@ -885,7 +905,7 @@ export default function AccountSettingsPage() {
               </section>
       
               
-              <section id="section-rewards" className="settings-section">
+              <section id="section-rewards" className={sectionClass('rewards')}>
                 <div className="mb-6">
                   <h1 className="text-2xl font-extrabold text-slate-900">
                     Rewards & Loyalty
@@ -943,11 +963,7 @@ export default function AccountSettingsPage() {
                     <span>Platinum — 20,000 pts</span>
                   </div>
                   <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      id="progress-fill"
-                      style={{"width":null}}
-                    ></div>
+                    <div className="progress-fill" id="progress-fill"></div>
                   </div>
                   <div className="text-right text-xs text-slate-400 mt-1">
                     62.3% complete

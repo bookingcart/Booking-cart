@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLegacyScripts } from '../hooks/useLegacyScripts.js';
+import { HeaderAuthCluster } from '../components/HeaderAuthCluster.jsx';
 
 const SCRIPTS = ['/js/loading-ui.js','/js/auth.js','/js/stays.js?v=2'];
 
@@ -11,13 +12,14 @@ export default function StaysResultsPage() {
       <header className="header" aria-label="Top navigation">
           <div className="container header__inner">
             <a className="brand" href="/" aria-label="BookingCart Home">
-              <img src="images/logo.png" alt="BookingCart" className="brand__logo" style={{"borderRadius":"12px"}} />
+              <img src="/images/logo.png" alt="BookingCart" className="brand__logo" style={{"borderRadius":"12px"}} />
             </a>
             <nav className="header__nav" aria-label="Primary">
               <a href="/">Flights</a>
               <a href="/stays">Stays</a>
               <a href="/events">Events</a>
             </nav>
+            <HeaderAuthCluster />
           </div>
         </header>
       

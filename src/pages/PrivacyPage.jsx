@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLegacyScripts } from '../hooks/useLegacyScripts.js';
+import { HeaderAuthCluster } from '../components/HeaderAuthCluster.jsx';
 const SCRIPTS = ['/js/loading-ui.js','/js/auth.js'];
 
 export default function PrivacyPage() {
@@ -9,9 +10,9 @@ export default function PrivacyPage() {
     <>
       
           <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-              <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-                  <div className="flex items-center gap-12">
-                      <a href="/" className="text-2xl font-semibold text-slate-900 tracking-tight"><img src="images/logo.png" alt="BookingCart" className="h-10 rounded-xl" /></a>
+              <div className="container mx-auto px-6 h-20 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-12 min-w-0">
+                      <a href="/" className="text-2xl font-semibold text-slate-900 tracking-tight shrink-0"><img src="/images/logo.png" alt="BookingCart" className="h-10 rounded-xl" /></a>
                       <div className="hidden lg:flex items-center gap-4">
                           <a href="/"
                               className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
@@ -19,6 +20,7 @@ export default function PrivacyPage() {
                           </a>
                       </div>
                   </div>
+                  <HeaderAuthCluster className="shrink-0" />
               </div>
           </header>
       

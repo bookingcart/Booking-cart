@@ -18,7 +18,44 @@
     ></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <style>
+        #bc-app-boot-loading {
+          position: fixed;
+          inset: 0;
+          z-index: 2147483000;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: rgba(248, 250, 252, 0.97);
+          font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        }
+        #bc-app-boot-loading .bc-boot-spinner {
+          width: 44px;
+          height: 44px;
+          border: 3px solid #e2e8f0;
+          border-top-color: #16a34a;
+          border-radius: 50%;
+          animation: bc-boot-spin 0.75s linear infinite;
+        }
+        @keyframes bc-boot-spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        #bc-app-boot-loading p {
+          margin: 1rem 0 0;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #475569;
+        }
+      </style>
+      <div id="bc-app-boot-loading" role="status" aria-live="polite" aria-busy="true">
+        <div class="bc-boot-spinner" aria-hidden="true"></div>
+        <p>Loading BookingCart…</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

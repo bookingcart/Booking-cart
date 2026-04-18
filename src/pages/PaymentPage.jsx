@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLegacyScripts } from '../hooks/useLegacyScripts.js';
 import { FlightFooter } from '../components/FlightFooter.jsx';
+import { HeaderAuthCluster } from '../components/HeaderAuthCluster.jsx';
 
 const SCRIPTS = ['/js/loading-ui.js','/js/auth.js','/js/bookingcart.js'];
 
@@ -25,27 +26,7 @@ export default function PaymentPage() {
                   
             <div className="flex items-center gap-3">
               
-              <div id="g_id_onload"
-                   data-client_id=""
-                   data-context="use"
-                   data-ux_mode="popup"
-                   data-callback="handleGoogleSignIn"
-                   data-auto_prompt="false">
-              </div>
-              
-              <div className="g_id_signin"
-                   data-type="standard"
-                   data-shape="pill"
-                   data-theme="outline"
-                   data-text="signin_with"
-                   data-size="large"
-                   data-logo_alignment="left">
-              </div>
-              
-              <button type="button" data-header-profile-btn
-                className="w-11 h-11 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm hover:border-green-500 transition-all focus:ring-2 focus:ring-green-500 outline-none">
-                <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User Profile" className="w-full h-full object-cover" />
-              </button>
+              <HeaderAuthCluster />
             </div>
           </div>
         </header>

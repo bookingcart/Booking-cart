@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useLegacyScripts } from '../hooks/useLegacyScripts.js';
+import { HeaderAuthCluster } from '../components/HeaderAuthCluster.jsx';
 
-const SCRIPTS = ['/js/visa.js?v=1'];
+const SCRIPTS = ['/js/loading-ui.js', '/js/auth.js', '/js/visa.js?v=1'];
 
 export default function AdminVisaPage() {
   useEffect(() => {
@@ -20,6 +21,7 @@ export default function AdminVisaPage() {
             <a href="/stays">Stays</a>
             <a href="/visa">Visa</a>
           </nav>
+          <HeaderAuthCluster />
         </div>
       </header>
 

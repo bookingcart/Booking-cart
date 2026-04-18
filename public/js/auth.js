@@ -160,17 +160,31 @@
     const gSignIn = document.querySelector('.g_id_signin');
 
     if (!signedIn) {
-      if (gSignIn) gSignIn.style.display = '';
+      var googleReady = typeof window.bookingcartGoogleSignInAvailable === 'boolean';
+      var googleOk = window.bookingcartGoogleSignInAvailable === true;
+      var showGoogleWidgets = !googleReady || googleOk;
+      var showAvatarWithoutGoogle = googleReady && !googleOk;
+
+      if (gSignIn) {
+        gSignIn.style.display = showGoogleWidgets ? '' : 'none';
+      }
+      var gOnloadEl = document.getElementById('g_id_onload');
+      if (gOnloadEl) {
+        gOnloadEl.style.display = showGoogleWidgets ? '' : 'none';
+      }
+
       document.querySelectorAll('[data-profile-dropdown]').forEach(function (el) {
-        el.style.display = 'none';
+        el.style.display = showAvatarWithoutGoogle ? '' : 'none';
       });
       document.querySelectorAll('[data-header-profile-btn]').forEach(function (el) {
-        el.style.display = 'none';
+        el.style.display = showAvatarWithoutGoogle ? '' : 'none';
       });
       return;
     }
 
     if (gSignIn) gSignIn.style.display = 'none';
+    var gOnloadSignedIn = document.getElementById('g_id_onload');
+    if (gOnloadSignedIn) gOnloadSignedIn.style.display = 'none';
 
     document.querySelectorAll('[data-profile-dropdown]').forEach(function (el) {
       el.style.display = '';
@@ -192,19 +206,32 @@
       const els = document.querySelectorAll(sel);
       els.forEach(function (el) {
         if (sel.indexOf('img') !== -1) {
-          if (user.picture) el.src = user.picture;
+          el.src =
+            user.picture ||
+            'https://ui-avatars.com/api/?name=' + encodeURIComponent(label);
           el.alt = label;
           el.title = label;
         } else {
-          while (el.firstChild) el.removeChild(el.firstChild);
-          const img = document.createElement('img');
-          img.src =
+          const url =
             user.picture ||
             'https://ui-avatars.com/api/?name=' + encodeURIComponent(label);
-          img.alt = label;
-          img.title = label;
-          img.className = 'w-full h-full object-cover';
-          el.appendChild(img);
+          const existing = el.querySelector('img');
+          if (existing) {
+            existing.src = url;
+            existing.alt = label;
+            existing.title = label;
+            if (!String(existing.className || '').trim()) {
+              existing.className = 'w-full h-full object-cover';
+            }
+          } else {
+            while (el.firstChild) el.removeChild(el.firstChild);
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = label;
+            img.title = label;
+            img.className = 'w-full h-full object-cover';
+            el.appendChild(img);
+          }
         }
       });
     }
@@ -244,10 +271,9 @@
       }
     } catch (e) {}
 
+    window.bookingcartGoogleSignInAvailable = !!googleClientId;
+
     if (!googleClientId) {
-      document.querySelectorAll('.g_id_signin').forEach(function (el) {
-        el.style.display = 'none';
-      });
       return;
     }
 

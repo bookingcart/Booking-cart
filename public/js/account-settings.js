@@ -193,7 +193,43 @@ function hideInitialLoading() {
 /* ══════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════ */
-document.addEventListener("DOMContentLoaded", async () => {
+let accountSettingsUiBound = false;
+
+function bindAccountSettingsUiOnce() {
+  if (accountSettingsUiBound) return;
+  accountSettingsUiBound = true;
+
+  document.body.addEventListener("click", (e) => {
+    const t = e.target;
+    if (t && t.classList && t.classList.contains("modal-overlay")) {
+      t.classList.remove("open");
+    }
+  });
+
+  document.body.addEventListener("input", (e) => {
+    const el = e.target;
+    if (!el || !el.id) return;
+    if (el.id === "delete-confirm-input") {
+      const btn = document.getElementById("confirm-delete-btn");
+      if (btn) btn.disabled = el.value !== "DELETE";
+      return;
+    }
+    if (el.id === "card-number-input") {
+      let v = el.value.replace(/\D/g, "").substring(0, 16);
+      el.value = v.match(/.{1,4}/g)?.join(" ") || v;
+      return;
+    }
+    if (el.id === "card-expiry-input") {
+      let v = el.value.replace(/\D/g, "").substring(0, 4);
+      if (v.length >= 2) v = v.substring(0, 2) + "/" + v.substring(2);
+      el.value = v;
+    }
+  });
+}
+
+async function bootAccountSettingsPage() {
+  if (!document.getElementById("firstName")) return;
+
   showInitialLoading();
   try {
     await loadStateFromDB();
@@ -216,7 +252,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   } finally {
     hideInitialLoading();
   }
-});
+  bindAccountSettingsUiOnce();
+}
+
+window.bootAccountSettingsPage = bootAccountSettingsPage;
 
 /* ══════════════════════════════════════════════════
    SECTION NAVIGATION
@@ -519,22 +558,6 @@ function closeDeleteModal() {
   document.getElementById("delete-modal").classList.remove("open");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const input = document.getElementById("delete-confirm-input");
-  const btn = document.getElementById("confirm-delete-btn");
-  if (input && btn) {
-    input.addEventListener("input", () => {
-      btn.disabled = input.value !== "DELETE";
-    });
-  }
-  // Close modals on overlay click
-  document.querySelectorAll(".modal-overlay").forEach((overlay) => {
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) overlay.classList.remove("open");
-    });
-  });
-});
-
 async function confirmDelete() {
   closeDeleteModal();
 
@@ -559,8 +582,8 @@ async function confirmDelete() {
 
   // Redirect to home page after a short delay
   setTimeout(() => {
-    if (typeof window.__bcNavigate === "function") window.__bcNavigate("index.html");
-    else window.location.href = "index.html";
+    if (typeof window.__bcNavigate === "function") window.__bcNavigate("/");
+    else window.location.href = "/";
   }, 1500);
 }
 
@@ -674,25 +697,6 @@ function addCard() {
   saveStateToDB();
   showToast(`${brand} card ending in ${last4} added!`);
 }
-
-// Format card number input with spaces
-document.addEventListener("DOMContentLoaded", () => {
-  const cardInput = document.getElementById("card-number-input");
-  if (cardInput) {
-    cardInput.addEventListener("input", function () {
-      let v = this.value.replace(/\D/g, "").substring(0, 16);
-      this.value = v.match(/.{1,4}/g)?.join(" ") || v;
-    });
-  }
-  const expiryInput = document.getElementById("card-expiry-input");
-  if (expiryInput) {
-    expiryInput.addEventListener("input", function () {
-      let v = this.value.replace(/\D/g, "").substring(0, 4);
-      if (v.length >= 2) v = v.substring(0, 2) + "/" + v.substring(2);
-      this.value = v;
-    });
-  }
-});
 
 /* ══════════════════════════════════════════════════
    TRAVEL PREFERENCES

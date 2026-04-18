@@ -1,55 +1,61 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './layouts/AppLayout.jsx';
-import HomePage from './pages/HomePage.jsx';
-import ResultsPage from './pages/ResultsPage.jsx';
-import DetailsPage from './pages/DetailsPage.jsx';
-import PassengersPage from './pages/PassengersPage.jsx';
-import ExtrasPage from './pages/ExtrasPage.jsx';
-import PaymentPage from './pages/PaymentPage.jsx';
-import ConfirmationPage from './pages/ConfirmationPage.jsx';
-import MyBookingsPage from './pages/MyBookingsPage.jsx';
-import AdminPage from './pages/AdminPage.jsx';
-import AccountSettingsPage from './pages/AccountSettingsPage.jsx';
-import StaysPage from './pages/StaysPage.jsx';
-import StaysResultsPage from './pages/StaysResultsPage.jsx';
-import StaysDetailsPage from './pages/StaysDetailsPage.jsx';
-import StaysCheckoutPage from './pages/StaysCheckoutPage.jsx';
-import StaysConfirmationPage from './pages/StaysConfirmationPage.jsx';
-import EventsPage from './pages/EventsPage.jsx';
-import VisaNewPage from './pages/VisaNewPage.jsx';
-import VisaDashboardPage from './pages/VisaDashboardPage.jsx';
-import AdminVisaPage from './pages/AdminVisaPage.jsx';
-import TermsPage from './pages/TermsPage.jsx';
-import PrivacyPage from './pages/PrivacyPage.jsx';
+import PageLoading from './components/PageLoading.jsx';
+
+const HomePage = lazy(() => import('./pages/HomePage.jsx'));
+const ResultsPage = lazy(() => import('./pages/ResultsPage.jsx'));
+const DetailsPage = lazy(() => import('./pages/DetailsPage.jsx'));
+const PassengersPage = lazy(() => import('./pages/PassengersPage.jsx'));
+const ExtrasPage = lazy(() => import('./pages/ExtrasPage.jsx'));
+const PaymentPage = lazy(() => import('./pages/PaymentPage.jsx'));
+const ConfirmationPage = lazy(() => import('./pages/ConfirmationPage.jsx'));
+const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage.jsx'));
+const AdminPage = lazy(() => import('./pages/AdminPage.jsx'));
+const AccountSettingsPage = lazy(() => import('./pages/AccountSettingsPage.jsx'));
+const StaysPage = lazy(() => import('./pages/StaysPage.jsx'));
+const StaysResultsPage = lazy(() => import('./pages/StaysResultsPage.jsx'));
+const StaysDetailsPage = lazy(() => import('./pages/StaysDetailsPage.jsx'));
+const StaysCheckoutPage = lazy(() => import('./pages/StaysCheckoutPage.jsx'));
+const StaysConfirmationPage = lazy(() => import('./pages/StaysConfirmationPage.jsx'));
+const EventsPage = lazy(() => import('./pages/EventsPage.jsx'));
+const VisaNewPage = lazy(() => import('./pages/VisaNewPage.jsx'));
+const VisaDashboardPage = lazy(() => import('./pages/VisaDashboardPage.jsx'));
+const AdminVisaPage = lazy(() => import('./pages/AdminVisaPage.jsx'));
+const TermsPage = lazy(() => import('./pages/TermsPage.jsx'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage.jsx'));
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/results" element={<ResultsPage />} />
-        <Route path="/details" element={<DetailsPage />} />
-        <Route path="/passengers" element={<PassengersPage />} />
-        <Route path="/extras" element={<ExtrasPage />} />
-        <Route path="/payment" element={<PaymentPage />} />
-        <Route path="/confirmation" element={<ConfirmationPage />} />
-        <Route path="/my-bookings" element={<MyBookingsPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/account-settings" element={<AccountSettingsPage />} />
-        <Route path="/stays" element={<StaysPage />} />
-        <Route path="/stays/results" element={<StaysResultsPage />} />
-        <Route path="/stays/details" element={<StaysDetailsPage />} />
-        <Route path="/stays/checkout" element={<StaysCheckoutPage />} />
-        <Route path="/stays/confirmation" element={<StaysConfirmationPage />} />
-        <Route path="/events" element={<EventsPage />} />
-        <Route path="/visa" element={<Navigate to="/visa/new" replace />} />
-        <Route path="/visa/new" element={<VisaNewPage />} />
-        <Route path="/visa/dashboard" element={<VisaDashboardPage />} />
-        <Route path="/admin/visa" element={<AdminVisaPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<PageLoading />}>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/results" element={<ResultsPage />} />
+          <Route path="/details" element={<DetailsPage />} />
+          <Route path="/passengers" element={<PassengersPage />} />
+          <Route path="/extras" element={<ExtrasPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/confirmation" element={<ConfirmationPage />} />
+          <Route path="/my-bookings" element={<MyBookingsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/account-settings" element={<AccountSettingsPage />} />
+          <Route path="/account-settings/:section" element={<AccountSettingsPage />} />
+          <Route path="/stays" element={<StaysPage />} />
+          <Route path="/stays/results" element={<StaysResultsPage />} />
+          <Route path="/stays/details" element={<StaysDetailsPage />} />
+          <Route path="/stays/checkout" element={<StaysCheckoutPage />} />
+          <Route path="/stays/confirmation" element={<StaysConfirmationPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/visa" element={<Navigate to="/visa/new" replace />} />
+          <Route path="/visa/new" element={<VisaNewPage />} />
+          <Route path="/visa/dashboard" element={<VisaDashboardPage />} />
+          <Route path="/admin/visa" element={<AdminVisaPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
