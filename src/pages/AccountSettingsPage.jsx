@@ -182,56 +182,6 @@ export default function AccountSettingsPage() {
       
           
           <div id="sidebar-overlay" onclick="closeSidebar()"></div>
-      
-          
-          <header
-            className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-100 h-[64px] flex items-center px-6"
-          >
-            <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-              <div className="flex items-center gap-4">
-              <button
-                  id="mobile-sidebar-toggle"
-                  onclick="toggleSidebar()"
-                  className="lg:hidden w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600"
-                >
-                  <i className="ph ph-list text-xl"></i>
-                </button>
-                <a href="/"
-                  ><img
-                    src="/images/logo.png"
-                    alt="BookingCart"
-                    className="h-9 rounded-xl"
-                    onerror="
-                      this.style.display = 'none';
-                      this.nextSibling.style.display = 'block';
-                    "
-                  /><span
-                    style={{"display":"none"}}
-                    className="text-xl font-extrabold text-green-700"
-                    >BookingCart</span
-                  ></a
-                >
-              </div>
-              <nav
-                className="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-500"
-              >
-                <a href="/" className="hover:text-green-600 transition-colors"
-                  >Flights</a
-                >
-                <a href="/stays" className="hover:text-green-600 transition-colors"
-                  >Stays</a
-                >
-                <a
-                  href="/my-bookings"
-                  className="hover:text-green-600 transition-colors"
-                  >My Bookings</a
-                >
-              </nav>
-              <HeaderAuthCluster className="shrink-0" />
-            </div>
-          </header>
-      
-          
           <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8 flex gap-6 items-start">
             
             <aside

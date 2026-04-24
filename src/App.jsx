@@ -24,6 +24,7 @@ const VisaDashboardPage = lazy(() => import('./pages/VisaDashboardPage.jsx'));
 const AdminVisaPage = lazy(() => import('./pages/AdminVisaPage.jsx'));
 const TermsPage = lazy(() => import('./pages/TermsPage.jsx'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage.jsx'));
+const BookingDetailsPage = lazy(() => import('./pages/BookingDetailsPage.jsx'));
 
 export default function App() {
   return (
@@ -53,6 +54,8 @@ export default function App() {
           <Route path="/admin/visa" element={<AdminVisaPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/booking-details" element={<BookingDetailsPage />} />
+          <Route path="/booking-details/:ref" element={<BookingDetailsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

@@ -9,21 +9,6 @@ export default function StaysDetailsPage() {
   useLegacyScripts(SCRIPTS, 'stays-details');
   return (
     <>
-      <header className="header" aria-label="Top navigation">
-          <div className="container header__inner">
-            <a className="brand" href="/" aria-label="BookingCart Home">
-              <img src="/images/logo.png" alt="BookingCart" className="brand__logo" style={{"borderRadius":"12px"}} />
-            </a>
-            <nav className="header__nav" aria-label="Primary">
-              <a href="/">Flights</a>
-              <a href="/stays">Stays</a>
-              <a href="/visa">Visa</a>
-              <a href="/stays/results">Back to results</a>
-            </nav>
-            <HeaderAuthCluster />
-          </div>
-        </header>
-      
         <main className="layout" data-stays-details>
           <div className="container">
             <div className="steps stays-steps" aria-label="Stays steps">

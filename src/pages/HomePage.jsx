@@ -11,34 +11,6 @@ export default function HomePage() {
 
   return (
     <>
-      
-        <header className="absolute top-0 left-0 w-full z-40 py-6">
-          <div className="container mx-auto px-6 flex items-center justify-between">
-            
-            <div className="flex items-center gap-4">
-              <a href="/">
-                <img src="/images/logo.png" alt="BookingCart" className="h-10 rounded-xl" />
-              </a>
-              <button className="lg:hidden text-slate-800">
-                <i className="ph ph-list text-2xl"></i>
-              </button>
-            </div>
-      
-            
-            <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold text-slate-500">
-              <a href="/" className="text-green-600">Flight Booking</a>
-      
-            </nav>
-      
-            
-            <div className="flex items-center gap-3">
-              
-              <HeaderAuthCluster />
-            </div>
-          </div>
-        </header>
-      
-        
         <section
           className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 min-h-[700px] flex flex-col items-center justify-center text-center px-4"
           data-step="search">

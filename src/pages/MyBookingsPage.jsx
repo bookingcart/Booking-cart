@@ -14,24 +14,6 @@ export default function MyBookingsPage() {
   useLegacyScripts(SCRIPTS, 'my-bookings');
   return (
     <>
-      
-          <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-              <div className="container mx-auto px-6 h-16 flex items-center justify-between gap-4">
-                  <a href="/" className="text-xl font-extrabold text-slate-900 tracking-tight shrink-0">
-                    <img src="/images/logo.png" alt="BookingCart" className="h-10 rounded-xl" />
-                  </a>
-                  <nav className="flex items-center gap-6 text-sm font-semibold text-slate-500 flex-1 justify-center">
-                      <a href="/" className="hover:text-green-600 transition-colors flex items-center gap-1.5">
-                          <i className="ph ph-airplane-tilt"></i> Flights
-                      </a>
-                      <a href="/my-bookings" className="text-green-600 flex items-center gap-1.5">
-                          <i className="ph ph-suitcase-rolling"></i> My Bookings
-                      </a>
-                  </nav>
-                  <HeaderAuthCluster className="shrink-0" />
-              </div>
-          </header>
-      
           <div className="container mx-auto px-6 py-8 flex gap-8 max-w-7xl">
       
               
