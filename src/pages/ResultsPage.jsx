@@ -9,33 +9,6 @@ export default function ResultsPage(){
  useEffect(()=>{document.title='BookingCart — Results';},[]);
  useLegacyScripts(SCRIPTS,'results');
  return (<>
-      
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-          <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-            <div className="flex items-center gap-12">
-              <a href="/" className="text-2xl font-semibold text-slate-900 tracking-tight"><img src="/images/logo.png" alt="BookingCart" className="h-10 rounded-xl" /></a>
-      
-              
-              <div className="hidden lg:flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-xl px-4 py-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <i className="ph-bold ph-airplane-takeoff text-green-500"></i>
-                  <span data-route>â€”</span>
-                </div>
-                <div className="h-4 w-px bg-slate-200"></div>
-                <div className="text-xs font-medium text-slate-500" data-meta>Loading...</div>
-                <a href="/" className="ml-4 text-xs font-medium text-green-600 hover:text-green-700">Modify</a>
-              </div>
-            </div>
-      
-                  
-            <div className="flex items-center gap-3">
-              
-              <HeaderAuthCluster />
-            </div>
-          </div>
-        </header>
-      
-        
         <main className="flex-grow container mx-auto px-6 py-8" data-results>
       
           

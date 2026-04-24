@@ -10,30 +10,6 @@ export default function ConfirmationPage() {
   useLegacyScripts(SCRIPTS, 'confirmation');
   return (
     <>
-      
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-          <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-            <div className="flex items-center gap-12">
-              <a href="/" className="text-2xl font-extrabold text-slate-900 tracking-tight"><img src="images/logo.png"
-                  alt="BookingCart" className="h-10 rounded-xl" /></a>
-              <div className="hidden lg:flex items-center gap-4">
-                <a href="/"
-                  className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
-                  <i className="ph-bold ph-plus"></i> New Search
-                </a>
-              </div>
-            </div>
-      
-            
-            <div className="flex items-center gap-3">
-              
-              <HeaderAuthCluster />
-            </div>
-          </div>
-        </header>
-      
-        
-      
         <main className="flex-grow flex flex-col items-center justify-center p-6 bg-[#16a34a] min-h-[80vh]"
           data-step="confirmation">
       

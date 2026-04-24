@@ -8,23 +8,6 @@ export default function PrivacyPage() {
   useLegacyScripts(SCRIPTS, 'privacy');
   return (
     <>
-      
-          <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-              <div className="container mx-auto px-6 h-20 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-12 min-w-0">
-                      <a href="/" className="text-2xl font-semibold text-slate-900 tracking-tight shrink-0"><img src="/images/logo.png" alt="BookingCart" className="h-10 rounded-xl" /></a>
-                      <div className="hidden lg:flex items-center gap-4">
-                          <a href="/"
-                              className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-                              <i className="ph-bold ph-arrow-left"></i> Back to home
-                          </a>
-                      </div>
-                  </div>
-                  <HeaderAuthCluster className="shrink-0" />
-              </div>
-          </header>
-      
-          
           <main className="flex-1 container mx-auto px-6 py-16 max-w-4xl">
       
               <h1 className="text-4xl font-bold text-slate-900 mb-2">Privacy Policy</h1>
