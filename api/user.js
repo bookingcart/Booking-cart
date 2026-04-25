@@ -1,44 +1,9 @@
-// api/user.js – persist Account Settings (MongoDB Atlas or local fallback)
+// api/user.js – persist Account Settings (Nile Database / Postgres or local fallback)
 
-const { MongoClient } = require('mongodb');
+const { getPool } = require('../lib/db');
 const { getCorsHeaders } = require('../lib/cors');
 const { verifyRequestBearer } = require('../lib/google-verify');
 const { requireAdminPin } = require('../lib/admin');
-
-let cachedClient = null;
-let cachedDb = null;
-
-async function connectToDatabase() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    if (!global.__users) global.__users = {};
-    return { collection: null };
-  }
-
-  if (cachedDb) {
-    return { collection: cachedDb.collection('users') };
-  }
-
-  const client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 2000,
-    connectTimeoutMS: 2000
-  });
-
-  try {
-    await client.connect();
-    const db = client.db('bookingcart');
-    cachedClient = client;
-    cachedDb = db;
-    return { collection: db.collection('users') };
-  } catch (err) {
-    console.warn('MongoDB users connection failed, using fallback store:', err.message);
-    if (process.env.NODE_ENV === 'production') {
-      throw err;
-    }
-    if (!global.__users) global.__users = {};
-    return { collection: null };
-  }
-}
 
 function applyCors(req, res) {
   const h = getCorsHeaders(req);
@@ -52,7 +17,11 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const { collection } = await connectToDatabase();
+    const db = await getPool();
+
+    if (!db && process.env.NODE_ENV !== 'production') {
+      if (!global.__users) global.__users = {};
+    }
 
     if (req.method === 'GET') {
       const action = req.query.action;
@@ -62,8 +31,9 @@ module.exports = async (req, res) => {
         if (!gate.ok) return res.status(gate.status).json({ ok: false, error: gate.error });
 
         let count = 0;
-        if (collection) {
-          count = await collection.countDocuments({});
+        if (db) {
+          const result = await db.query('SELECT COUNT(*) FROM users');
+          count = parseInt(result.rows[0].count, 10);
         } else {
           count = Object.keys(global.__users || {}).length;
         }
@@ -73,8 +43,8 @@ module.exports = async (req, res) => {
       const email = String(req.query.email || '').trim().toLowerCase();
       if (!email) return res.status(400).json({ ok: false, error: 'Missing email' });
 
-      if (process.env.NODE_ENV === 'production' && !collection) {
-        return res.status(503).json({ ok: false, error: 'Database is not configured (MONGODB_URI)' });
+      if (process.env.NODE_ENV === 'production' && !db) {
+        return res.status(503).json({ ok: false, error: 'Database is not configured (DATABASE_URL)' });
       }
 
       const auth = await verifyRequestBearer(req);
@@ -83,18 +53,16 @@ module.exports = async (req, res) => {
         return res.status(403).json({ ok: false, error: 'Email does not match signed-in account' });
       }
 
-      if (collection) {
-        const user = await collection.findOne({
-          'profile.email': { $regex: new RegExp('^' + escapeRegex(email) + '$', 'i') }
-        });
-        return res.json({ ok: true, state: user ? user.state : null });
+      if (db) {
+        const result = await db.query('SELECT state FROM users WHERE email ILIKE $1', [email]);
+        return res.json({ ok: true, state: result.rows.length > 0 ? result.rows[0].state : null });
       }
       return res.json({ ok: true, state: global.__users[email] || null });
     }
 
     if (req.method === 'POST') {
-      if (process.env.NODE_ENV === 'production' && !collection) {
-        return res.status(503).json({ ok: false, error: 'Database is not configured (MONGODB_URI)' });
+      if (process.env.NODE_ENV === 'production' && !db) {
+        return res.status(503).json({ ok: false, error: 'Database is not configured (DATABASE_URL)' });
       }
 
       const auth = await verifyRequestBearer(req);
@@ -109,18 +77,13 @@ module.exports = async (req, res) => {
         return res.status(403).json({ ok: false, error: 'Email does not match signed-in account' });
       }
 
-      const doc = {
-        profile: { email: emailRaw },
-        state: body.state,
-        updatedAt: new Date().toISOString()
-      };
-
-      if (collection) {
-        await collection.updateOne(
-          { 'profile.email': { $regex: new RegExp('^' + escapeRegex(emailRaw) + '$', 'i') } },
-          { $set: doc },
-          { upsert: true }
-        );
+      if (db) {
+        await db.query(`
+          INSERT INTO users (email, state, updated_at) 
+          VALUES ($1, $2, CURRENT_TIMESTAMP)
+          ON CONFLICT (email) DO UPDATE 
+          SET state = EXCLUDED.state, updated_at = CURRENT_TIMESTAMP
+        `, [emailRaw, JSON.stringify(body.state)]);
       } else {
         global.__users[emailRaw] = body.state;
       }
@@ -128,8 +91,8 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'DELETE') {
-      if (process.env.NODE_ENV === 'production' && !collection) {
-        return res.status(503).json({ ok: false, error: 'Database is not configured (MONGODB_URI)' });
+      if (process.env.NODE_ENV === 'production' && !db) {
+        return res.status(503).json({ ok: false, error: 'Database is not configured (DATABASE_URL)' });
       }
 
       const auth = await verifyRequestBearer(req);
@@ -143,10 +106,8 @@ module.exports = async (req, res) => {
         return res.status(403).json({ ok: false, error: 'Email does not match signed-in account' });
       }
 
-      if (collection) {
-        await collection.deleteOne({
-          'profile.email': { $regex: new RegExp('^' + escapeRegex(email) + '$', 'i') }
-        });
+      if (db) {
+        await db.query('DELETE FROM users WHERE email ILIKE $1', [email]);
       } else {
         delete global.__users[email];
       }
@@ -159,7 +120,3 @@ module.exports = async (req, res) => {
     return res.status(500).json({ ok: false, error: 'Internal server error' });
   }
 };
-
-function escapeRegex(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}

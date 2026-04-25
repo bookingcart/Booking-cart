@@ -1,47 +1,32 @@
-// api/bookings.js – booking CRUD (MongoDB Atlas or in-memory fallback outside production)
+// api/bookings.js – booking CRUD (Nile Database / Postgres or in-memory fallback outside production)
 
-const { MongoClient } = require('mongodb');
+const { getPool } = require('../lib/db');
 const { getCorsHeaders } = require('../lib/cors');
 const { verifyRequestBearer } = require('../lib/google-verify');
 const { requireAdminPin } = require('../lib/admin');
+const fs = require('fs');
+const path = require('path');
 
-let cachedClient = null;
-let cachedDb = null;
+const LOCAL_BOOKINGS_FILE = path.join(process.cwd(), 'local-bookings.json');
 
-async function connectToDatabase() {
-  const uri = process.env.MONGODB_URI;
-
-  if (!uri) {
-    if (process.env.NODE_ENV === 'production') {
-      return { collection: null };
-    }
-    if (!global.__bookings) global.__bookings = [];
-    return { collection: null };
-  }
-
-  if (cachedDb) {
-    return { collection: cachedDb.collection('bookings') };
-  }
-
-  const client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 2000,
-    connectTimeoutMS: 2000
-  });
-
+function loadLocalBookings() {
+  if (process.env.NODE_ENV === 'production') return [];
   try {
-    await client.connect();
-    const db = client.db('bookingcart');
-
-    cachedClient = client;
-    cachedDb = db;
-    return { collection: db.collection('bookings') };
-  } catch (err) {
-    console.warn('MongoDB bookings connection failed, using fallback store:', err.message);
-    if (process.env.NODE_ENV === 'production') {
-      throw err;
+    if (fs.existsSync(LOCAL_BOOKINGS_FILE)) {
+      return JSON.parse(fs.readFileSync(LOCAL_BOOKINGS_FILE, 'utf8'));
     }
-    if (!global.__bookings) global.__bookings = [];
-    return { collection: null };
+  } catch (err) {
+    console.error('Failed to load local bookings:', err);
+  }
+  return [];
+}
+
+function saveLocalBookings(bookings) {
+  if (process.env.NODE_ENV === 'production') return;
+  try {
+    fs.writeFileSync(LOCAL_BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
+  } catch (err) {
+    console.error('Failed to save local bookings:', err);
   }
 }
 
@@ -60,42 +45,37 @@ module.exports = async (req, res) => {
   const { action, booking, email, id, status, pin } = req.body || {};
 
   try {
-    const { collection } = await connectToDatabase();
+    const db = await getPool();
 
-    if (process.env.NODE_ENV === 'production' && !collection) {
-      return res.status(503).json({ ok: false, error: 'Database is not configured (MONGODB_URI)' });
+    if (!db && process.env.NODE_ENV !== 'production') {
+      if (!global.__bookings) global.__bookings = loadLocalBookings();
+    }
+
+    if (process.env.NODE_ENV === 'production' && !db) {
+      return res.status(503).json({ ok: false, error: 'Database is not configured (NILE_DB_URL or DATABASE_URL)' });
     }
 
     if (action === 'save') {
       if (!booking) return res.status(400).json({ ok: false, error: 'Missing booking' });
 
-      if (collection) {
-        const now = new Date().toISOString();
-        const safeUpdate = {
-          $setOnInsert: {
-            status: 'new',
-            createdAt: now
-          },
-          $set: {
-            ref: booking.ref,
-            status: booking.status || 'new',
-            route: booking.route,
-            dates: booking.dates,
-            flight: booking.flight,
-            passengers: booking.passengers,
-            contact: booking.contact,
-            extras: booking.extras,
-            total: booking.total,
-            payment: booking.payment || null
-          }
-        };
-        await collection.updateOne({ ref: booking.ref }, safeUpdate, { upsert: true });
+      if (db) {
+        booking.createdAt = booking.createdAt || new Date().toISOString();
+        booking.status = booking.status || 'new';
+        const contactEmail = ((booking.contact && booking.contact.email) || '').trim().toLowerCase();
+
+        await db.query(`
+          INSERT INTO bookings (ref, email, data) 
+          VALUES ($1, $2, $3)
+          ON CONFLICT (ref) DO UPDATE 
+          SET email = EXCLUDED.email, data = EXCLUDED.data
+        `, [booking.ref, contactEmail, JSON.stringify(booking)]);
       } else {
         const exists = global.__bookings.find((b) => b.ref === booking.ref);
         if (!exists) {
           booking.createdAt = new Date().toISOString();
           booking.status = 'new';
           global.__bookings.unshift(booking);
+          saveLocalBookings(global.__bookings);
         }
       }
 
@@ -107,8 +87,9 @@ module.exports = async (req, res) => {
       if (!gate.ok) return res.status(gate.status).json({ ok: false, error: gate.error });
 
       let all = [];
-      if (collection) {
-        all = await collection.find({}).sort({ createdAt: -1 }).toArray();
+      if (db) {
+        const result = await db.query('SELECT data FROM bookings ORDER BY created_at DESC');
+        all = result.rows.map(r => r.data);
       } else {
         all = global.__bookings;
       }
@@ -126,13 +107,12 @@ module.exports = async (req, res) => {
       }
 
       let found = [];
-      if (collection) {
-        found = await collection
-          .find({
-            'contact.email': { $regex: new RegExp('^' + escapeRegex(String(email).trim()) + '$', 'i') }
-          })
-          .sort({ createdAt: -1 })
-          .toArray();
+      if (db) {
+        const result = await db.query(
+          'SELECT data FROM bookings WHERE email ILIKE $1 ORDER BY created_at DESC', 
+          [String(email).trim()]
+        );
+        found = result.rows.map(r => r.data);
       } else {
         found = global.__bookings.filter(
           (b) => ((b.contact && b.contact.email) || '').toLowerCase() === email.toLowerCase()
@@ -147,18 +127,21 @@ module.exports = async (req, res) => {
       if (!gate.ok) return res.status(gate.status).json({ ok: false, error: gate.error });
       if (!id || !status) return res.status(400).json({ ok: false, error: 'Missing id or status' });
 
-      if (collection) {
-        const doc = await collection.findOneAndUpdate(
-          { ref: id },
-          { $set: { status: status } },
-          { returnDocument: 'after' }
-        );
-        if (!doc) return res.status(404).json({ ok: false, error: 'Booking not found' });
-        return res.json({ ok: true, booking: doc });
+      if (db) {
+        const getRes = await db.query('SELECT data FROM bookings WHERE ref = $1', [id]);
+        if (getRes.rows.length === 0) return res.status(404).json({ ok: false, error: 'Booking not found' });
+        
+        const b = getRes.rows[0].data;
+        b.status = status;
+        
+        await db.query('UPDATE bookings SET data = $1 WHERE ref = $2', [JSON.stringify(b), id]);
+        return res.json({ ok: true, booking: b });
       }
+
       const idx = global.__bookings.findIndex((b) => b.ref === id);
       if (idx === -1) return res.status(404).json({ ok: false, error: 'Booking not found' });
       global.__bookings[idx].status = status;
+      saveLocalBookings(global.__bookings);
       return res.json({ ok: true, booking: global.__bookings[idx] });
     }
 
@@ -167,14 +150,20 @@ module.exports = async (req, res) => {
       const auth = await verifyRequestBearer(req);
       if (!auth.ok) return res.status(auth.status).json({ ok: false, error: auth.error });
 
-      if (collection) {
-        const b = await collection.findOne({ ref: id });
-        if (!b) return res.status(404).json({ ok: false, error: 'Booking not found' });
-        const em = ((b.contact && b.contact.email) || '').trim().toLowerCase();
+      if (db) {
+        const getRes = await db.query('SELECT data, email FROM bookings WHERE ref = $1', [id]);
+        if (getRes.rows.length === 0) return res.status(404).json({ ok: false, error: 'Booking not found' });
+        
+        const row = getRes.rows[0];
+        const em = (row.email || '').trim().toLowerCase();
+        
         if (!em || em !== auth.email) {
           return res.status(403).json({ ok: false, error: 'Not allowed for this booking' });
         }
-        await collection.updateOne({ ref: id }, { $set: { status: 'cancelled' } });
+        
+        const b = row.data;
+        b.status = 'cancelled';
+        await db.query('UPDATE bookings SET data = $1 WHERE ref = $2', [JSON.stringify(b), id]);
       } else {
         const idx = global.__bookings.findIndex((x) => x.ref === id);
         if (idx === -1) return res.status(404).json({ ok: false, error: 'Booking not found' });
@@ -185,6 +174,7 @@ module.exports = async (req, res) => {
           return res.status(403).json({ ok: false, error: 'Not allowed for this booking' });
         }
         global.__bookings[idx].status = 'cancelled';
+        saveLocalBookings(global.__bookings);
       }
       return res.json({ ok: true });
     }
@@ -194,10 +184,11 @@ module.exports = async (req, res) => {
       if (!gate.ok) return res.status(gate.status).json({ ok: false, error: gate.error });
       if (!id) return res.status(400).json({ ok: false, error: 'Missing id' });
 
-      if (collection) {
-        await collection.deleteOne({ ref: id });
+      if (db) {
+        await db.query('DELETE FROM bookings WHERE ref = $1', [id]);
       } else {
         global.__bookings = global.__bookings.filter((b) => b.ref !== id);
+        saveLocalBookings(global.__bookings);
       }
       return res.json({ ok: true });
     }
@@ -208,31 +199,41 @@ module.exports = async (req, res) => {
       const { ticket } = req.body;
       if (!id || !ticket) return res.status(400).json({ ok: false, error: 'Missing id or ticket data' });
 
-      if (collection) {
-        const doc = await collection.findOneAndUpdate(
-          { ref: id },
-          { $set: { status: 'issued', ticket: ticket } },
-          { returnDocument: 'after' }
-        );
-        if (!doc) return res.status(404).json({ ok: false, error: 'Booking not found' });
-        return res.json({ ok: true, booking: doc });
+      if (db) {
+        const getRes = await db.query('SELECT data FROM bookings WHERE ref = $1', [id]);
+        if (getRes.rows.length === 0) return res.status(404).json({ ok: false, error: 'Booking not found' });
+        
+        const b = getRes.rows[0].data;
+        b.status = 'issued';
+        b.ticket = ticket;
+        
+        await db.query('UPDATE bookings SET data = $1 WHERE ref = $2', [JSON.stringify(b), id]);
+        return res.json({ ok: true, booking: b });
       }
+
       const idx = global.__bookings.findIndex((b) => b.ref === id);
       if (idx === -1) return res.status(404).json({ ok: false, error: 'Booking not found' });
       global.__bookings[idx].status = 'issued';
       global.__bookings[idx].ticket = ticket;
+      saveLocalBookings(global.__bookings);
       return res.json({ ok: true, booking: global.__bookings[idx] });
     }
 
     if (action === 'track_download') {
       if (!id) return res.status(400).json({ ok: false, error: 'Missing id' });
 
-      if (collection) {
-        await collection.updateOne({ ref: id }, { $inc: { downloadCount: 1 } });
+      if (db) {
+        const getRes = await db.query('SELECT data FROM bookings WHERE ref = $1', [id]);
+        if (getRes.rows.length > 0) {
+          const b = getRes.rows[0].data;
+          b.downloadCount = (b.downloadCount || 0) + 1;
+          await db.query('UPDATE bookings SET data = $1 WHERE ref = $2', [JSON.stringify(b), id]);
+        }
       } else {
         const idx = global.__bookings.findIndex((b) => b.ref === id);
         if (idx !== -1) {
           global.__bookings[idx].downloadCount = (global.__bookings[idx].downloadCount || 0) + 1;
+          saveLocalBookings(global.__bookings);
         }
       }
       return res.json({ ok: true });
@@ -244,7 +245,3 @@ module.exports = async (req, res) => {
     return res.status(500).json({ ok: false, error: 'Internal server error' });
   }
 };
-
-function escapeRegex(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
