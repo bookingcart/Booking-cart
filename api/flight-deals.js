@@ -11,7 +11,7 @@
 require('dotenv').config();
 const fetch = require('node-fetch');
 const { getCorsHeaders } = require('../lib/cors');
-const { getCache, getCollections, isMongoConfigured, setCache } = require('../lib/mongo');
+const { getCache, getCollections, isDbConfigured, setCache } = require('../lib/db');
 
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || '';
 const DUFFEL_BASE_URL = 'https://api.duffel.com';
@@ -206,7 +206,7 @@ module.exports = async (req, res) => {
     // Check cache first
     const cacheKey = `deals_${overrideIata || ip}`;
     let searchCacheCollection = null;
-    if (isMongoConfigured()) {
+    if (isDbConfigured()) {
         try {
             const collections = await getCollections();
             searchCacheCollection = collections.searchCache;
