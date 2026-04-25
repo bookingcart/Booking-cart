@@ -9,13 +9,21 @@ export function HeaderAuthCluster({ className = '' }) {
   const { user } = useAuth();
 
   useEffect(() => {
-    // If we're already logged in, no need to boot Google button
+    // Only attempt to boot if we're signed out and Google script is ready
     if (user) return;
 
-    // Trigger the global bootGoogle function (from /js/auth.js) 
-    // to render the button into .g_id_signin if it exists.
-    if (typeof window.applyAuthUI === 'function') {
-      window.applyAuthUI();
+    const tryBoot = () => {
+      if (typeof window.applyAuthUI === 'function') {
+        window.applyAuthUI();
+      }
+    };
+
+    // If the window is already loaded, boot now. Otherwise wait for load.
+    if (document.readyState === 'complete') {
+      tryBoot();
+    } else {
+      window.addEventListener('load', tryBoot);
+      return () => window.removeEventListener('load', tryBoot);
     }
   }, [user]);
 
