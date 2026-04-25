@@ -1,29 +1,33 @@
+import { useEffect } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
 import { HeaderProfileDropdown } from './HeaderProfileDropdown.jsx';
 
 /**
- * Google Identity placeholders + profile dropdown. Pair with /js/auth.js (bootGoogle, applyAuthUI).
+ * Unified Auth Cluster: Handles Google Sign-In button rendering and Profile dropdown.
  */
 export function HeaderAuthCluster({ className = '' }) {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    // If we're already logged in, no need to boot Google button
+    if (user) return;
+
+    // Trigger the global bootGoogle function (from /js/auth.js) 
+    // to render the button into .g_id_signin if it exists.
+    if (typeof window.applyAuthUI === 'function') {
+      window.applyAuthUI();
+    }
+  }, [user]);
+
   return (
     <div className={`bc-header-auth flex items-center gap-3 flex-shrink-0 ${className}`.trim()}>
-      <div
-        id="g_id_onload"
-        data-client_id=""
-        data-context="use"
-        data-ux_mode="popup"
-        data-callback="handleGoogleSignIn"
-        data-auto_prompt="false"
-      ></div>
-      <div
-        className="g_id_signin"
-        data-type="standard"
-        data-shape="pill"
-        data-theme="outline"
-        data-text="signin_with"
-        data-size="large"
-        data-logo_alignment="left"
-      ></div>
-      <HeaderProfileDropdown />
+      {!user && (
+        <div 
+          className="g_id_signin" 
+          style={{ minWidth: '200px', minHeight: '40px' }}
+        ></div>
+      )}
+      {user && <HeaderProfileDropdown />}
     </div>
   );
 }

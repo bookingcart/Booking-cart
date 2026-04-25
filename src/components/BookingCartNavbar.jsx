@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { HeaderAuthCluster } from './HeaderAuthCluster.jsx';
 
 /**
  * BookingCartNavbar
@@ -9,27 +9,6 @@ import { useState, useRef, useEffect } from 'react';
  *   rightSlot  – optional JSX rendered on the far right (e.g. Print button)
  */
 export default function BookingCartNavbar({ activeNav = 'flights', rightSlot }) {
-  const [profileOpen, setProfileOpen] = useState(false);
-  const profileRef = useRef(null);
-
-  useEffect(() => {
-    function onDocClick(e) {
-      if (!profileRef.current || profileRef.current.contains(e.target)) return;
-      setProfileOpen(false);
-    }
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
-  }, []);
-
-  const signOut = () => {
-    try {
-      localStorage.removeItem('bookingcart_user');
-      localStorage.removeItem('bookingcart_google_id_token');
-      localStorage.removeItem('bc_user');
-    } catch (_) {}
-    window.location.reload();
-  };
-
   const navItems = [
     { key: 'flights',  href: '/',           icon: 'ph-airplane-tilt',     label: 'Flights'  },
   ];
@@ -107,57 +86,8 @@ export default function BookingCartNavbar({ activeNav = 'flights', rightSlot }) 
             {/* Optional slot (e.g. Print button) */}
             {rightSlot}
 
-            {/* Avatar */}
-            <div className="relative" ref={profileRef} data-profile-dropdown>
-              <button
-                id="nav-profile-btn"
-                data-header-profile-btn
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setProfileOpen((v) => !v);
-                }}
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-green-400 to-green-700 flex items-center justify-center shadow-md shadow-green-200 border-2 border-white hover:scale-105 transition-transform overflow-hidden shrink-0"
-                title="My Account"
-              >
-                <i className="ph ph-user text-white text-base" />
-              </button>
-
-              {/* Profile Dropdown */}
-              {profileOpen && (
-                <div
-                  data-profile-menu
-                  className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 py-2 z-50"
-                >
-                  <a
-                    href="/account-settings"
-                    className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    <i className="ph ph-user-circle text-xl text-slate-400"></i> My Account
-                  </a>
-                  <a
-                    href="/my-bookings"
-                    className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    <i className="ph ph-suitcase-rolling text-xl text-slate-400"></i> Bookings & Trips
-                  </a>
-                  <div className="border-t border-slate-100 my-1"></div>
-                  <button
-                    type="button"
-                    data-signout
-                    className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setProfileOpen(false);
-                      signOut();
-                    }}
-                  >
-                    <i className="ph ph-sign-out text-xl"></i> Sign Out
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Auth Cluster (Google Sign-In or Profile Dropdown) */}
+            <HeaderAuthCluster />
 
           </div>
         </div>

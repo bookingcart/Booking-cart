@@ -157,41 +157,11 @@
     const displayName = user && (user.name || user.email || '').trim();
     const signedIn = !!(user && displayName);
 
-    const gSignIn = document.querySelector('.g_id_signin');
-
     if (!signedIn) {
-      var googleReady = typeof window.bookingcartGoogleSignInAvailable === 'boolean';
-      var googleOk = window.bookingcartGoogleSignInAvailable === true;
-      var showGoogleWidgets = !googleReady || googleOk;
-      var showAvatarWithoutGoogle = googleReady && !googleOk;
-
-      if (gSignIn) {
-        gSignIn.style.display = showGoogleWidgets ? '' : 'none';
-      }
-      var gOnloadEl = document.getElementById('g_id_onload');
-      if (gOnloadEl) {
-        gOnloadEl.style.display = showGoogleWidgets ? '' : 'none';
-      }
-
-      document.querySelectorAll('[data-profile-dropdown]').forEach(function (el) {
-        el.style.display = showAvatarWithoutGoogle ? '' : 'none';
-      });
-      document.querySelectorAll('[data-header-profile-btn]').forEach(function (el) {
-        el.style.display = showAvatarWithoutGoogle ? '' : 'none';
-      });
+      // If not signed in, just ensure bootGoogle is called to render the button
+      bootGoogle().catch(function() {});
       return;
     }
-
-    if (gSignIn) gSignIn.style.display = 'none';
-    var gOnloadSignedIn = document.getElementById('g_id_onload');
-    if (gOnloadSignedIn) gOnloadSignedIn.style.display = 'none';
-
-    document.querySelectorAll('[data-profile-dropdown]').forEach(function (el) {
-      el.style.display = '';
-    });
-    document.querySelectorAll('[data-header-profile-btn]').forEach(function (el) {
-      el.style.display = '';
-    });
 
     const label = user.name || user.email || 'Account';
 
@@ -266,14 +236,12 @@
       if (j && j.googleClientId) {
         googleClientId = String(j.googleClientId).trim();
       }
-      if (gOnload && googleClientId) {
-        gOnload.setAttribute('data-client_id', googleClientId);
-      }
     } catch (e) {}
 
     window.bookingcartGoogleSignInAvailable = !!googleClientId;
 
     if (!googleClientId) {
+      console.warn('Google Client ID not found in config.');
       return;
     }
 
@@ -282,6 +250,30 @@
         await loadScript('https://accounts.google.com/gsi/client');
       } catch (e) {
         console.warn('Could not load Google Sign-In script');
+        return;
+      }
+    }
+
+    // Explicitly initialize and render the button
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: window.handleGoogleSignIn,
+        context: 'use',
+        ux_mode: 'popup',
+        auto_prompt: false
+      });
+
+      const parent = document.querySelector('.g_id_signin');
+      if (parent) {
+        window.google.accounts.id.renderButton(parent, {
+          type: 'standard',
+          shape: 'pill',
+          theme: 'outline',
+          text: 'signin_with',
+          size: 'large',
+          logo_alignment: 'left'
+        });
       }
     }
   }
