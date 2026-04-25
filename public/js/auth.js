@@ -227,7 +227,22 @@
     });
   }
 
+  // Trusted Types Policy for Google Identity Services compatibility
+  if (window.trustedTypes && window.trustedTypes.createPolicy && !window.trustedTypes.defaultPolicy) {
+    try {
+      window.trustedTypes.createPolicy('default', {
+        createHTML: (string) => string,
+        createScriptURL: (string) => string,
+        createScript: (string) => string,
+      });
+    } catch (e) {}
+  }
+
+  let googleInitDone = false;
+
   async function bootGoogle() {
+    if (googleInitDone) return;
+
     const gOnload = document.getElementById('g_id_onload');
     let googleClientId = '';
     try {
@@ -256,24 +271,29 @@
 
     // Explicitly initialize and render the button
     if (window.google && window.google.accounts && window.google.accounts.id) {
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: window.handleGoogleSignIn,
-        context: 'use',
-        ux_mode: 'popup',
-        auto_prompt: false
-      });
-
-      const parent = document.querySelector('.g_id_signin');
-      if (parent) {
-        window.google.accounts.id.renderButton(parent, {
-          type: 'standard',
-          shape: 'pill',
-          theme: 'outline',
-          text: 'signin_with',
-          size: 'large',
-          logo_alignment: 'left'
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: window.handleGoogleSignIn,
+          context: 'use',
+          ux_mode: 'popup',
+          auto_prompt: false
         });
+
+        const parent = document.querySelector('.g_id_signin');
+        if (parent) {
+          window.google.accounts.id.renderButton(parent, {
+            type: 'standard',
+            shape: 'pill',
+            theme: 'outline',
+            text: 'signin_with',
+            size: 'large',
+            logo_alignment: 'left'
+          });
+        }
+        googleInitDone = true;
+      } catch (err) {
+        console.error('Google ID initialization failed:', err);
       }
     }
   }
