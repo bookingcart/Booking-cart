@@ -1,157 +1,98 @@
-// api/flight-deals.js — Top Flight Deals serverless function
-//
-// Flow:
-//  1. Read client IP → ip-api.com → city/country/IATA
-//  2. Map city to nearest major airport (IATA code)
-//  3. Search Duffel for top routes from that airport
-//  4. Cache results in Vercel KV (or global for local dev) for 2 hours
-//  5. Return structured deal objects
+// api/flight-deals.js – Fetch trending flight deals (Duffel API + MongoDB Cache)
 
-'use strict';
-require('dotenv').config();
 const fetch = require('node-fetch');
 const { getCorsHeaders } = require('../lib/cors');
-const { getCache, getCollections, isDbConfigured, setCache } = require('../lib/db');
+const { getCollections, isMongoConfigured, getCache, setCache } = require('../lib/mongo');
 
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 const DUFFEL_API_KEY = process.env.DUFFEL_API_KEY || '';
-const DUFFEL_BASE_URL = 'https://api.duffel.com';
-const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-// ── Popular destination routes per origin region ──────────────────────────────
-// Each entry: { to, city, country, image (Unsplash keyword) }
+// Cities to IATA mapping for common lookups
+const CITY_TO_IATA = {
+    'kampala': 'EBB', 'entebbe': 'EBB', 'nairobi': 'NBO', 'dar es salaam': 'DAR',
+    'dubai': 'DXB', 'london': 'LHR', 'paris': 'CDG', 'new york': 'JFK',
+    'mombasa': 'MBA', 'kigali': 'KGL', 'johannesburg': 'JNB', 'cape town': 'CPT',
+    'cairo': 'CAI', 'lagos': 'LOS', 'accra': 'ACC', 'addis ababa': 'ADD',
+    'istanbul': 'IST', 'singapore': 'SIN', 'mumbai': 'BOM', 'toronto': 'YYZ'
+};
+
+const COUNTRY_TO_IATA = {
+    'Uganda': 'EBB', 'Kenya': 'NBO', 'Tanzania': 'DAR', 'Rwanda': 'KGL',
+    'Ethiopia': 'ADD', 'Nigeria': 'LOS', 'South Africa': 'JNB', 'Egypt': 'CAI'
+};
+
+// Hand-picked routes for common starting points
 const ROUTES = {
-    // East Africa
-    EBB: [
+    'EBB': [
         { to: 'DXB', city: 'Dubai', country: 'UAE', image: 'dubai' },
         { to: 'LHR', city: 'London', country: 'UK', image: 'london' },
         { to: 'NBO', city: 'Nairobi', country: 'Kenya', image: 'nairobi' },
-        { to: 'JNB', city: 'Johannesburg', country: 'South Africa', image: 'johannesburg' },
-        { to: 'CAI', city: 'Cairo', country: 'Egypt', image: 'cairo' },
         { to: 'IST', city: 'Istanbul', country: 'Turkey', image: 'istanbul' },
-    ],
-    NBO: [
-        { to: 'DXB', city: 'Dubai', country: 'UAE', image: 'dubai' },
-        { to: 'LHR', city: 'London', country: 'UK', image: 'london' },
         { to: 'JNB', city: 'Johannesburg', country: 'South Africa', image: 'johannesburg' },
-        { to: 'CDG', city: 'Paris', country: 'France', image: 'paris' },
-        { to: 'BOM', city: 'Mumbai', country: 'India', image: 'mumbai' },
+        { to: 'BOM', city: 'Mumbai', country: 'India', image: 'mumbai' }
     ],
-    // Default / Europe / Americas
-    LHR: [
-        { to: 'JFK', city: 'New York', country: 'USA', image: 'new-york' },
+    'NBO': [
         { to: 'DXB', city: 'Dubai', country: 'UAE', image: 'dubai' },
+        { to: 'LHR', city: 'London', country: 'UK', image: 'london' },
+        { to: 'EBB', city: 'Kampala', country: 'Uganda', image: 'paris' }, // using a nice fallback image
+        { to: 'DAR', city: 'Dar es Salaam', country: 'Tanzania', image: 'cancun' },
+        { to: 'IST', city: 'Istanbul', country: 'Turkey', image: 'istanbul' },
+        { to: 'BKK', city: 'Bangkok', country: 'Thailand', image: 'bangkok' }
+    ],
+    'DEFAULT': [
+        { to: 'DXB', city: 'Dubai', country: 'UAE', image: 'dubai' },
+        { to: 'LHR', city: 'London', country: 'UK', image: 'london' },
         { to: 'CDG', city: 'Paris', country: 'France', image: 'paris' },
+        { to: 'JFK', city: 'New York', country: 'USA', image: 'new-york' },
         { to: 'AMS', city: 'Amsterdam', country: 'Netherlands', image: 'amsterdam' },
-        { to: 'SIN', city: 'Singapore', country: 'Singapore', image: 'singapore' },
-        { to: 'BKK', city: 'Bangkok', country: 'Thailand', image: 'bangkok' },
-    ],
-    JFK: [
-        { to: 'LHR', city: 'London', country: 'UK', image: 'london' },
-        { to: 'CDG', city: 'Paris', country: 'France', image: 'paris' },
-        { to: 'CUN', city: 'Cancun', country: 'Mexico', image: 'cancun' },
-        { to: 'MIA', city: 'Miami', country: 'USA', image: 'miami' },
-        { to: 'LAX', city: 'Los Angeles', country: 'USA', image: 'los-angeles' },
-    ],
-    DXB: [
-        { to: 'LHR', city: 'London', country: 'UK', image: 'london' },
-        { to: 'BOM', city: 'Mumbai', country: 'India', image: 'mumbai' },
-        { to: 'JFK', city: 'New York', country: 'USA', image: 'new-york' },
-        { to: 'SIN', city: 'Singapore', country: 'Singapore', image: 'singapore' },
-        { to: 'CDG', city: 'Paris', country: 'France', image: 'paris' },
-        { to: 'NBO', city: 'Nairobi', country: 'Kenya', image: 'nairobi' },
-    ],
-    DEFAULT: [
-        { to: 'DXB', city: 'Dubai', country: 'UAE', image: 'dubai' },
-        { to: 'LHR', city: 'London', country: 'UK', image: 'london' },
-        { to: 'CDG', city: 'Paris', country: 'France', image: 'paris' },
-        { to: 'JFK', city: 'New York', country: 'USA', image: 'new-york' },
-        { to: 'SIN', city: 'Singapore', country: 'Singapore', image: 'singapore' },
-        { to: 'BKK', city: 'Bangkok', country: 'Thailand', image: 'bangkok' },
+        { to: 'SIN', city: 'Singapore', country: 'Singapore', image: 'singapore' }
     ]
 };
 
-// City name → IATA airport code mapping
-const CITY_TO_IATA = {
-    'kampala': 'EBB', 'entebbe': 'EBB',
-    'nairobi': 'NBO',
-    'dar es salaam': 'DAR',
-    'johannesburg': 'JNB', 'joburg': 'JNB',
-    'cape town': 'CPT',
-    'lagos': 'LOS',
-    'accra': 'ACC',
-    'cairo': 'CAI',
-    'dubai': 'DXB', 'abu dhabi': 'AUH',
-    'london': 'LHR',
-    'paris': 'CDG',
-    'amsterdam': 'AMS',
-    'frankfurt': 'FRA',
-    'delhi': 'DEL', 'new delhi': 'DEL',
-    'mumbai': 'BOM',
-    'new york': 'JFK',
-    'los angeles': 'LAX',
-    'chicago': 'ORD',
-    'toronto': 'YYZ',
-    'sydney': 'SYD',
-    'singapore': 'SIN',
-    'bangkok': 'BKK',
-    'istanbul': 'IST',
-};
-
-// Country → default airport
-const COUNTRY_TO_IATA = {
-    'Uganda': 'EBB', 'Kenya': 'NBO', 'Tanzania': 'DAR',
-    'South Africa': 'JNB', 'Nigeria': 'LOS', 'Ghana': 'ACC',
-    'Egypt': 'CAI', 'Ethiopia': 'ADD',
-    'United Kingdom': 'LHR', 'France': 'CDG', 'Germany': 'FRA',
-    'Netherlands': 'AMS', 'Italy': 'FCO', 'Spain': 'MAD',
-    'United States': 'JFK', 'Canada': 'YYZ',
-    'UAE': 'DXB', 'India': 'DEL', 'Singapore': 'SIN',
-    'Australia': 'SYD', 'Japan': 'NRT', 'China': 'PEK',
-    'Turkey': 'IST', 'Brazil': 'GRU',
-};
-
-// Get departure dates for next month
-function getNextDates(offsetDays = 30) {
+function getNextDates(daysFromNow = 30) {
     const d = new Date();
-    d.setDate(d.getDate() + offsetDays);
+    d.setDate(d.getDate() + daysFromNow);
     return d.toISOString().split('T')[0];
 }
 
-// Fetch one route deal from Duffel
-async function fetchDeal(origin, dest, date) {
+// Fetch single cheapest offer from Duffel
+async function fetchDeal(origin, destination, date) {
     if (!DUFFEL_API_KEY) return null;
+
     try {
-        const body = {
-            data: {
-                slices: [{ origin, destination: dest, departure_date: date }],
-                passengers: [{ type: 'adult' }],
-                cabin_class: 'economy',
-                max_connections: 1
-            }
-        };
-        const resp = await fetch(`${DUFFEL_BASE_URL}/air/offer_requests`, {
+        const resp = await fetch('https://api.duffel.com/air/offer_requests', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${DUFFEL_API_KEY}`,
-                'Content-Type': 'application/json',
-                'Duffel-Version': 'v2',
-                'Accept': 'application/json'
+                'Duffel-Version': 'v1',
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(body)
+            body: JSON.stringify({
+                data: {
+                    slices: [{ origin, destination, departure_date: date }],
+                    passengers: [{ type: 'adult' }],
+                    cabin_class: 'economy'
+                }
+            })
         });
+
         if (!resp.ok) return null;
         const json = await resp.json();
-        const offers = (json.data && json.data.offers) || [];
-        if (!offers.length) return null;
-        // Sort by price, take the cheapest
-        offers.sort((a, b) => parseFloat(a.total_amount) - parseFloat(b.total_amount));
-        const best = offers[0];
-        const slice = best.slices && best.slices[0];
-        const seg = slice && slice.segments && slice.segments[0];
+        const offers = json.data.offers || [];
+        if (offers.length === 0) return null;
+
+        // Find cheapest
+        const best = offers.reduce((prev, curr) =>
+            parseFloat(curr.total_amount) < parseFloat(prev.total_amount) ? curr : prev
+        );
+
+        const slice = best.slices[0];
+        const seg = slice ? slice.segments[0] : null;
+
         return {
-            price: parseFloat(best.total_amount),
-            currency: best.total_currency || 'USD',
-            airline: seg ? (seg.marketing_carrier && seg.marketing_carrier.name) || '' : '',
+            price: Math.ceil(parseFloat(best.total_amount)),
+            currency: best.total_currency,
+            airline: best.owner.name,
             airlineCode: seg ? (seg.marketing_carrier && seg.marketing_carrier.iata_code) || '' : '',
             duration: slice ? slice.duration : '',
             stops: slice ? (slice.segments.length - 1) : 0,
@@ -206,7 +147,7 @@ module.exports = async (req, res) => {
     // Check cache first
     const cacheKey = `deals_${overrideIata || ip}`;
     let searchCacheCollection = null;
-    if (isDbConfigured()) {
+    if (isMongoConfigured()) {
         try {
             const collections = await getCollections();
             searchCacheCollection = collections.searchCache;

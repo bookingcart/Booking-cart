@@ -1,6 +1,6 @@
-// api/user.js – persist Account Settings (Nile Database / Postgres or local fallback)
+// api/user.js – persist Account Settings (MongoDB or local fallback)
 
-const { getPool } = require('../lib/db');
+const { getCollections } = require('../lib/mongo');
 const { getCorsHeaders } = require('../lib/cors');
 const { verifyRequestBearer } = require('../lib/google-verify');
 const { requireAdminPin } = require('../lib/admin');
@@ -17,11 +17,15 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const db = await getPool();
-
-    if (!db && process.env.NODE_ENV !== 'production') {
+    let collections;
+    try {
+      collections = await getCollections();
+    } catch (err) {
+      if (process.env.NODE_ENV === 'production') throw err;
       if (!global.__users) global.__users = {};
     }
+
+    const users = collections ? collections.users : null;
 
     if (req.method === 'GET') {
       const action = req.query.action;
@@ -31,9 +35,8 @@ module.exports = async (req, res) => {
         if (!gate.ok) return res.status(gate.status).json({ ok: false, error: gate.error });
 
         let count = 0;
-        if (db) {
-          const result = await db.query('SELECT COUNT(*) FROM users');
-          count = parseInt(result.rows[0].count, 10);
+        if (users) {
+          count = await users.countDocuments({});
         } else {
           count = Object.keys(global.__users || {}).length;
         }
@@ -43,8 +46,8 @@ module.exports = async (req, res) => {
       const email = String(req.query.email || '').trim().toLowerCase();
       if (!email) return res.status(400).json({ ok: false, error: 'Missing email' });
 
-      if (process.env.NODE_ENV === 'production' && !db) {
-        return res.status(503).json({ ok: false, error: 'Database is not configured (DATABASE_URL)' });
+      if (process.env.NODE_ENV === 'production' && !users) {
+        return res.status(503).json({ ok: false, error: 'Database is not configured (MONGODB_URI)' });
       }
 
       const auth = await verifyRequestBearer(req);
@@ -53,16 +56,16 @@ module.exports = async (req, res) => {
         return res.status(403).json({ ok: false, error: 'Email does not match signed-in account' });
       }
 
-      if (db) {
-        const result = await db.query('SELECT state FROM users WHERE email ILIKE $1', [email]);
-        return res.json({ ok: true, state: result.rows.length > 0 ? result.rows[0].state : null });
+      if (users) {
+        const doc = await users.findOne({ 'profile.email': email });
+        return res.json({ ok: true, state: doc ? doc.state : null });
       }
       return res.json({ ok: true, state: global.__users[email] || null });
     }
 
     if (req.method === 'POST') {
-      if (process.env.NODE_ENV === 'production' && !db) {
-        return res.status(503).json({ ok: false, error: 'Database is not configured (DATABASE_URL)' });
+      if (process.env.NODE_ENV === 'production' && !users) {
+        return res.status(503).json({ ok: false, error: 'Database is not configured (MONGODB_URI)' });
       }
 
       const auth = await verifyRequestBearer(req);
@@ -77,13 +80,18 @@ module.exports = async (req, res) => {
         return res.status(403).json({ ok: false, error: 'Email does not match signed-in account' });
       }
 
-      if (db) {
-        await db.query(`
-          INSERT INTO users (email, state, updated_at) 
-          VALUES ($1, $2, CURRENT_TIMESTAMP)
-          ON CONFLICT (email) DO UPDATE 
-          SET state = EXCLUDED.state, updated_at = CURRENT_TIMESTAMP
-        `, [emailRaw, JSON.stringify(body.state)]);
+      if (users) {
+        await users.updateOne(
+          { 'profile.email': emailRaw },
+          {
+            $set: {
+              'profile.email': emailRaw,
+              state: body.state,
+              updatedAt: new Date()
+            }
+          },
+          { upsert: true }
+        );
       } else {
         global.__users[emailRaw] = body.state;
       }
@@ -91,8 +99,8 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'DELETE') {
-      if (process.env.NODE_ENV === 'production' && !db) {
-        return res.status(503).json({ ok: false, error: 'Database is not configured (DATABASE_URL)' });
+      if (process.env.NODE_ENV === 'production' && !users) {
+        return res.status(503).json({ ok: false, error: 'Database is not configured (MONGODB_URI)' });
       }
 
       const auth = await verifyRequestBearer(req);
@@ -106,8 +114,8 @@ module.exports = async (req, res) => {
         return res.status(403).json({ ok: false, error: 'Email does not match signed-in account' });
       }
 
-      if (db) {
-        await db.query('DELETE FROM users WHERE email ILIKE $1', [email]);
+      if (users) {
+        await users.deleteOne({ 'profile.email': email });
       } else {
         delete global.__users[email];
       }
