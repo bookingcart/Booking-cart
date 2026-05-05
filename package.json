@@ -1,0 +1,56 @@
+{
+  "name": "bookingcart",
+  "version": "1.0.0",
+  "description": "Flight booking application — Next.js 15 App Router",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "db:generate": "node_modules/.bin/drizzle-kit generate",
+    "db:migrate": "node_modules/.bin/drizzle-kit migrate",
+    "db:push": "node_modules/.bin/drizzle-kit push",
+    "db:studio": "node_modules/.bin/drizzle-kit studio",
+    "make-admin": "tsx scripts/make-admin.ts",
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "flight",
+    "booking",
+    "travel",
+    "nextjs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1035.0",
+    "@aws-sdk/s3-request-presigner": "^3.1035.0",
+    "@tanstack/react-query": "^5",
+    "@trpc/client": "^11",
+    "@trpc/react-query": "^11",
+    "@trpc/server": "^11",
+    "better-auth": "^1.2.7",
+    "drizzle-orm": "^0.44.0",
+    "next": "^15.3.1",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.16.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "stripe": "^17.7.0",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.13",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.23",
+    "drizzle-kit": "^0.31.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
