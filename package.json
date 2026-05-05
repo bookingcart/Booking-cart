@@ -8,7 +8,7 @@
     "start": "next start",
     "db:generate": "node_modules/.bin/drizzle-kit generate",
     "db:migrate": "node_modules/.bin/drizzle-kit migrate",
-    "db:push": "node_modules/.bin/drizzle-kit push",
+    "db:mg": "npm run db:generate && npm run db:migrate",
     "db:studio": "node_modules/.bin/drizzle-kit studio",
     "make-admin": "tsx scripts/make-admin.ts",
     "test": "node --test test/*.test.js"
